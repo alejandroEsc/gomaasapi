@@ -74,7 +74,7 @@ func WrapWithUnsupportedVersionError(err error) error {
 }
 
 // DeserializationError types are returned when the returned JSON data from
-// the controller doesn't match the code's expectations.
+// the Controller doesn't match the code's expectations.
 type DeserializationError struct {
 	errors.Err
 }

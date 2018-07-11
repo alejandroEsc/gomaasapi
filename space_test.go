@@ -45,52 +45,52 @@ func (*spaceSuite) TestHighVersion(c *gc.C) {
 var spacesResponse = `
 [
     {
-        "subnets": [
+        "Subnets": [
             {
                 "gateway_ip": null,
-                "name": "192.168.122.0/24",
-                "vlan": {
-                    "fabric": "fabric-1",
-                    "resource_uri": "/MAAS/api/2.0/vlans/5001/",
-                    "name": "untagged",
+                "Name": "192.168.122.0/24",
+                "VLAN": {
+                    "Fabric": "Fabric-1",
+                    "resource_uri": "/MAAS/api/2.0/VLANs/5001/",
+                    "Name": "untagged",
                     "secondary_rack": null,
                     "primary_rack": null,
-                    "vid": 0,
+                    "VID": 0,
                     "dhcp_on": false,
-                    "id": 5001,
-                    "mtu": 1500
+                    "ID": 5001,
+                    "MTU": 1500
                 },
                 "space": "space-0",
-                "id": 34,
-                "resource_uri": "/MAAS/api/2.0/subnets/34/",
+                "ID": 34,
+                "resource_uri": "/MAAS/api/2.0/Subnets/34/",
                 "dns_servers": [],
                 "cidr": "192.168.122.0/24",
                 "rdns_mode": 2
             },
             {
                 "gateway_ip": "192.168.100.1",
-                "name": "192.168.100.0/24",
-                "vlan": {
-                    "fabric": "fabric-0",
-                    "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                    "name": "untagged",
+                "Name": "192.168.100.0/24",
+                "VLAN": {
+                    "Fabric": "Fabric-0",
+                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                    "Name": "untagged",
                     "secondary_rack": null,
                     "primary_rack": "4y3h7n",
-                    "vid": 0,
+                    "VID": 0,
                     "dhcp_on": true,
-                    "id": 1,
-                    "mtu": 1500
+                    "ID": 1,
+                    "MTU": 1500
                 },
                 "space": "space-0",
-                "id": 1,
-                "resource_uri": "/MAAS/api/2.0/subnets/1/",
+                "ID": 1,
+                "resource_uri": "/MAAS/api/2.0/Subnets/1/",
                 "dns_servers": [],
                 "cidr": "192.168.100.0/24",
                 "rdns_mode": 2
             }
         ],
-        "id": 0,
-        "name": "space-0",
+        "ID": 0,
+        "Name": "space-0",
         "resource_uri": "/MAAS/api/2.0/spaces/0/"
     }
 ]

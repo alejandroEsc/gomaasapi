@@ -9,23 +9,23 @@ import (
 )
 
 func getVLANsEndpoint(version string) string {
-	return fmt.Sprintf("/api/%s/vlans/", version)
+	return fmt.Sprintf("/api/%s/VLANs/", version)
 }
 
 // TestVLAN is the MAAS API VLAN representation
 type TestVLAN struct {
-	Name   string `json:"name"`
-	Fabric string `json:"fabric"`
-	VID    uint   `json:"vid"`
+	Name   string `json:"Name"`
+	Fabric string `json:"Fabric"`
+	VID    uint   `json:"VID"`
 
 	ResourceURI string `json:"resource_uri"`
-	ID          uint   `json:"id"`
+	ID          uint   `json:"ID"`
 }
 
 // PostedVLAN is the MAAS API posted VLAN representation
 type PostedVLAN struct {
-	Name string `json:"name"`
-	VID  uint   `json:"vid"`
+	Name string `json:"Name"`
+	VID  uint   `json:"VID"`
 }
 
 func vlansHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {

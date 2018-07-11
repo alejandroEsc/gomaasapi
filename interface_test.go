@@ -20,7 +20,7 @@ type interfaceSuite struct {
 var _ = gc.Suite(&interfaceSuite{})
 
 func (*interfaceSuite) TestNilVLAN(c *gc.C) {
-	var empty interface_
+	var empty MachineNetworkInterface
 	c.Check(empty.VLAN() == nil, jc.IsTrue)
 }
 
@@ -47,7 +47,7 @@ func (*interfaceSuite) TestReadInterfacesNulls(c *gc.C) {
 	c.Check(iface.VLAN(), gc.IsNil)
 }
 
-func (s *interfaceSuite) checkInterface(c *gc.C, iface *interface_) {
+func (s *interfaceSuite) checkInterface(c *gc.C, iface *MachineNetworkInterface) {
 	c.Check(iface.ID(), gc.Equals, 40)
 	c.Check(iface.Name(), gc.Equals, "eth0")
 	c.Check(iface.Type(), gc.Equals, "physical")
@@ -108,7 +108,7 @@ func (*interfaceSuite) TestHighVersion(c *gc.C) {
 	c.Assert(err, jc.ErrorIsNil)
 }
 
-func (s *interfaceSuite) getServerAndNewInterface(c *gc.C) (*SimpleTestServer, *interface_) {
+func (s *interfaceSuite) getServerAndNewInterface(c *gc.C) (*SimpleTestServer, *MachineNetworkInterface) {
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
 	devices, err := controller.Devices(DevicesArgs{})
@@ -117,7 +117,7 @@ func (s *interfaceSuite) getServerAndNewInterface(c *gc.C) (*SimpleTestServer, *
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusOK, interfaceResponse)
 	iface, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	c.Assert(err, jc.ErrorIsNil)
-	return server, iface.(*interface_)
+	return server, iface.(*MachineNetworkInterface)
 }
 
 func (s *interfaceSuite) TestDelete(c *gc.C) {
@@ -131,7 +131,7 @@ func (s *interfaceSuite) TestDelete(c *gc.C) {
 
 func (s *interfaceSuite) TestDelete404(c *gc.C) {
 	_, iface := s.getServerAndNewInterface(c)
-	// No path, so 404
+	// No Path, so 404
 	err := iface.Delete()
 	c.Assert(err, jc.Satisfies, IsNoMatchError)
 }
@@ -227,7 +227,7 @@ func (s *interfaceSuite) TestLinkSubnetGood(c *gc.C) {
 	// The changed information is there just for the test to show that the response
 	// is parsed and the interface updated
 	response := updateJSONMap(c, interfaceResponse, map[string]interface{}{
-		"name": "eth42",
+		"Name": "eth42",
 	})
 	server.AddPostResponse(iface.resourceURI+"?op=link_subnet", http.StatusOK, response)
 	args := LinkSubnetArgs{
@@ -242,8 +242,8 @@ func (s *interfaceSuite) TestLinkSubnetGood(c *gc.C) {
 
 	request := server.LastRequest()
 	form := request.PostForm
-	c.Assert(form.Get("mode"), gc.Equals, "STATIC")
-	c.Assert(form.Get("subnet"), gc.Equals, "42")
+	c.Assert(form.Get("Mode"), gc.Equals, "STATIC")
+	c.Assert(form.Get("Subnet"), gc.Equals, "42")
 	c.Assert(form.Get("ip_address"), gc.Equals, "10.10.10.10")
 	c.Assert(form.Get("default_gateway"), gc.Equals, "true")
 }
@@ -313,7 +313,7 @@ func (s *interfaceSuite) TestUnlinkSubnetGood(c *gc.C) {
 	// The changed information is there just for the test to show that the response
 	// is parsed and the interface updated
 	response := updateJSONMap(c, interfaceResponse, map[string]interface{}{
-		"name": "eth42",
+		"Name": "eth42",
 	})
 	server.AddPostResponse(iface.resourceURI+"?op=unlink_subnet", http.StatusOK, response)
 	err := iface.UnlinkSubnet(&fakeSubnet{id: 1})
@@ -322,8 +322,8 @@ func (s *interfaceSuite) TestUnlinkSubnetGood(c *gc.C) {
 
 	request := server.LastRequest()
 	form := request.PostForm
-	// The link id that contains subnet 1 has an internal id of 69.
-	c.Assert(form.Get("id"), gc.Equals, "69")
+	// The link ID that contains Subnet 1 has an internal ID of 69.
+	c.Assert(form.Get("ID"), gc.Equals, "69")
 }
 
 func (s *interfaceSuite) TestUnlinkSubnetMissing(c *gc.C) {
@@ -383,7 +383,7 @@ func (s *interfaceSuite) TestUpdateGood(c *gc.C) {
 	// The changed information is there just for the test to show that the response
 	// is parsed and the interface updated
 	response := updateJSONMap(c, interfaceResponse, map[string]interface{}{
-		"name": "eth42",
+		"Name": "eth42",
 	})
 	server.AddPutResponse(iface.resourceURI, http.StatusOK, response)
 	args := UpdateInterfaceArgs{
@@ -397,9 +397,9 @@ func (s *interfaceSuite) TestUpdateGood(c *gc.C) {
 
 	request := server.LastRequest()
 	form := request.PostForm
-	c.Assert(form.Get("name"), gc.Equals, "eth42")
+	c.Assert(form.Get("Name"), gc.Equals, "eth42")
 	c.Assert(form.Get("mac_address"), gc.Equals, "c3-52-51-b4-50-cd")
-	c.Assert(form.Get("vlan"), gc.Equals, "13")
+	c.Assert(form.Get("VLAN"), gc.Equals, "13")
 }
 
 const (
@@ -408,49 +408,49 @@ const (
 {
     "effective_mtu": 1500,
     "mac_address": "52:54:00:c9:6a:45",
-    "children": ["eth0.1", "eth0.2"],
+    "Children": ["eth0.1", "eth0.2"],
     "discovered": [],
     "params": "some params",
-    "vlan": {
-        "resource_uri": "/MAAS/api/2.0/vlans/1/",
-        "id": 1,
+    "VLAN": {
+        "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+        "ID": 1,
         "secondary_rack": null,
-        "mtu": 1500,
+        "MTU": 1500,
         "primary_rack": "4y3h7n",
-        "name": "untagged",
-        "fabric": "fabric-0",
+        "Name": "untagged",
+        "Fabric": "Fabric-0",
         "dhcp_on": true,
-        "vid": 0
+        "VID": 0
     },
-    "name": "eth0",
-    "enabled": true,
-    "parents": ["bond0"],
-    "id": 40,
+    "Name": "eth0",
+    "Enabled": true,
+    "Parents": ["bond0"],
+    "ID": 40,
     "type": "physical",
     "resource_uri": "/MAAS/api/2.0/nodes/4y3ha6/interfaces/40/",
-    "tags": ["foo", "bar"],
-    "links": [
+    "Tags": ["foo", "bar"],
+    "Links": [
         {
-            "id": 69,
-            "mode": "auto",
-            "subnet": {
-                "resource_uri": "/MAAS/api/2.0/subnets/1/",
-                "id": 1,
+            "ID": 69,
+            "Mode": "auto",
+            "Subnet": {
+                "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+                "ID": 1,
                 "rdns_mode": 2,
-                "vlan": {
-                    "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                    "id": 1,
+                "VLAN": {
+                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                    "ID": 1,
                     "secondary_rack": null,
-                    "mtu": 1500,
+                    "MTU": 1500,
                     "primary_rack": "4y3h7n",
-                    "name": "untagged",
-                    "fabric": "fabric-0",
+                    "Name": "untagged",
+                    "Fabric": "Fabric-0",
                     "dhcp_on": true,
-                    "vid": 0
+                    "VID": 0
                 },
                 "dns_servers": [],
                 "space": "space-0",
-                "name": "192.168.100.0/24",
+                "Name": "192.168.100.0/24",
                 "gateway_ip": "192.168.100.1",
                 "cidr": "192.168.100.0/24"
             }
@@ -462,39 +462,39 @@ const (
 {
     "effective_mtu": 1500,
     "mac_address": null,
-    "children": ["eth0.1", "eth0.2"],
+    "Children": ["eth0.1", "eth0.2"],
     "discovered": [],
     "params": "some params",
-    "vlan": null,
-    "name": "eth0",
-    "enabled": true,
-    "parents": ["bond0"],
-    "id": 40,
+    "VLAN": null,
+    "Name": "eth0",
+    "Enabled": true,
+    "Parents": ["bond0"],
+    "ID": 40,
     "type": "physical",
     "resource_uri": "/MAAS/api/2.0/nodes/4y3ha6/interfaces/40/",
-    "tags": null,
-    "links": [
+    "Tags": null,
+    "Links": [
         {
-            "id": 69,
-            "mode": "auto",
-            "subnet": {
-                "resource_uri": "/MAAS/api/2.0/subnets/1/",
-                "id": 1,
+            "ID": 69,
+            "Mode": "auto",
+            "Subnet": {
+                "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+                "ID": 1,
                 "rdns_mode": 2,
-                "vlan": {
-                    "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                    "id": 1,
+                "VLAN": {
+                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                    "ID": 1,
                     "secondary_rack": null,
-                    "mtu": 1500,
+                    "MTU": 1500,
                     "primary_rack": "4y3h7n",
-                    "name": "untagged",
-                    "fabric": "fabric-0",
+                    "Name": "untagged",
+                    "Fabric": "Fabric-0",
                     "dhcp_on": true,
-                    "vid": 0
+                    "VID": 0
                 },
                 "dns_servers": [],
                 "space": "space-0",
-                "name": "192.168.100.0/24",
+                "Name": "192.168.100.0/24",
                 "gateway_ip": "192.168.100.1",
                 "cidr": "192.168.100.0/24"
             }

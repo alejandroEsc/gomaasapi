@@ -53,52 +53,52 @@ func (*linkSuite) TestHighVersion(c *gc.C) {
 var linksResponse = `
 [
     {
-        "id": 69,
-        "mode": "auto",
+        "ID": 69,
+        "Mode": "auto",
         "ip_address": "192.168.100.5",
-        "subnet": {
-            "resource_uri": "/MAAS/api/2.0/subnets/1/",
-            "id": 1,
+        "Subnet": {
+            "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+            "ID": 1,
             "rdns_mode": 2,
-            "vlan": {
-                "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                "id": 1,
+            "VLAN": {
+                "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                "ID": 1,
                 "secondary_rack": null,
-                "mtu": 1500,
+                "MTU": 1500,
                 "primary_rack": "4y3h7n",
-                "name": "untagged",
-                "fabric": "fabric-0",
+                "Name": "untagged",
+                "Fabric": "Fabric-0",
                 "dhcp_on": true,
-                "vid": 0
+                "VID": 0
             },
             "dns_servers": [],
             "space": "space-0",
-            "name": "192.168.100.0/24",
+            "Name": "192.168.100.0/24",
             "gateway_ip": "192.168.100.1",
             "cidr": "192.168.100.0/24"
         }
     },
 	{
-        "id": 70,
-        "mode": "auto",
-        "subnet": {
-            "resource_uri": "/MAAS/api/2.0/subnets/1/",
-            "id": 1,
+        "ID": 70,
+        "Mode": "auto",
+        "Subnet": {
+            "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+            "ID": 1,
             "rdns_mode": 2,
-            "vlan": {
-                "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                "id": 1,
+            "VLAN": {
+                "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                "ID": 1,
                 "secondary_rack": null,
-                "mtu": 1500,
+                "MTU": 1500,
                 "primary_rack": "4y3h7n",
-                "name": "untagged",
-                "fabric": "fabric-0",
+                "Name": "untagged",
+                "Fabric": "Fabric-0",
                 "dhcp_on": true,
-                "vid": 0
+                "VID": 0
             },
             "dns_servers": [],
             "space": "space-0",
-            "name": "192.168.100.0/24",
+            "Name": "192.168.100.0/24",
             "gateway_ip": "192.168.100.1",
             "cidr": "192.168.100.0/24"
         }

@@ -10,81 +10,23 @@ import (
 )
 
 type blockdevice struct {
-	resourceURI string
+	ResourceURI string
 
-	id      int
-	name    string
-	model   string
-	idPath  string
-	path    string
-	usedFor string
-	tags    []string
+	ID      int
+	Name    string
+	Model   string
+	IDPath  string
+	Path    string
+	UsedFor string
+	Tags    []string
 
-	blockSize uint64
-	usedSize  uint64
-	size      uint64
+	BlockSize uint64
+	UsedSize  uint64
+	Size      uint64
 
-	partitions []*partition
+	Partitions []*partition
 }
 
-// ID implements BlockDevice.
-func (b *blockdevice) ID() int {
-	return b.id
-}
-
-// Name implements BlockDevice.
-func (b *blockdevice) Name() string {
-	return b.name
-}
-
-// Model implements BlockDevice.
-func (b *blockdevice) Model() string {
-	return b.model
-}
-
-// IDPath implements BlockDevice.
-func (b *blockdevice) IDPath() string {
-	return b.idPath
-}
-
-// Path implements BlockDevice.
-func (b *blockdevice) Path() string {
-	return b.path
-}
-
-// UsedFor implements BlockDevice.
-func (b *blockdevice) UsedFor() string {
-	return b.usedFor
-}
-
-// Tags implements BlockDevice.
-func (b *blockdevice) Tags() []string {
-	return b.tags
-}
-
-// BlockSize implements BlockDevice.
-func (b *blockdevice) BlockSize() uint64 {
-	return b.blockSize
-}
-
-// UsedSize implements BlockDevice.
-func (b *blockdevice) UsedSize() uint64 {
-	return b.usedSize
-}
-
-// Size implements BlockDevice.
-func (b *blockdevice) Size() uint64 {
-	return b.size
-}
-
-// Partitions implements BlockDevice.
-func (b *blockdevice) Partitions() []Partition {
-	result := make([]Partition, len(b.partitions))
-	for i, v := range b.partitions {
-		result[i] = v
-	}
-	return result
-}
 
 func readBlockDevices(controllerVersion version.Number, source interface{}) ([]*blockdevice, error) {
 	checker := schema.List(schema.StringMap(schema.Any()))
@@ -107,7 +49,7 @@ func readBlockDevices(controllerVersion version.Number, source interface{}) ([]*
 	return readBlockDeviceList(valid, readFunc)
 }
 
-// readBlockDeviceList expects the values of the sourceList to be string maps.
+// readBlockDeviceList expects the Values of the sourceList to be string maps.
 func readBlockDeviceList(sourceList []interface{}, readFunc blockdeviceDeserializationFunc) ([]*blockdevice, error) {
 	result := make([]*blockdevice, 0, len(sourceList))
 	for i, value := range sourceList {
@@ -134,19 +76,19 @@ func blockdevice_2_0(source map[string]interface{}) (*blockdevice, error) {
 	fields := schema.Fields{
 		"resource_uri": schema.String(),
 
-		"id":       schema.ForceInt(),
-		"name":     schema.String(),
-		"model":    schema.OneOf(schema.Nil(""), schema.String()),
+		"ID":       schema.ForceInt(),
+		"Name":     schema.String(),
+		"Model":    schema.OneOf(schema.Nil(""), schema.String()),
 		"id_path":  schema.OneOf(schema.Nil(""), schema.String()),
-		"path":     schema.String(),
+		"Path":     schema.String(),
 		"used_for": schema.String(),
-		"tags":     schema.List(schema.String()),
+		"Tags":     schema.List(schema.String()),
 
 		"block_size": schema.ForceUint(),
 		"used_size":  schema.ForceUint(),
-		"size":       schema.ForceUint(),
+		"Size":       schema.ForceUint(),
 
-		"partitions": schema.List(schema.StringMap(schema.Any())),
+		"Partitions": schema.List(schema.StringMap(schema.Any())),
 	}
 	checker := schema.FieldMap(fields, nil)
 	coerced, err := checker.Coerce(source, nil)
@@ -157,29 +99,29 @@ func blockdevice_2_0(source map[string]interface{}) (*blockdevice, error) {
 	// From here we know that the map returned from the schema coercion
 	// contains fields of the right type.
 
-	partitions, err := readPartitionList(valid["partitions"].([]interface{}), partition_2_0)
+	partitions, err := readPartitionList(valid["Partitions"].([]interface{}), partition_2_0)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 
-	model, _ := valid["model"].(string)
+	model, _ := valid["Model"].(string)
 	idPath, _ := valid["id_path"].(string)
 	result := &blockdevice{
-		resourceURI: valid["resource_uri"].(string),
+		ResourceURI: valid["resource_uri"].(string),
 
-		id:      valid["id"].(int),
-		name:    valid["name"].(string),
-		model:   model,
-		idPath:  idPath,
-		path:    valid["path"].(string),
-		usedFor: valid["used_for"].(string),
-		tags:    convertToStringSlice(valid["tags"]),
+		ID:      valid["ID"].(int),
+		Name:    valid["Name"].(string),
+		Model:   model,
+		IDPath:  idPath,
+		Path:    valid["Path"].(string),
+		UsedFor: valid["used_for"].(string),
+		Tags:    convertToStringSlice(valid["Tags"]),
 
-		blockSize: valid["block_size"].(uint64),
-		usedSize:  valid["used_size"].(uint64),
-		size:      valid["size"].(uint64),
+		BlockSize: valid["block_size"].(uint64),
+		UsedSize:  valid["used_size"].(uint64),
+		Size:      valid["Size"].(uint64),
 
-		partitions: partitions,
+		Partitions: partitions,
 	}
 	return result, nil
 }

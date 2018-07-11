@@ -61,7 +61,7 @@ func (suite *ClientSuite) TestClientdispatchRequestRetries503(c *gc.C) {
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
 	c.Assert(err, jc.ErrorIsNil)
-	content := "content"
+	content := "Content"
 	request, err := http.NewRequest("GET", server.URL+URI, ioutil.NopCloser(strings.NewReader(content)))
 
 	_, err = client.dispatchRequest(request)
@@ -196,7 +196,7 @@ func (suite *ClientSuite) TestClientPostSendsRequestWithParams(c *gc.C) {
 }
 
 // extractFileContent extracts from the request built using 'requestContent',
-// 'requestHeader' and 'requestURL', the file named 'filename'.
+// 'requestHeader' and 'requestURL', the file named 'Filename'.
 func extractFileContent(requestContent string, requestHeader *http.Header, requestURL string, filename string) ([]byte, error) {
 	// Recreate the request from server.requestContent to use the parsing
 	// utility from the http package (http.Request.FormFile).
@@ -225,7 +225,7 @@ func (suite *ClientSuite) TestClientPostSendsMultipartRequest(c *gc.C) {
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
 	c.Assert(err, jc.ErrorIsNil)
-	fileContent := []byte("content")
+	fileContent := []byte("Content")
 	files := map[string][]byte{"testfile": fileContent}
 
 	result, err := client.Post(URI, "add", nil, files)

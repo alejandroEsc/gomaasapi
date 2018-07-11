@@ -13,105 +13,44 @@ import (
 )
 
 // Can't use interface as a type, so add an underscore. Yay.
-type interface_ struct {
-	controller *controller
+type Interface struct {
+	Controller *controller
 
-	resourceURI string
+	ResourceURI string
 
-	id      int
-	name    string
-	type_   string
-	enabled bool
-	tags    []string
+	ID      int
+	Name    string
+	Type    string
+	Enabled bool
+	Tags    []string
 
-	vlan  *vlan
-	links []*link
+	VLAN  *vlan
+	Links []*link
 
-	macAddress   string
-	effectiveMTU int
+	MACAddress   string
+	EffectiveMTU int
 
-	parents  []string
-	children []string
+	Parents  []string
+	Children []string
 }
 
-func (i *interface_) updateFrom(other *interface_) {
-	i.resourceURI = other.resourceURI
-	i.id = other.id
-	i.name = other.name
-	i.type_ = other.type_
-	i.enabled = other.enabled
-	i.tags = other.tags
-	i.vlan = other.vlan
-	i.links = other.links
-	i.macAddress = other.macAddress
-	i.effectiveMTU = other.effectiveMTU
-	i.parents = other.parents
-	i.children = other.children
+func (i *Interface) updateFrom(other *Interface) {
+	i.ResourceURI = other.ResourceURI
+	i.ID = other.ID
+	i.Name = other.Name
+	i.Type = other.Type
+	i.Enabled = other.Enabled
+	i.Tags = other.Tags
+	i.VLAN = other.VLAN
+	i.Links = other.Links
+	i.MACAddress = other.MACAddress
+	i.EffectiveMTU = other.EffectiveMTU
+	i.Parents = other.Parents
+	i.Children = other.Children
 }
 
-// ID implements Interface.
-func (i *interface_) ID() int {
-	return i.id
-}
 
-// Name implements Interface.
-func (i *interface_) Name() string {
-	return i.name
-}
-
-// Parents implements Interface.
-func (i *interface_) Parents() []string {
-	return i.parents
-}
-
-// Children implements Interface.
-func (i *interface_) Children() []string {
-	return i.children
-}
-
-// Type implements Interface.
-func (i *interface_) Type() string {
-	return i.type_
-}
-
-// Enabled implements Interface.
-func (i *interface_) Enabled() bool {
-	return i.enabled
-}
-
-// Tags implements Interface.
-func (i *interface_) Tags() []string {
-	return i.tags
-}
-
-// VLAN implements Interface.
-func (i *interface_) VLAN() VLAN {
-	if i.vlan == nil {
-		return nil
-	}
-	return i.vlan
-}
-
-// Links implements Interface.
-func (i *interface_) Links() []Link {
-	result := make([]Link, len(i.links))
-	for i, link := range i.links {
-		result[i] = link
-	}
-	return result
-}
-
-// MACAddress implements Interface.
-func (i *interface_) MACAddress() string {
-	return i.macAddress
-}
-
-// EffectiveMTU implements Interface.
-func (i *interface_) EffectiveMTU() int {
-	return i.effectiveMTU
-}
-
-// UpdateInterfaceArgs is an argument struct for calling Interface.Update.
+// UpdateInterfaceArgs is an argument struct for calling MachineNetworkInterface.Update.
 type UpdateInterfaceArgs struct {
 	Name       string
 	MACAddress string
@@ -125,17 +64,17 @@ func (a *UpdateInterfaceArgs) vlanID() int {
 	return a.VLAN.ID()
 }
 
-// Update implements Interface.
-func (i *interface_) Update(args UpdateInterfaceArgs) error {
+// Update implements MachineNetworkInterface.
+func (i *Interface) Update(args UpdateInterfaceArgs) error {
 	var empty UpdateInterfaceArgs
 	if args == empty {
 		return nil
 	}
 	params := NewURLParams()
-	params.MaybeAdd("name", args.Name)
+	params.MaybeAdd("Name", args.Name)
 	params.MaybeAdd("mac_address", args.MACAddress)
-	params.MaybeAddInt("vlan", args.vlanID())
-	source, err := i.controller.put(i.resourceURI, params.Values)
+	params.MaybeAddInt("VLAN", args.vlanID())
+	source, err := i.Controller.put(i.ResourceURI, params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
 			switch svrErr.StatusCode {
@@ -148,7 +87,7 @@ func (i *interface_) Update(args UpdateInterfaceArgs) error {
 		return NewUnexpectedError(err)
 	}
 
-	response, err := readInterface(i.controller.apiVersion, source)
+	response, err := readInterface(i.Controller.apiVersion, source)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -156,9 +95,9 @@ func (i *interface_) Update(args UpdateInterfaceArgs) error {
 	return nil
 }
 
-// Delete implements Interface.
-func (i *interface_) Delete() error {
-	err := i.controller.delete(i.resourceURI)
+// Delete implements MachineNetworkInterface.
+func (i *Interface) Delete() error {
+	err := i.Controller.delete(i.ResourceURI)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
 			switch svrErr.StatusCode {
@@ -173,41 +112,41 @@ func (i *interface_) Delete() error {
 	return nil
 }
 
-// InterfaceLinkMode is the type of the various link mode constants used for
+// InterfaceLinkMode is the type of the various link Mode constants used for
 // LinkSubnetArgs.
 type InterfaceLinkMode string
 
 const (
-	// LinkModeDHCP - Bring the interface up with DHCP on the given subnet. Only
-	// one subnet can be set to DHCP. If the subnet is managed this interface
+	// LinkModeDHCP - Bring the interface up with DHCP on the given Subnet. Only
+	// one Subnet can be set to DHCP. If the Subnet is managed this interface
 	// will pull from the dynamic IP range.
 	LinkModeDHCP InterfaceLinkMode = "DHCP"
 
 	// LinkModeStatic - Bring the interface up with a STATIC IP address on the
-	// given subnet. Any number of STATIC links can exist on an interface.
+	// given Subnet. Any number of STATIC Links can exist on an interface.
 	LinkModeStatic InterfaceLinkMode = "STATIC"
 
-	// LinkModeLinkUp - Bring the interface up only on the given subnet. No IP
+	// LinkModeLinkUp - Bring the interface up only on the given Subnet. No IP
 	// address will be assigned to this interface. The interface cannot have any
-	// current DHCP or STATIC links.
+	// current DHCP or STATIC Links.
 	LinkModeLinkUp InterfaceLinkMode = "LINK_UP"
 )
 
 // LinkSubnetArgs is an argument struct for passing parameters to
-// the Interface.LinkSubnet method.
+// the MachineNetworkInterface.LinkSubnet method.
 type LinkSubnetArgs struct {
 	// Mode is used to describe how the address is provided for the Link.
 	// Required field.
 	Mode InterfaceLinkMode
-	// Subnet is the subnet to link to. Required field.
+	// Subnet is the Subnet to link to. Required field.
 	Subnet Subnet
 	// IPAddress is only valid when the Mode is set to LinkModeStatic. If
 	// not specified with a Mode of LinkModeStatic, an IP address from the
-	// subnet will be auto selected.
+	// Subnet will be auto selected.
 	IPAddress string
 	// DefaultGateway will set the gateway IP address for the Subnet as the
 	// default gateway for the machine or device the interface belongs to.
-	// Option can only be used with mode LinkModeStatic.
+	// Option can only be used with Mode LinkModeStatic.
 	DefaultGateway bool
 }
 
@@ -233,17 +172,17 @@ func (a *LinkSubnetArgs) Validate() error {
 	return nil
 }
 
-// LinkSubnet implements Interface.
-func (i *interface_) LinkSubnet(args LinkSubnetArgs) error {
+// LinkSubnet implements MachineNetworkInterface.
+func (i *Interface) LinkSubnet(args LinkSubnetArgs) error {
 	if err := args.Validate(); err != nil {
 		return errors.Trace(err)
 	}
 	params := NewURLParams()
-	params.Values.Add("mode", string(args.Mode))
-	params.Values.Add("subnet", fmt.Sprint(args.Subnet.ID()))
+	params.Values.Add("Mode", string(args.Mode))
+	params.Values.Add("Subnet", fmt.Sprint(args.Subnet.ID()))
 	params.MaybeAdd("ip_address", args.IPAddress)
 	params.MaybeAddBool("default_gateway", args.DefaultGateway)
-	source, err := i.controller.post(i.resourceURI, "link_subnet", params.Values)
+	source, err := i.Controller.post(i.ResourceURI, "link_subnet", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
 			switch svrErr.StatusCode {
@@ -258,7 +197,7 @@ func (i *interface_) LinkSubnet(args LinkSubnetArgs) error {
 		return NewUnexpectedError(err)
 	}
 
-	response, err := readInterface(i.controller.apiVersion, source)
+	response, err := readInterface(i.Controller.apiVersion, source)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -266,8 +205,8 @@ func (i *interface_) LinkSubnet(args LinkSubnetArgs) error {
 	return nil
 }
 
-func (i *interface_) linkForSubnet(subnet Subnet) *link {
-	for _, link := range i.links {
+func (i *Interface) linkForSubnet(subnet Subnet) *link {
+	for _, link := range i.Links {
 		if s := link.Subnet(); s != nil && s.ID() == subnet.ID() {
 			return link
 		}
@@ -275,8 +214,8 @@ func (i *interface_) linkForSubnet(subnet Subnet) *link {
 	return nil
 }
 
-// LinkSubnet implements Interface.
-func (i *interface_) UnlinkSubnet(subnet Subnet) error {
+// LinkSubnet implements MachineNetworkInterface.
+func (i *Interface) UnlinkSubnet(subnet Subnet) error {
 	if subnet == nil {
 		return errors.NotValidf("missing Subnet")
 	}
@@ -285,8 +224,8 @@ func (i *interface_) UnlinkSubnet(subnet Subnet) error {
 		return errors.NotValidf("unlinked Subnet")
 	}
 	params := NewURLParams()
-	params.Values.Add("id", fmt.Sprint(link.ID()))
-	source, err := i.controller.post(i.resourceURI, "unlink_subnet", params.Values)
+	params.Values.Add("ID", fmt.Sprint(link.ID()))
+	source, err := i.Controller.post(i.ResourceURI, "unlink_subnet", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
 			switch svrErr.StatusCode {
@@ -299,7 +238,7 @@ func (i *interface_) UnlinkSubnet(subnet Subnet) error {
 		return NewUnexpectedError(err)
 	}
 
-	response, err := readInterface(i.controller.apiVersion, source)
+	response, err := readInterface(i.Controller.apiVersion, source)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -308,7 +247,7 @@ func (i *interface_) UnlinkSubnet(subnet Subnet) error {
 	return nil
 }
 
-func readInterface(controllerVersion version.Number, source interface{}) (*interface_, error) {
+func readInterface(controllerVersion version.Number, source interface{}) (*Interface, error) {
 	readFunc, err := getInterfaceDeserializationFunc(controllerVersion)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -323,7 +262,7 @@ func readInterface(controllerVersion version.Number, source interface{}) (*inter
 	return readFunc(valid)
 }
 
-func readInterfaces(controllerVersion version.Number, source interface{}) ([]*interface_, error) {
+func readInterfaces(controllerVersion version.Number, source interface{}) ([]*Interface, error) {
 	readFunc, err := getInterfaceDeserializationFunc(controllerVersion)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -351,8 +290,8 @@ func getInterfaceDeserializationFunc(controllerVersion version.Number) (interfac
 	return interfaceDeserializationFuncs[deserialisationVersion], nil
 }
 
-func readInterfaceList(sourceList []interface{}, readFunc interfaceDeserializationFunc) ([]*interface_, error) {
-	result := make([]*interface_, 0, len(sourceList))
+func readInterfaceList(sourceList []interface{}, readFunc interfaceDeserializationFunc) ([]*Interface, error) {
+	result := make([]*Interface, 0, len(sourceList))
 	for i, value := range sourceList {
 		source, ok := value.(map[string]interface{})
 		if !ok {
@@ -367,30 +306,30 @@ func readInterfaceList(sourceList []interface{}, readFunc interfaceDeserializati
 	return result, nil
 }
 
-type interfaceDeserializationFunc func(map[string]interface{}) (*interface_, error)
+type interfaceDeserializationFunc func(map[string]interface{}) (*Interface, error)
 
 var interfaceDeserializationFuncs = map[version.Number]interfaceDeserializationFunc{
 	twoDotOh: interface_2_0,
 }
 
-func interface_2_0(source map[string]interface{}) (*interface_, error) {
+func interface_2_0(source map[string]interface{}) (*Interface, error) {
 	fields := schema.Fields{
 		"resource_uri": schema.String(),
 
-		"id":      schema.ForceInt(),
-		"name":    schema.String(),
+		"ID":      schema.ForceInt(),
+		"Name":    schema.String(),
 		"type":    schema.String(),
-		"enabled": schema.Bool(),
-		"tags":    schema.OneOf(schema.Nil(""), schema.List(schema.String())),
+		"Enabled": schema.Bool(),
+		"Tags":    schema.OneOf(schema.Nil(""), schema.List(schema.String())),
 
-		"vlan":  schema.OneOf(schema.Nil(""), schema.StringMap(schema.Any())),
-		"links": schema.List(schema.StringMap(schema.Any())),
+		"VLAN":  schema.OneOf(schema.Nil(""), schema.StringMap(schema.Any())),
+		"Links": schema.List(schema.StringMap(schema.Any())),
 
 		"mac_address":   schema.OneOf(schema.Nil(""), schema.String()),
 		"effective_mtu": schema.ForceInt(),
 
-		"parents":  schema.List(schema.String()),
-		"children": schema.List(schema.String()),
+		"Parents":  schema.List(schema.String()),
+		"Children": schema.List(schema.String()),
 	}
 	defaults := schema.Defaults{
 		"mac_address": "",
@@ -406,35 +345,35 @@ func interface_2_0(source map[string]interface{}) (*interface_, error) {
 
 	var vlan *vlan
 	// If it's not an attribute map then we know it's nil from the schema check.
-	if vlanMap, ok := valid["vlan"].(map[string]interface{}); ok {
+	if vlanMap, ok := valid["VLAN"].(map[string]interface{}); ok {
 		vlan, err = vlan_2_0(vlanMap)
 		if err != nil {
 			return nil, errors.Trace(err)
 		}
 	}
 
-	links, err := readLinkList(valid["links"].([]interface{}), link_2_0)
+	links, err := readLinkList(valid["Links"].([]interface{}), link_2_0)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 	macAddress, _ := valid["mac_address"].(string)
-	result := &interface_{
-		resourceURI: valid["resource_uri"].(string),
+	result := &Interface{
+		ResourceURI: valid["resource_uri"].(string),
 
-		id:      valid["id"].(int),
-		name:    valid["name"].(string),
-		type_:   valid["type"].(string),
-		enabled: valid["enabled"].(bool),
-		tags:    convertToStringSlice(valid["tags"]),
+		ID:      valid["ID"].(int),
+		Name:    valid["Name"].(string),
+		Type:    valid["type"].(string),
+		Enabled: valid["Enabled"].(bool),
+		Tags:    convertToStringSlice(valid["Tags"]),
 
-		vlan:  vlan,
-		links: links,
+		VLAN:  vlan,
+		Links: links,
 
-		macAddress:   macAddress,
-		effectiveMTU: valid["effective_mtu"].(int),
+		MACAddress:   macAddress,
+		EffectiveMTU: valid["effective_mtu"].(int),
 
-		parents:  convertToStringSlice(valid["parents"]),
-		children: convertToStringSlice(valid["children"]),
+		Parents:  convertToStringSlice(valid["Parents"]),
+		Children: convertToStringSlice(valid["Children"]),
 	}
 	return result, nil
 }

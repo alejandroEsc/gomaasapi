@@ -15,7 +15,7 @@ var _ = gc.Suite(&zoneSuite{})
 
 func (*zoneSuite) TestReadZonesBadSchema(c *gc.C) {
 	_, err := readZones(twoDotOh, "wat?")
-	c.Assert(err.Error(), gc.Equals, `zone base schema check failed: expected list, got string("wat?")`)
+	c.Assert(err.Error(), gc.Equals, `Zone base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*zoneSuite) TestReadZones(c *gc.C) {
@@ -23,14 +23,14 @@ func (*zoneSuite) TestReadZones(c *gc.C) {
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(zones, gc.HasLen, 2)
 	c.Assert(zones[0].Name(), gc.Equals, "default")
-	c.Assert(zones[0].Description(), gc.Equals, "default description")
+	c.Assert(zones[0].Description(), gc.Equals, "default Description")
 	c.Assert(zones[1].Name(), gc.Equals, "special")
-	c.Assert(zones[1].Description(), gc.Equals, "special description")
+	c.Assert(zones[1].Description(), gc.Equals, "special Description")
 }
 
 func (*zoneSuite) TestLowVersion(c *gc.C) {
 	_, err := readZones(version.MustParse("1.9.0"), parseJSON(c, zoneResponse))
-	c.Assert(err.Error(), gc.Equals, `no zone read func for version 1.9.0`)
+	c.Assert(err.Error(), gc.Equals, `no Zone read func for version 1.9.0`)
 }
 
 func (*zoneSuite) TestHighVersion(c *gc.C) {
@@ -42,13 +42,13 @@ func (*zoneSuite) TestHighVersion(c *gc.C) {
 var zoneResponse = `
 [
     {
-        "description": "default description",
+        "Description": "default Description",
         "resource_uri": "/MAAS/api/2.0/zones/default/",
-        "name": "default"
+        "Name": "default"
     }, {
-        "description": "special description",
+        "Description": "special Description",
         "resource_uri": "/MAAS/api/2.0/zones/special/",
-        "name": "special"
+        "Name": "special"
     }
 ]
 `

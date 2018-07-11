@@ -60,13 +60,13 @@ func (s *fileSuite) TestReadAllFromFiles(c *gc.C) {
 	// base64 encoded, so ReadAll just decodes it.
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/files/", http.StatusOK, filesResponse)
-	server.AddGetResponse("/api/2.0/files/?filename=test&op=get", http.StatusOK, "some content\n")
+	server.AddGetResponse("/api/2.0/files/?Filename=test&op=get", http.StatusOK, "some Content\n")
 	files, err := controller.Files("")
 	c.Assert(err, jc.ErrorIsNil)
 	file := files[0]
 	content, err := file.ReadAll()
 	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(string(content), gc.Equals, "some content\n")
+	c.Assert(string(content), gc.Equals, "some Content\n")
 }
 
 func (s *fileSuite) TestDeleteMissing(c *gc.C) {
@@ -94,9 +94,9 @@ var (
 	fileResponse = `
 {
     "resource_uri": "/MAAS/api/2.0/files/testing/",
-    "content": "dGhpcyBpcyBhIHRlc3QK",
+    "Content": "dGhpcyBpcyBhIHRlc3QK",
     "anon_resource_uri": "/MAAS/api/2.0/files/?op=get_by_key&key=88e64b76-fb82-11e5-932f-52540051bf22",
-    "filename": "testing"
+    "Filename": "testing"
 }
 `
 	filesResponse = `
@@ -104,12 +104,12 @@ var (
     {
         "resource_uri": "/MAAS/api/2.0/files/test/",
         "anon_resource_uri": "/MAAS/api/2.0/files/?op=get_by_key&key=3afba564-fb7d-11e5-932f-52540051bf22",
-        "filename": "test"
+        "Filename": "test"
     },
     {
         "resource_uri": "/MAAS/api/2.0/files/test-file.txt/",
         "anon_resource_uri": "/MAAS/api/2.0/files/?op=get_by_key&key=69913e62-fad2-11e5-932f-52540051bf22",
-        "filename": "test-file.txt"
+        "Filename": "test-file.txt"
     }
 ]
 `

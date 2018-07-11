@@ -9,39 +9,25 @@ import (
 	"github.com/juju/version"
 )
 
+// StaticRoute defines an explicit route that users have requested to be added
+// for a given Subnet.
 type staticRoute struct {
-	resourceURI string
+	ResourceURI string
 
-	id          int
-	source      *subnet
-	destination *subnet
-	gatewayIP   string
-	metric      int
-}
-
-// Id implements StaticRoute.
-func (s *staticRoute) ID() int {
-	return s.id
-}
-
-// Source implements StaticRoute.
-func (s *staticRoute) Source() Subnet {
-	return s.source
-}
-
-// Destination implements StaticRoute.
-func (s *staticRoute) Destination() Subnet {
-	return s.destination
-}
-
-// GatewayIP implements StaticRoute.
-func (s *staticRoute) GatewayIP() string {
-	return s.gatewayIP
-}
-
-// Metric implements StaticRoute.
-func (s *staticRoute) Metric() int {
-	return s.metric
+	ID          int
+	// Source is the Subnet that should have the route configured. (Machines
+	// inside Source should use GatewayIP to reach Destination addresses.)
+	Source      *subnet
+	// Destination is the Subnet that a Machine wants to send packets to. We
+	// want to configure a route to that Subnet via GatewayIP.
+	Destination *subnet
+	// GatewayIP is the IPAddress to direct traffic to.
+	GatewayIP   string
+	// Metric is the routing Metric that determines whether this route will
+	// take precedence over similar routes (there may be a route for 10/8, but
+	// also a more concrete route for 10.0/16 that should take precedence if it
+	// applies.) Metric should be a non-negative integer.
+	Metric      int
 }
 
 func readStaticRoutes(controllerVersion version.Number, source interface{}) ([]*staticRoute, error) {
@@ -65,7 +51,7 @@ func readStaticRoutes(controllerVersion version.Number, source interface{}) ([]*
 	return readStaticRouteList(valid, readFunc)
 }
 
-// readStaticRouteList expects the values of the sourceList to be string maps.
+// readStaticRouteList expects the Values of the sourceList to be string maps.
 func readStaticRouteList(sourceList []interface{}, readFunc staticRouteDeserializationFunc) ([]*staticRoute, error) {
 	result := make([]*staticRoute, 0, len(sourceList))
 	for i, value := range sourceList {
@@ -91,11 +77,11 @@ var staticRouteDeserializationFuncs = map[version.Number]staticRouteDeserializat
 func staticRoute_2_0(source map[string]interface{}) (*staticRoute, error) {
 	fields := schema.Fields{
 		"resource_uri": schema.String(),
-		"id":           schema.ForceInt(),
-		"source":       schema.StringMap(schema.Any()),
-		"destination":  schema.StringMap(schema.Any()),
+		"ID":           schema.ForceInt(),
+		"Source":       schema.StringMap(schema.Any()),
+		"Destination":  schema.StringMap(schema.Any()),
 		"gateway_ip":   schema.String(),
-		"metric":       schema.ForceInt(),
+		"Metric":       schema.ForceInt(),
 	}
 	checker := schema.FieldMap(fields, nil) // no defaults
 	coerced, err := checker.Coerce(source, nil)
@@ -106,25 +92,25 @@ func staticRoute_2_0(source map[string]interface{}) (*staticRoute, error) {
 	// From here we know that the map returned from the schema coercion
 	// contains fields of the right type.
 
-	// readSubnetList takes a list of interfaces. We happen to have 2 subnets
+	// readSubnetList takes a list of interfaces. We happen to have 2 Subnets
 	// to parse, that are in different keys, but we might as well wrap them up
 	// together and pass them in.
-	subnets, err := readSubnetList([]interface{}{valid["source"], valid["destination"]}, subnet_2_0)
+	subnets, err := readSubnetList([]interface{}{valid["Source"], valid["Destination"]}, subnet_2_0)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 	if len(subnets) != 2 {
 		// how could we get here?
-		return nil, errors.Errorf("subnets somehow parsed into the wrong number of items (expected 2): %d", len(subnets))
+		return nil, errors.Errorf("Subnets somehow parsed into the wrong number of items (expected 2): %d", len(subnets))
 	}
 
 	result := &staticRoute{
-		resourceURI: valid["resource_uri"].(string),
-		id:          valid["id"].(int),
-		gatewayIP:   valid["gateway_ip"].(string),
-		metric:      valid["metric"].(int),
-		source:      subnets[0],
-		destination: subnets[1],
+		ResourceURI: valid["resource_uri"].(string),
+		ID:          valid["ID"].(int),
+		GatewayIP:   valid["gateway_ip"].(string),
+		Metric:      valid["Metric"].(int),
+		Source:      subnets[0],
+		Destination: subnets[1],
 	}
 	return result, nil
 }

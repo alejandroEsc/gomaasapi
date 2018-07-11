@@ -9,48 +9,31 @@ import (
 	"github.com/juju/version"
 )
 
+// Fabric represents a set of interconnected VLANs that are capable of mutual
+// communication. A Fabric can be thought of as a logical grouping in which
+// VLANs can be considered unique.
+//
+// For example, a distributed network may have a Fabric in London containing
+// VLAN 100, while a separate Fabric in San Francisco may contain a VLAN 100,
+// whose attached Subnets are completely different and unrelated.
 type fabric struct {
-	// Add the controller in when we need to do things with the fabric.
-	// controller Controller
+	// Add the Controller in when we need to do things with the Fabric.
+	// Controller Controller
 
-	resourceURI string
+	ResourceURI string
 
-	id        int
-	name      string
-	classType string
+	ID        int
+	Name      string
+	ClassType string
 
-	vlans []*vlan
-}
-
-// ID implements Fabric.
-func (f *fabric) ID() int {
-	return f.id
-}
-
-// Name implements Fabric.
-func (f *fabric) Name() string {
-	return f.name
-}
-
-// ClassType implements Fabric.
-func (f *fabric) ClassType() string {
-	return f.classType
-}
-
-// VLANs implements Fabric.
-func (f *fabric) VLANs() []VLAN {
-	var result []VLAN
-	for _, v := range f.vlans {
-		result = append(result, v)
-	}
-	return result
+	VLANs []*vlan
 }
 
 func readFabrics(controllerVersion version.Number, source interface{}) ([]*fabric, error) {
 	checker := schema.List(schema.StringMap(schema.Any()))
 	coerced, err := checker.Coerce(source, nil)
 	if err != nil {
-		return nil, errors.Annotatef(err, "fabric base schema check failed")
+		return nil, errors.Annotatef(err, "Fabric base schema check failed")
 	}
 	valid := coerced.([]interface{})
 
@@ -61,23 +44,23 @@ func readFabrics(controllerVersion version.Number, source interface{}) ([]*fabri
 		}
 	}
 	if deserialisationVersion == version.Zero {
-		return nil, errors.Errorf("no fabric read func for version %s", controllerVersion)
+		return nil, errors.Errorf("no Fabric read func for version %s", controllerVersion)
 	}
 	readFunc := fabricDeserializationFuncs[deserialisationVersion]
 	return readFabricList(valid, readFunc)
 }
 
-// readFabricList expects the values of the sourceList to be string maps.
+// readFabricList expects the Values of the sourceList to be string maps.
 func readFabricList(sourceList []interface{}, readFunc fabricDeserializationFunc) ([]*fabric, error) {
 	result := make([]*fabric, 0, len(sourceList))
 	for i, value := range sourceList {
 		source, ok := value.(map[string]interface{})
 		if !ok {
-			return nil, errors.Errorf("unexpected value for fabric %d, %T", i, value)
+			return nil, errors.Errorf("unexpected value for Fabric %d, %T", i, value)
 		}
 		fabric, err := readFunc(source)
 		if err != nil {
-			return nil, errors.Annotatef(err, "fabric %d", i)
+			return nil, errors.Annotatef(err, "Fabric %d", i)
 		}
 		result = append(result, fabric)
 	}
@@ -93,21 +76,21 @@ var fabricDeserializationFuncs = map[version.Number]fabricDeserializationFunc{
 func fabric_2_0(source map[string]interface{}) (*fabric, error) {
 	fields := schema.Fields{
 		"resource_uri": schema.String(),
-		"id":           schema.ForceInt(),
-		"name":         schema.String(),
+		"ID":           schema.ForceInt(),
+		"Name":         schema.String(),
 		"class_type":   schema.OneOf(schema.Nil(""), schema.String()),
-		"vlans":        schema.List(schema.StringMap(schema.Any())),
+		"VLANs":        schema.List(schema.StringMap(schema.Any())),
 	}
 	checker := schema.FieldMap(fields, nil) // no defaults
 	coerced, err := checker.Coerce(source, nil)
 	if err != nil {
-		return nil, errors.Annotatef(err, "fabric 2.0 schema check failed")
+		return nil, errors.Annotatef(err, "Fabric 2.0 schema check failed")
 	}
 	valid := coerced.(map[string]interface{})
 	// From here we know that the map returned from the schema coercion
 	// contains fields of the right type.
 
-	vlans, err := readVLANList(valid["vlans"].([]interface{}), vlan_2_0)
+	vlans, err := readVLANList(valid["VLANs"].([]interface{}), vlan_2_0)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -118,11 +101,11 @@ func fabric_2_0(source map[string]interface{}) (*fabric, error) {
 	classType, _ := valid["class_type"].(string)
 
 	result := &fabric{
-		resourceURI: valid["resource_uri"].(string),
-		id:          valid["id"].(int),
-		name:        valid["name"].(string),
-		classType:   classType,
-		vlans:       vlans,
+		ResourceURI: valid["resource_uri"].(string),
+		ID:          valid["ID"].(int),
+		Name:        valid["Name"].(string),
+		ClassType:   classType,
+		VLANs:       vlans,
 	}
 	return result, nil
 }

@@ -13,70 +13,30 @@ import (
 	"github.com/juju/version"
 )
 
+// Device represents some form of device in MAAS.
 type device struct {
-	controller *controller
+	// TODO: add domain
 
-	resourceURI string
+	Controller *controller
 
-	systemID string
-	hostname string
-	fqdn     string
+	ResourceURI string
 
-	parent string
-	owner  string
+	SystemID string
+	Hostname string
+	FQDN     string
 
-	ipAddresses  []string
-	interfaceSet []*interface_
-	zone         *zone
+	// Parent returns the SystemID of the Parent. Most often this will be a
+	// Machine.
+	Parent string
+	// Owner is the username of the user that created the device.
+	Owner  string
+
+	IPAddresses  []string
+	// InterfaceSet returns all the interfaces for the Device.
+	InterfaceSet []*MachineNetworkInterface
+	Zone         *zone
 }
 
-// SystemID implements Device.
-func (d *device) SystemID() string {
-	return d.systemID
-}
-
-// Hostname implements Device.
-func (d *device) Hostname() string {
-	return d.hostname
-}
-
-// FQDN implements Device.
-func (d *device) FQDN() string {
-	return d.fqdn
-}
-
-// Parent implements Device.
-func (d *device) Parent() string {
-	return d.parent
-}
-
-// Owner implements Device.
-func (d *device) Owner() string {
-	return d.owner
-}
-
-// IPAddresses implements Device.
-func (d *device) IPAddresses() []string {
-	return d.ipAddresses
-}
-
-// Zone implements Device.
-func (d *device) Zone() Zone {
-	if d.zone == nil {
-		return nil
-	}
-	return d.zone
-}
-
-// InterfaceSet implements Device.
-func (d *device) InterfaceSet() []Interface {
-	result := make([]Interface, len(d.interfaceSet))
-	for i, v := range d.interfaceSet {
-		v.controller = d.controller
-		result[i] = v
-	}
-	return result
-}
 
 // CreateInterfaceArgs is an argument struct for passing parameters to
 // the Machine.CreateInterface method.
@@ -86,7 +46,7 @@ type CreateInterfaceArgs struct {
 	// MACAddress is the MAC address of the interface (required).
 	MACAddress string
 	// VLAN is the untagged VLAN the interface is connected to (required).
-	VLAN VLAN
+	VLAN vlan
 	// Tags to attach to the interface (optional).
 	Tags []string
 	// MTU - Maximum transmission unit. (optional)
@@ -114,23 +74,23 @@ func (a *CreateInterfaceArgs) Validate() error {
 // interfacesURI used to add interfaces for this device. The operations
 // are on the nodes endpoint, not devices.
 func (d *device) interfacesURI() string {
-	return strings.Replace(d.resourceURI, "devices", "nodes", 1) + "interfaces/"
+	return strings.Replace(d.ResourceURI, "devices", "nodes", 1) + "interfaces/"
 }
 
 // CreateInterface implements Device.
-func (d *device) CreateInterface(args CreateInterfaceArgs) (Interface, error) {
+func (d *device) CreateInterface(args CreateInterfaceArgs) (MachineNetworkInterface, error) {
 	if err := args.Validate(); err != nil {
 		return nil, errors.Trace(err)
 	}
 	params := NewURLParams()
-	params.Values.Add("name", args.Name)
+	params.Values.Add("Name", args.Name)
 	params.Values.Add("mac_address", args.MACAddress)
-	params.Values.Add("vlan", fmt.Sprint(args.VLAN.ID()))
-	params.MaybeAdd("tags", strings.Join(args.Tags, ","))
-	params.MaybeAddInt("mtu", args.MTU)
+	params.Values.Add("VLAN", fmt.Sprint(args.VLAN.ID()))
+	params.MaybeAdd("Tags", strings.Join(args.Tags, ","))
+	params.MaybeAddInt("MTU", args.MTU)
 	params.MaybeAddBool("accept_ra", args.AcceptRA)
 	params.MaybeAddBool("autoconf", args.Autoconf)
-	result, err := d.controller.post(d.interfacesURI(), "create_physical", params.Values)
+	result, err := d.Controller.post(d.interfacesURI(), "create_physical", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
 			switch svrErr.StatusCode {
@@ -145,11 +105,11 @@ func (d *device) CreateInterface(args CreateInterfaceArgs) (Interface, error) {
 		return nil, NewUnexpectedError(err)
 	}
 
-	iface, err := readInterface(d.controller.apiVersion, result)
+	iface, err := readInterface(d.Controller.APIVersion, result)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	iface.controller = d.controller
+	iface.Controller = d.Controller
 
 	// TODO: add to the interfaces for the device when the interfaces are returned.
 	// lp:bug 1567213.
@@ -158,7 +118,7 @@ func (d *device) CreateInterface(args CreateInterfaceArgs) (Interface, error) {
 
 // Delete implements Device.
 func (d *device) Delete() error {
-	err := d.controller.delete(d.resourceURI)
+	err := d.Controller.delete(d.ResourceURI)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
 			switch svrErr.StatusCode {
@@ -216,7 +176,7 @@ func getDeviceDeserializationFunc(controllerVersion version.Number) (deviceDeser
 	return deviceDeserializationFuncs[deserialisationVersion], nil
 }
 
-// readDeviceList expects the values of the sourceList to be string maps.
+// readDeviceList expects the Values of the sourceList to be string maps.
 func readDeviceList(sourceList []interface{}, readFunc deviceDeserializationFunc) ([]*device, error) {
 	result := make([]*device, 0, len(sourceList))
 	for i, value := range sourceList {
@@ -244,18 +204,18 @@ func device_2_0(source map[string]interface{}) (*device, error) {
 		"resource_uri": schema.String(),
 
 		"system_id": schema.String(),
-		"hostname":  schema.String(),
-		"fqdn":      schema.String(),
-		"parent":    schema.OneOf(schema.Nil(""), schema.String()),
-		"owner":     schema.OneOf(schema.Nil(""), schema.String()),
+		"Hostname":  schema.String(),
+		"FQDN":      schema.String(),
+		"Parent":    schema.OneOf(schema.Nil(""), schema.String()),
+		"Owner":     schema.OneOf(schema.Nil(""), schema.String()),
 
 		"ip_addresses":  schema.List(schema.String()),
 		"interface_set": schema.List(schema.StringMap(schema.Any())),
-		"zone":          schema.StringMap(schema.Any()),
+		"Zone":          schema.StringMap(schema.Any()),
 	}
 	defaults := schema.Defaults{
-		"owner":  "",
-		"parent": "",
+		"Owner":  "",
+		"Parent": "",
 	}
 	checker := schema.FieldMap(fields, defaults)
 	coerced, err := checker.Coerce(source, nil)
@@ -270,24 +230,24 @@ func device_2_0(source map[string]interface{}) (*device, error) {
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	zone, err := zone_2_0(valid["zone"].(map[string]interface{}))
+	zone, err := zone_2_0(valid["Zone"].(map[string]interface{}))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	owner, _ := valid["owner"].(string)
-	parent, _ := valid["parent"].(string)
+	owner, _ := valid["Owner"].(string)
+	parent, _ := valid["Parent"].(string)
 	result := &device{
-		resourceURI: valid["resource_uri"].(string),
+		ResourceURI: valid["resource_uri"].(string),
 
-		systemID: valid["system_id"].(string),
-		hostname: valid["hostname"].(string),
-		fqdn:     valid["fqdn"].(string),
-		parent:   parent,
-		owner:    owner,
+		SystemID: valid["system_id"].(string),
+		Hostname: valid["Hostname"].(string),
+		FQDN:     valid["FQDN"].(string),
+		Parent:   parent,
+		Owner:    owner,
 
-		ipAddresses:  convertToStringSlice(valid["ip_addresses"]),
-		interfaceSet: interfaceSet,
-		zone:         zone,
+		IPAddresses:  convertToStringSlice(valid["ip_addresses"]),
+		InterfaceSet: interfaceSet,
+		Zone:         zone,
 	}
 	return result, nil
 }

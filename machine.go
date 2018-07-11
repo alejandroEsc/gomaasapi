@@ -13,215 +13,127 @@ import (
 	"github.com/juju/version"
 )
 
+// Machine represents a physical Machine.
 type machine struct {
-	controller *controller
+	Controller *controller
 
-	resourceURI string
+	ResourceURI string
 
-	systemID  string
-	hostname  string
-	fqdn      string
-	tags      []string
-	ownerData map[string]string
+	SystemID  string
+	Hostname  string
+	FQDN      string
+	Tags      []string
+	OwnerData map[string]string
 
-	operatingSystem string
-	distroSeries    string
-	architecture    string
-	memory          int
-	cpuCount        int
+	OperatingSystem string
+	DistroSeries    string
+	Architecture    string
+	Memory          int
+	CPUCount        int
 
-	ipAddresses []string
-	powerState  string
+	IPAddresses []string
+	PowerState  string
 
 	// NOTE: consider some form of status struct
-	statusName    string
-	statusMessage string
+	StatusName    string
+	StatusMessage string
 
-	bootInterface *interface_
-	interfaceSet  []*interface_
-	zone          *zone
+	// BootInterface returns the interface that was used to boot the Machine.
+	BootInterface *MachineNetworkInterface
+	// InterfaceSet returns all the interfaces for the Machine.
+	InterfaceSet  []*MachineNetworkInterface
+	Zone          *zone
+
 	// Don't really know the difference between these two lists:
-	physicalBlockDevices []*blockdevice
-	blockDevices         []*blockdevice
+
+	// PhysicalBlockDevice returns the physical block device for the Machine
+	// that matches the ID specified. If there is no match, nil is returned.
+	PhysicalBlockDevices []*blockdevice
+	// BlockDevices returns all the physical and virtual block devices on the Machine.
+	BlockDevices         []*blockdevice
 }
 
 func (m *machine) updateFrom(other *machine) {
-	m.resourceURI = other.resourceURI
-	m.systemID = other.systemID
-	m.hostname = other.hostname
-	m.fqdn = other.fqdn
-	m.operatingSystem = other.operatingSystem
-	m.distroSeries = other.distroSeries
-	m.architecture = other.architecture
-	m.memory = other.memory
-	m.cpuCount = other.cpuCount
-	m.ipAddresses = other.ipAddresses
-	m.powerState = other.powerState
-	m.statusName = other.statusName
-	m.statusMessage = other.statusMessage
-	m.zone = other.zone
-	m.tags = other.tags
-	m.ownerData = other.ownerData
+	m.ResourceURI = other.ResourceURI
+	m.SystemID = other.SystemID
+	m.Hostname = other.Hostname
+	m.FQDN = other.FQDN
+	m.OperatingSystem = other.OperatingSystem
+	m.DistroSeries = other.DistroSeries
+	m.Architecture = other.Architecture
+	m.Memory = other.Memory
+	m.CPUCount = other.CPUCount
+	m.IPAddresses = other.IPAddresses
+	m.PowerState = other.PowerState
+	m.StatusName = other.StatusName
+	m.StatusMessage = other.StatusMessage
+	m.Zone = other.Zone
+	m.Tags = other.Tags
+	m.OwnerData = other.OwnerData
 }
 
-// SystemID implements Machine.
-func (m *machine) SystemID() string {
-	return m.systemID
+// CreatemachineDeviceArgs is an argument structure for machine.CreateDevice.
+// Only InterfaceName and MACAddress fields are required, the others are only
+// used if set. If Subnet and VLAN are both set, Subnet.VLAN() must match the
+// given VLAN. On failure, returns an error satisfying errors.IsNotValid().
+type CreateMachineDeviceArgs struct {
+	Hostname      string
+	InterfaceName string
+	MACAddress    string
+	Subnet        subnet
+	VLAN          vlan
 }
 
-// Hostname implements Machine.
-func (m *machine) Hostname() string {
-	return m.hostname
-}
 
-// FQDN implements Machine.
-func (m *machine) FQDN() string {
-	return m.fqdn
-}
-
-// Tags implements Machine.
-func (m *machine) Tags() []string {
-	return m.tags
-}
-
-// IPAddresses implements Machine.
-func (m *machine) IPAddresses() []string {
-	return m.ipAddresses
-}
-
-// Memory implements Machine.
-func (m *machine) Memory() int {
-	return m.memory
-}
-
-// CPUCount implements Machine.
-func (m *machine) CPUCount() int {
-	return m.cpuCount
-}
-
-// PowerState implements Machine.
-func (m *machine) PowerState() string {
-	return m.powerState
-}
-
-// Zone implements Machine.
-func (m *machine) Zone() Zone {
-	if m.zone == nil {
-		return nil
-	}
-	return m.zone
-}
-
-// BootInterface implements Machine.
-func (m *machine) BootInterface() Interface {
-	if m.bootInterface == nil {
-		return nil
-	}
-	m.bootInterface.controller = m.controller
-	return m.bootInterface
-}
-
-// InterfaceSet implements Machine.
-func (m *machine) InterfaceSet() []Interface {
-	result := make([]Interface, len(m.interfaceSet))
-	for i, v := range m.interfaceSet {
-		v.controller = m.controller
-		result[i] = v
-	}
-	return result
-}
-
-// Interface implements Machine.
-func (m *machine) Interface(id int) Interface {
-	for _, iface := range m.interfaceSet {
-		if iface.ID() == id {
-			iface.controller = m.controller
+// MachineNetworkInterface implements machine.
+func (m *machine) Interface(id int) MachineNetworkInterface {
+	for _, iface := range m.InterfaceSet {
+		if iface.ID == id {
+			iface.Controller = m.Controller
 			return iface
 		}
 	}
 	return nil
 }
 
-// OperatingSystem implements Machine.
-func (m *machine) OperatingSystem() string {
-	return m.operatingSystem
-}
-
-// DistroSeries implements Machine.
-func (m *machine) DistroSeries() string {
-	return m.distroSeries
-}
-
-// Architecture implements Machine.
-func (m *machine) Architecture() string {
-	return m.architecture
-}
-
-// StatusName implements Machine.
-func (m *machine) StatusName() string {
-	return m.statusName
-}
-
-// StatusMessage implements Machine.
-func (m *machine) StatusMessage() string {
-	return m.statusMessage
-}
-
-// PhysicalBlockDevices implements Machine.
-func (m *machine) PhysicalBlockDevices() []BlockDevice {
-	result := make([]BlockDevice, len(m.physicalBlockDevices))
-	for i, v := range m.physicalBlockDevices {
-		result[i] = v
-	}
-	return result
-}
-
-// PhysicalBlockDevice implements Machine.
-func (m *machine) PhysicalBlockDevice(id int) BlockDevice {
-	return blockDeviceById(id, m.PhysicalBlockDevices())
-}
-
-// BlockDevices implements Machine.
-func (m *machine) BlockDevices() []BlockDevice {
-	result := make([]BlockDevice, len(m.blockDevices))
-	for i, v := range m.blockDevices {
-		result[i] = v
-	}
-	return result
-}
-
-// BlockDevice implements Machine.
-func (m *machine) BlockDevice(id int) BlockDevice {
-	return blockDeviceById(id, m.BlockDevices())
-}
-
-func blockDeviceById(id int, blockDevices []BlockDevice) BlockDevice {
-	for _, blockDevice := range blockDevices {
-		if blockDevice.ID() == id {
+// PhysicalBlockDevice implements machine.
+func (m *machine) PhysicalBlockDevice(id int) *blockdevice {
+	for _, blockDevice := range m.PhysicalBlockDevices {
+		if blockDevice.ID == id {
 			return blockDevice
 		}
 	}
 	return nil
 }
 
-// Devices implements Machine.
+// BlockDevice implements machine.
+func (m *machine) BlockDevice(id int) *blockdevice {
+	for _, blockDevice := range m.BlockDevices {
+		if blockDevice.ID == id {
+			return blockDevice
+		}
+	}
+	return nil
+}
+
+// Devices implements machine.
 func (m *machine) Devices(args DevicesArgs) ([]Device, error) {
 	// Perhaps in the future, MAAS will give us a way to query just for the
-	// devices for a particular parent.
-	devices, err := m.controller.Devices(args)
+	// devices for a particular Parent.
+	devices, err := m.Controller.Devices(args)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 	var result []Device
 	for _, device := range devices {
-		if device.Parent() == m.SystemID() {
+		if device.Parent == m.SystemID {
 			result = append(result, device)
 		}
 	}
 	return result, nil
 }
 
-// StartArgs is an argument struct for passing parameters to the Machine.Start
+// StartArgs is an argument struct for passing parameters to the machine.Start
 // method.
 type StartArgs struct {
 	// UserData needs to be Base64 encoded user data for cloud-init.
@@ -231,14 +143,14 @@ type StartArgs struct {
 	Comment      string
 }
 
-// Start implements Machine.
+// Start implements machine.
 func (m *machine) Start(args StartArgs) error {
 	params := NewURLParams()
 	params.MaybeAdd("user_data", args.UserData)
 	params.MaybeAdd("distro_series", args.DistroSeries)
 	params.MaybeAdd("hwe_kernel", args.Kernel)
 	params.MaybeAdd("comment", args.Comment)
-	result, err := m.controller.post(m.resourceURI, "deploy", params.Values)
+	result, err := m.Controller.post(m.ResourceURI, "deploy", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
 			switch svrErr.StatusCode {
@@ -253,7 +165,7 @@ func (m *machine) Start(args StartArgs) error {
 		return NewUnexpectedError(err)
 	}
 
-	machine, err := readMachine(m.controller.apiVersion, result)
+	machine, err := readmachine(m.Controller.APIVersion, result)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -261,19 +173,8 @@ func (m *machine) Start(args StartArgs) error {
 	return nil
 }
 
-// CreateMachineDeviceArgs is an argument structure for Machine.CreateDevice.
-// Only InterfaceName and MACAddress fields are required, the others are only
-// used if set. If Subnet and VLAN are both set, Subnet.VLAN() must match the
-// given VLAN. On failure, returns an error satisfying errors.IsNotValid().
-type CreateMachineDeviceArgs struct {
-	Hostname      string
-	InterfaceName string
-	MACAddress    string
-	Subnet        Subnet
-	VLAN          VLAN
-}
 
-// Validate ensures that all required values are non-emtpy.
+// Validate ensures that all required Values are non-emtpy.
 func (a *CreateMachineDeviceArgs) Validate() error {
 	if a.InterfaceName == "" {
 		return errors.NotValidf("missing InterfaceName")
@@ -283,10 +184,10 @@ func (a *CreateMachineDeviceArgs) Validate() error {
 		return errors.NotValidf("missing MACAddress")
 	}
 
-	if a.Subnet != nil && a.VLAN != nil && a.Subnet.VLAN() != a.VLAN {
+	if a.Subnet != nil && a.VLAN != nil && a.Subnet.VLAN != a.VLAN {
 		msg := fmt.Sprintf(
-			"given subnet %q on VLAN %d does not match given VLAN %d",
-			a.Subnet.CIDR(), a.Subnet.VLAN().ID(), a.VLAN.ID(),
+			"given Subnet %q on VLAN %d does not match given VLAN %d",
+			a.Subnet.CIDR, a.Subnet.VLAN.ID, a.VLAN.ID(),
 		)
 		return errors.NewNotValid(nil, msg)
 	}
@@ -294,15 +195,15 @@ func (a *CreateMachineDeviceArgs) Validate() error {
 	return nil
 }
 
-// CreateDevice implements Machine
+// CreateDevice implements machine
 func (m *machine) CreateDevice(args CreateMachineDeviceArgs) (_ Device, err error) {
 	if err := args.Validate(); err != nil {
 		return nil, errors.Trace(err)
 	}
-	device, err := m.controller.CreateDevice(CreateDeviceArgs{
+	device, err := m.Controller.CreateDevice(CreateDeviceArgs{
 		Hostname:     args.Hostname,
 		MACAddresses: []string{args.MACAddress},
-		Parent:       m.SystemID(),
+		Parent:       m.SystemID,
 	})
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -320,7 +221,7 @@ func (m *machine) CreateDevice(args CreateMachineDeviceArgs) (_ Device, err erro
 	// Update the VLAN to use for the interface, if given.
 	vlanToUse := args.VLAN
 	if vlanToUse == nil && args.Subnet != nil {
-		vlanToUse = args.Subnet.VLAN()
+		vlanToUse = args.Subnet.VLAN
 	}
 
 	// There should be one interface created for each MAC Address, and since we
@@ -349,7 +250,7 @@ func (m *machine) CreateDevice(args CreateMachineDeviceArgs) (_ Device, err erro
 	return device, nil
 }
 
-func (m *machine) updateDeviceInterface(iface Interface, nameToUse string, vlanToUse VLAN) error {
+func (m *machine) updateDeviceInterface(iface MachineNetworkInterface, nameToUse string, vlanToUse VLAN) error {
 	updateArgs := UpdateInterfaceArgs{}
 	updateArgs.Name = nameToUse
 
@@ -364,27 +265,18 @@ func (m *machine) updateDeviceInterface(iface Interface, nameToUse string, vlanT
 	return nil
 }
 
-func (m *machine) linkDeviceInterfaceToSubnet(iface Interface, subnetToUse Subnet) error {
+func (m *machine) linkDeviceInterfaceToSubnet(iface MachineNetworkInterface, subnetToUse Subnet) error {
 	err := iface.LinkSubnet(LinkSubnetArgs{
 		Mode:   LinkModeStatic,
 		Subnet: subnetToUse,
 	})
 	if err != nil {
 		return errors.Annotatef(
-			err, "linking device interface %q to subnet %q failed",
+			err, "linking device interface %q to Subnet %q failed",
 			iface.Name(), subnetToUse.CIDR())
 	}
 
 	return nil
-}
-
-// OwnerData implements OwnerDataHolder.
-func (m *machine) OwnerData() map[string]string {
-	result := make(map[string]string)
-	for key, value := range m.ownerData {
-		result[key] = value
-	}
-	return result
 }
 
 // SetOwnerData implements OwnerDataHolder.
@@ -393,11 +285,11 @@ func (m *machine) SetOwnerData(ownerData map[string]string) error {
 	for key, value := range ownerData {
 		params.Add(key, value)
 	}
-	result, err := m.controller.post(m.resourceURI, "set_owner_data", params)
+	result, err := m.Controller.post(m.ResourceURI, "set_owner_data", params)
 	if err != nil {
 		return errors.Trace(err)
 	}
-	machine, err := readMachine(m.controller.apiVersion, result)
+	machine, err := readmachine(m.Controller.APIVersion, result)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -405,8 +297,8 @@ func (m *machine) SetOwnerData(ownerData map[string]string) error {
 	return nil
 }
 
-func readMachine(controllerVersion version.Number, source interface{}) (*machine, error) {
-	readFunc, err := getMachineDeserializationFunc(controllerVersion)
+func readmachine(controllerVersion version.Number, source interface{}) (*machine, error) {
+	readFunc, err := getmachineDeserializationFunc(controllerVersion)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -420,8 +312,8 @@ func readMachine(controllerVersion version.Number, source interface{}) (*machine
 	return readFunc(valid)
 }
 
-func readMachines(controllerVersion version.Number, source interface{}) ([]*machine, error) {
-	readFunc, err := getMachineDeserializationFunc(controllerVersion)
+func readmachines(controllerVersion version.Number, source interface{}) ([]*machine, error) {
+	readFunc, err := getmachineDeserializationFunc(controllerVersion)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -432,10 +324,10 @@ func readMachines(controllerVersion version.Number, source interface{}) ([]*mach
 		return nil, WrapWithDeserializationError(err, "machine base schema check failed")
 	}
 	valid := coerced.([]interface{})
-	return readMachineList(valid, readFunc)
+	return readmachineList(valid, readFunc)
 }
 
-func getMachineDeserializationFunc(controllerVersion version.Number) (machineDeserializationFunc, error) {
+func getmachineDeserializationFunc(controllerVersion version.Number) (machineDeserializationFunc, error) {
 	var deserialisationVersion version.Number
 	for v := range machineDeserializationFuncs {
 		if v.Compare(deserialisationVersion) > 0 && v.Compare(controllerVersion) <= 0 {
@@ -448,7 +340,7 @@ func getMachineDeserializationFunc(controllerVersion version.Number) (machineDes
 	return machineDeserializationFuncs[deserialisationVersion], nil
 }
 
-func readMachineList(sourceList []interface{}, readFunc machineDeserializationFunc) ([]*machine, error) {
+func readmachineList(sourceList []interface{}, readFunc machineDeserializationFunc) ([]*machine, error) {
 	result := make([]*machine, 0, len(sourceList))
 	for i, value := range sourceList {
 		source, ok := value.(map[string]interface{})
@@ -475,15 +367,15 @@ func machine_2_0(source map[string]interface{}) (*machine, error) {
 		"resource_uri": schema.String(),
 
 		"system_id":  schema.String(),
-		"hostname":   schema.String(),
-		"fqdn":       schema.String(),
+		"Hostname":   schema.String(),
+		"FQDN":       schema.String(),
 		"tag_names":  schema.List(schema.String()),
 		"owner_data": schema.StringMap(schema.String()),
 
 		"osystem":       schema.String(),
 		"distro_series": schema.String(),
-		"architecture":  schema.OneOf(schema.Nil(""), schema.String()),
-		"memory":        schema.ForceInt(),
+		"Architecture":  schema.OneOf(schema.Nil(""), schema.String()),
+		"Memory":        schema.ForceInt(),
 		"cpu_count":     schema.ForceInt(),
 
 		"ip_addresses":   schema.List(schema.String()),
@@ -493,13 +385,13 @@ func machine_2_0(source map[string]interface{}) (*machine, error) {
 
 		"boot_interface": schema.OneOf(schema.Nil(""), schema.StringMap(schema.Any())),
 		"interface_set":  schema.List(schema.StringMap(schema.Any())),
-		"zone":           schema.StringMap(schema.Any()),
+		"Zone":           schema.StringMap(schema.Any()),
 
 		"physicalblockdevice_set": schema.List(schema.StringMap(schema.Any())),
 		"blockdevice_set":         schema.List(schema.StringMap(schema.Any())),
 	}
 	defaults := schema.Defaults{
-		"architecture": "",
+		"Architecture": "",
 	}
 	checker := schema.FieldMap(fields, defaults)
 	coerced, err := checker.Coerce(source, nil)
@@ -510,7 +402,7 @@ func machine_2_0(source map[string]interface{}) (*machine, error) {
 	// From here we know that the map returned from the schema coercion
 	// contains fields of the right type.
 
-	var bootInterface *interface_
+	var bootInterface *MachineNetworkInterface
 	if ifaceMap, ok := valid["boot_interface"].(map[string]interface{}); ok {
 		bootInterface, err = interface_2_0(ifaceMap)
 		if err != nil {
@@ -522,7 +414,7 @@ func machine_2_0(source map[string]interface{}) (*machine, error) {
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	zone, err := zone_2_0(valid["zone"].(map[string]interface{}))
+	zone, err := zone_2_0(valid["Zone"].(map[string]interface{}))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -534,33 +426,33 @@ func machine_2_0(source map[string]interface{}) (*machine, error) {
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	architecture, _ := valid["architecture"].(string)
+	architecture, _ := valid["Architecture"].(string)
 	statusMessage, _ := valid["status_message"].(string)
 	result := &machine{
-		resourceURI: valid["resource_uri"].(string),
+		ResourceURI: valid["resource_uri"].(string),
 
-		systemID:  valid["system_id"].(string),
-		hostname:  valid["hostname"].(string),
-		fqdn:      valid["fqdn"].(string),
-		tags:      convertToStringSlice(valid["tag_names"]),
-		ownerData: convertToStringMap(valid["owner_data"]),
+		SystemID:  valid["system_id"].(string),
+		Hostname:  valid["Hostname"].(string),
+		FQDN:      valid["FQDN"].(string),
+		Tags:      convertToStringSlice(valid["tag_names"]),
+		OwnerData: convertToStringMap(valid["owner_data"]),
 
-		operatingSystem: valid["osystem"].(string),
-		distroSeries:    valid["distro_series"].(string),
-		architecture:    architecture,
-		memory:          valid["memory"].(int),
-		cpuCount:        valid["cpu_count"].(int),
+		OperatingSystem: valid["osystem"].(string),
+		DistroSeries:    valid["distro_series"].(string),
+		Architecture:    architecture,
+		Memory:          valid["Memory"].(int),
+		CPUCount:        valid["cpu_count"].(int),
 
-		ipAddresses:   convertToStringSlice(valid["ip_addresses"]),
-		powerState:    valid["power_state"].(string),
-		statusName:    valid["status_name"].(string),
-		statusMessage: statusMessage,
+		IPAddresses:   convertToStringSlice(valid["ip_addresses"]),
+		PowerState:    valid["power_state"].(string),
+		StatusName:    valid["status_name"].(string),
+		StatusMessage: statusMessage,
 
-		bootInterface:        bootInterface,
-		interfaceSet:         interfaceSet,
-		zone:                 zone,
-		physicalBlockDevices: physicalBlockDevices,
-		blockDevices:         blockDevices,
+		BootInterface:        bootInterface,
+		InterfaceSet:         interfaceSet,
+		Zone:                 zone,
+		PhysicalBlockDevices: physicalBlockDevices,
+		BlockDevices:         blockDevices,
 	}
 
 	return result, nil

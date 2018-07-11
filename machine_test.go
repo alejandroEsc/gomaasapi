@@ -21,7 +21,7 @@ type machineSuite struct {
 var _ = gc.Suite(&machineSuite{})
 
 func (*machineSuite) TestNilGetters(c *gc.C) {
-	var empty machine
+	var empty Machine
 	c.Check(empty.Zone() == nil, jc.IsTrue)
 	c.Check(empty.PhysicalBlockDevice(0) == nil, jc.IsTrue)
 	c.Check(empty.Interface(0) == nil, jc.IsTrue)
@@ -31,7 +31,7 @@ func (*machineSuite) TestNilGetters(c *gc.C) {
 func (*machineSuite) TestReadMachinesBadSchema(c *gc.C) {
 	_, err := readMachines(twoDotOh, "wat?")
 	c.Check(err, jc.Satisfies, IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, `machine base schema check failed: expected list, got string("wat?")`)
+	c.Assert(err.Error(), gc.Equals, `Machine base schema check failed: expected list, got string("wat?")`)
 
 	_, err = readMachines(twoDotOh, []map[string]interface{}{
 		{
@@ -39,7 +39,7 @@ func (*machineSuite) TestReadMachinesBadSchema(c *gc.C) {
 		},
 	})
 	c.Check(err, jc.Satisfies, IsDeserializationError)
-	c.Assert(err, gc.ErrorMatches, `machine 0: machine 2.0 schema check failed: .*`)
+	c.Assert(err, gc.ErrorMatches, `Machine 0: Machine 2.0 schema check failed: .*`)
 }
 
 func (*machineSuite) TestReadMachines(c *gc.C) {
@@ -98,7 +98,7 @@ func (*machineSuite) TestReadMachines(c *gc.C) {
 func (*machineSuite) TestReadMachinesNilValues(c *gc.C) {
 	json := parseJSON(c, machinesResponse)
 	data := json.([]interface{})[0].(map[string]interface{})
-	data["architecture"] = nil
+	data["Architecture"] = nil
 	data["status_message"] = nil
 	data["boot_interface"] = nil
 	machines, err := readMachines(twoDotOh, json)
@@ -113,7 +113,7 @@ func (*machineSuite) TestReadMachinesNilValues(c *gc.C) {
 func (*machineSuite) TestLowVersion(c *gc.C) {
 	_, err := readMachines(version.MustParse("1.9.0"), parseJSON(c, machinesResponse))
 	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-	c.Assert(err.Error(), gc.Equals, `no machine read func for version 1.9.0`)
+	c.Assert(err.Error(), gc.Equals, `no Machine read func for version 1.9.0`)
 }
 
 func (*machineSuite) TestHighVersion(c *gc.C) {
@@ -122,14 +122,14 @@ func (*machineSuite) TestHighVersion(c *gc.C) {
 	c.Assert(machines, gc.HasLen, 3)
 }
 
-func (s *machineSuite) getServerAndMachine(c *gc.C) (*SimpleTestServer, *machine) {
+func (s *machineSuite) getServerAndMachine(c *gc.C) (*SimpleTestServer, *Machine) {
 	server, controller := createTestServerController(c, s)
-	// Just have machines return one machine
+	// Just have machines return one Machine
 	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, "["+machineResponse+"]")
 	machines, err := controller.Machines(MachinesArgs{})
 	c.Assert(err, jc.ErrorIsNil)
 	c.Check(machines, gc.HasLen, 1)
-	machine := machines[0].(*machine)
+	machine := machines[0].(*Machine)
 	server.ResetRequests()
 	return server, machine
 }
@@ -140,7 +140,7 @@ func (s *machineSuite) TestStart(c *gc.C) {
 		"status_name":    "Deploying",
 		"status_message": "for testing",
 	})
-	server.AddPostResponse(machine.resourceURI+"?op=deploy", http.StatusOK, response)
+	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusOK, response)
 
 	err := machine.Start(StartArgs{
 		UserData:     "userdata",
@@ -153,7 +153,7 @@ func (s *machineSuite) TestStart(c *gc.C) {
 	c.Assert(machine.StatusMessage(), gc.Equals, "for testing")
 
 	request := server.LastRequest()
-	// There should be one entry in the form values for each of the args.
+	// There should be one entry in the form Values for each of the args.
 	form := request.PostForm
 	c.Assert(form, gc.HasLen, 4)
 	c.Check(form.Get("user_data"), gc.Equals, "userdata")
@@ -164,31 +164,31 @@ func (s *machineSuite) TestStart(c *gc.C) {
 
 func (s *machineSuite) TestStartMachineNotFound(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	server.AddPostResponse(machine.resourceURI+"?op=deploy", http.StatusNotFound, "can't find machine")
+	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusNotFound, "can't find Machine")
 	err := machine.Start(StartArgs{})
 	c.Assert(err, jc.Satisfies, IsBadRequestError)
-	c.Assert(err.Error(), gc.Equals, "can't find machine")
+	c.Assert(err.Error(), gc.Equals, "can't find Machine")
 }
 
 func (s *machineSuite) TestStartMachineConflict(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	server.AddPostResponse(machine.resourceURI+"?op=deploy", http.StatusConflict, "machine not allocated")
+	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusConflict, "Machine not allocated")
 	err := machine.Start(StartArgs{})
 	c.Assert(err, jc.Satisfies, IsBadRequestError)
-	c.Assert(err.Error(), gc.Equals, "machine not allocated")
+	c.Assert(err.Error(), gc.Equals, "Machine not allocated")
 }
 
 func (s *machineSuite) TestStartMachineForbidden(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	server.AddPostResponse(machine.resourceURI+"?op=deploy", http.StatusForbidden, "machine not yours")
+	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusForbidden, "Machine not yours")
 	err := machine.Start(StartArgs{})
 	c.Assert(err, jc.Satisfies, IsPermissionError)
-	c.Assert(err.Error(), gc.Equals, "machine not yours")
+	c.Assert(err.Error(), gc.Equals, "Machine not yours")
 }
 
 func (s *machineSuite) TestStartMachineServiceUnavailable(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	server.AddPostResponse(machine.resourceURI+"?op=deploy", http.StatusServiceUnavailable, "no ip addresses available")
+	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusServiceUnavailable, "no ip addresses available")
 	err := machine.Start(StartArgs{})
 	c.Assert(err, jc.Satisfies, IsCannotCompleteError)
 	c.Assert(err.Error(), gc.Equals, "no ip addresses available")
@@ -196,7 +196,7 @@ func (s *machineSuite) TestStartMachineServiceUnavailable(c *gc.C) {
 
 func (s *machineSuite) TestStartMachineUnknown(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	server.AddPostResponse(machine.resourceURI+"?op=deploy", http.StatusMethodNotAllowed, "wat?")
+	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusMethodNotAllowed, "wat?")
 	err := machine.Start(StartArgs{})
 	c.Assert(err, jc.Satisfies, IsUnexpectedError)
 	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 405 Method Not Allowed (wat?)")
@@ -214,7 +214,7 @@ func (s *machineSuite) TestDevices(c *gc.C) {
 func (s *machineSuite) TestDevicesNone(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
 	response := updateJSONMap(c, deviceResponse, map[string]interface{}{
-		"parent": "other",
+		"Parent": "other",
 	})
 	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, "["+response+"]")
 	devices, err := machine.Devices(DevicesArgs{})
@@ -243,7 +243,7 @@ func (s *machineSuite) TestCreateMachineDeviceArgsValidate(c *gc.C) {
 			},
 			VLAN: &fakeVLAN{id: 10},
 		},
-		errText: `given subnet "1.2.3.4/5" on VLAN 42 does not match given VLAN 10`,
+		errText: `given Subnet "1.2.3.4/5" on VLAN 42 does not match given VLAN 10`,
 	}, {
 		args: CreateMachineDeviceArgs{
 			Hostname:      "is-optional",
@@ -287,16 +287,16 @@ func (s *machineSuite) TestCreateDeviceValidates(c *gc.C) {
 
 func (s *machineSuite) TestCreateDevice(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	// The createDeviceResponse returns a single interface with the name "eth0".
+	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
 	updateInterfaceResponse := updateJSONMap(c, interfaceResponse, map[string]interface{}{
-		"name":         "eth4",
-		"links":        []interface{}{},
+		"Name":         "eth4",
+		"Links":        []interface{}{},
 		"resource_uri": "/MAAS/api/2.0/nodes/4y3haf/interfaces/48/",
 	})
 	server.AddPutResponse("/MAAS/api/2.0/nodes/4y3haf/interfaces/48/", http.StatusOK, updateInterfaceResponse)
 	linkSubnetResponse := updateJSONMap(c, interfaceResponse, map[string]interface{}{
-		"name":         "eth4",
+		"Name":         "eth4",
 		"resource_uri": "/MAAS/api/2.0/nodes/4y3haf/interfaces/48/",
 	})
 	server.AddPostResponse("/MAAS/api/2.0/nodes/4y3haf/interfaces/48/?op=link_subnet", http.StatusOK, linkSubnetResponse)
@@ -314,11 +314,11 @@ func (s *machineSuite) TestCreateDevice(c *gc.C) {
 
 func (s *machineSuite) TestCreateDeviceWithoutSubnetOrVLAN(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	// The createDeviceResponse returns a single interface with the name "eth0".
+	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
 	updateInterfaceResponse := updateJSONMap(c, interfaceResponse, map[string]interface{}{
-		"name":         "eth4",
-		"links":        []interface{}{},
+		"Name":         "eth4",
+		"Links":        []interface{}{},
 		"resource_uri": "/MAAS/api/2.0/nodes/4y3haf/interfaces/48/",
 	})
 	server.AddPutResponse("/MAAS/api/2.0/nodes/4y3haf/interfaces/48/", http.StatusOK, updateInterfaceResponse)
@@ -330,26 +330,26 @@ func (s *machineSuite) TestCreateDeviceWithoutSubnetOrVLAN(c *gc.C) {
 	})
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(device.InterfaceSet()[0].Name(), gc.Equals, "eth4")
-	// No specifc subnet or VLAN should be set.
+	// No specifc Subnet or VLAN should be set.
 	c.Assert(device.InterfaceSet()[0].VLAN().ID(), gc.Equals, 1) // set in interfaceResponse
 	c.Assert(device.InterfaceSet()[0].Links(), gc.HasLen, 0)     // set above
 }
 
 func (s *machineSuite) TestCreateDeviceWithVLANOnly(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	// The createDeviceResponse returns a single interface with the name "eth0".
+	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
 	updateInterfaceResponse := updateJSONMap(c, interfaceResponse, map[string]interface{}{
-		"name": "eth4",
-		"vlan": map[string]interface{}{
-			"id":           42,
-			"resource_uri": "/MAAS/api/2.0/vlans/42/",
-			"vid":          1234,
-			"fabric":       "live",
+		"Name": "eth4",
+		"VLAN": map[string]interface{}{
+			"ID":           42,
+			"resource_uri": "/MAAS/api/2.0/VLANs/42/",
+			"VID":          1234,
+			"Fabric":       "live",
 			"dhcp_on":      false,
-			"mtu":          9001,
+			"MTU":          9001,
 		},
-		"links":        []interface{}{},
+		"Links":        []interface{}{},
 		"resource_uri": "/MAAS/api/2.0/nodes/4y3haf/interfaces/48/",
 	})
 	server.AddPutResponse("/MAAS/api/2.0/nodes/4y3haf/interfaces/48/", http.StatusOK, updateInterfaceResponse)
@@ -367,11 +367,11 @@ func (s *machineSuite) TestCreateDeviceWithVLANOnly(c *gc.C) {
 
 func (s *machineSuite) TestCreateDeviceTriesToDeleteDeviceOnError(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	// The createDeviceResponse returns a single interface with the name "eth0".
+	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
 	updateInterfaceResponse := updateJSONMap(c, interfaceResponse, map[string]interface{}{
-		"name":         "eth4",
-		"links":        []interface{}{},
+		"Name":         "eth4",
+		"Links":        []interface{}{},
 		"resource_uri": "/MAAS/api/2.0/nodes/4y3haf/interfaces/48/",
 	})
 	server.AddPutResponse("/MAAS/api/2.0/nodes/4y3haf/interfaces/48/", http.StatusOK, updateInterfaceResponse)
@@ -391,15 +391,15 @@ func (s *machineSuite) TestCreateDeviceTriesToDeleteDeviceOnError(c *gc.C) {
 }
 
 func (s *machineSuite) TestOwnerDataCopies(c *gc.C) {
-	machine := machine{ownerData: make(map[string]string)}
+	machine := Machine{OwnerData: make(map[string]string)}
 	ownerData := machine.OwnerData()
-	ownerData["sad"] = "children"
+	ownerData["sad"] = "Children"
 	c.Assert(machine.OwnerData(), gc.DeepEquals, map[string]string{})
 }
 
 func (s *machineSuite) TestSetOwnerData(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	server.AddPostResponse(machine.resourceURI+"?op=set_owner_data", 200, machineWithOwnerData(`{"returned": "data"}`))
+	server.AddPostResponse(machine.ResourceURI+"?op=set_owner_data", 200, machineWithOwnerData(`{"returned": "data"}`))
 	err := machine.SetOwnerData(map[string]string{
 		"draco": "malfoy",
 		"empty": "", // Check that empty strings get passed along.
@@ -432,7 +432,7 @@ const (
         "ip_addresses": [
             "192.168.100.4"
         ],
-        "memory": 1024,
+        "Memory": 1024,
         "cpu_count": 1,
         "hwe_kernel": "hwe-t",
         "status_action": "",
@@ -449,23 +449,23 @@ const (
             {
                 "block_size": 512,
                 "serial": null,
-                "path": "/dev/disk/by-dname/md0",
+                "Path": "/dev/disk/by-dname/md0",
                 "system_id": "xc3e6q",
                 "available_size": 256599130112,
-                "size": 256599130112,
-                "uuid": "b76de3fd-d05f-4a3f-b515-189de53d6c03",
-                "tags": [
+                "Size": 256599130112,
+                "UUID": "b76de3fd-d05f-4a3f-b515-189de53d6c03",
+                "Tags": [
                     "raid0"
                 ],
                 "used_size": 0,
-                "name": "md0",
+                "Name": "md0",
                 "type": "virtual",
                 "filesystem": null,
                 "used_for": "Unused",
-                "partitions": [],
-                "id": 23,
+                "Partitions": [],
+                "ID": 23,
                 "partition_table_type": null,
-                "model": null,
+                "Model": null,
                 "id_path": null,
                 "resource_uri": "/MAAS/api/2.0/nodes/xc3e6q/blockdevices/23/"
             }
@@ -473,82 +473,82 @@ const (
 
         "physicalblockdevice_set": [
             {
-                "path": "/dev/disk/by-dname/sda",
-                "name": "sda",
+                "Path": "/dev/disk/by-dname/sda",
+                "Name": "sda",
                 "used_for": "MBR partitioned with 1 partition",
-                "partitions": [
+                "Partitions": [
                     {
                         "bootable": false,
-                        "id": 1,
-                        "path": "/dev/disk/by-dname/sda-part1",
+                        "ID": 1,
+                        "Path": "/dev/disk/by-dname/sda-part1",
                         "filesystem": {
-                            "fstype": "ext4",
+                            "Type": "ext4",
                             "mount_point": "/",
-                            "label": "root",
+                            "Label": "root",
                             "mount_options": null,
-                            "uuid": "fcd7745e-f1b5-4f5d-9575-9b0bb796b752"
+                            "UUID": "fcd7745e-f1b5-4f5d-9575-9b0bb796b752"
                         },
                         "type": "partition",
                         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/partition/1",
-                        "uuid": "6199b7c9-b66f-40f6-a238-a938a58a0adf",
+                        "UUID": "6199b7c9-b66f-40f6-a238-a938a58a0adf",
                         "used_for": "ext4 formatted filesystem mounted at /",
-                        "size": 8581545984
+                        "Size": 8581545984
                     }
                 ],
                 "filesystem": null,
-                "id_path": "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001",
+                "id_path": "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/",
-                "id": 34,
+                "ID": 34,
                 "serial": "QM00001",
                 "type": "physical",
                 "block_size": 4096,
                 "used_size": 8586788864,
                 "available_size": 0,
                 "partition_table_type": "MBR",
-                "uuid": null,
-                "size": 8589934592,
-                "model": "QEMU HARDDISK",
-                "tags": [
+                "UUID": null,
+                "Size": 8589934592,
+                "Model": "QEMU HARDDISK",
+                "Tags": [
                     "rotary"
                 ]
             },
             {
-                "path": "/dev/disk/by-dname/sdb",
-                "name": "sdb",
+                "Path": "/dev/disk/by-dname/sdb",
+                "Name": "sdb",
                 "used_for": "MBR partitioned with 1 partition",
-                "partitions": [
+                "Partitions": [
                     {
                         "bootable": false,
-                        "id": 101,
-                        "path": "/dev/disk/by-dname/sdb-part1",
+                        "ID": 101,
+                        "Path": "/dev/disk/by-dname/sdb-part1",
                         "filesystem": {
-                            "fstype": "ext4",
+                            "Type": "ext4",
                             "mount_point": "/home",
-                            "label": "home",
+                            "Label": "home",
                             "mount_options": null,
-                            "uuid": "fcd7745e-f1b5-4f5d-9575-9b0bb796b753"
+                            "UUID": "fcd7745e-f1b5-4f5d-9575-9b0bb796b753"
                         },
                         "type": "partition",
                         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/98/partition/101",
-                        "uuid": "6199b7c9-b66f-40f6-a238-a938a58a0ae0",
+                        "UUID": "6199b7c9-b66f-40f6-a238-a938a58a0ae0",
                         "used_for": "ext4 formatted filesystem mounted at /home",
-                        "size": 8581545984
+                        "Size": 8581545984
                     }
                 ],
                 "filesystem": null,
-                "id_path": "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00002",
+                "id_path": "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00002",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/98/",
-                "id": 98,
+                "ID": 98,
                 "serial": "QM00002",
                 "type": "physical",
                 "block_size": 4096,
                 "used_size": 8586788864,
                 "available_size": 0,
                 "partition_table_type": "MBR",
-                "uuid": null,
-                "size": 8589934592,
-                "model": "QEMU HARDDISK",
-                "tags": [
+                "UUID": null,
+                "Size": 8589934592,
+                "Model": "QEMU HARDDISK",
+                "Tags": [
                     "rotary"
                 ]
             }
@@ -557,170 +557,170 @@ const (
             {
                 "effective_mtu": 1500,
                 "mac_address": "52:54:00:55:b6:80",
-                "children": [],
+                "Children": [],
                 "discovered": [],
                 "params": "",
-                "vlan": {
-                    "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                    "id": 1,
+                "VLAN": {
+                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                    "ID": 1,
                     "secondary_rack": null,
-                    "mtu": 1500,
+                    "MTU": 1500,
                     "primary_rack": "4y3h7n",
-                    "name": "untagged",
-                    "fabric": "fabric-0",
+                    "Name": "untagged",
+                    "Fabric": "Fabric-0",
                     "dhcp_on": true,
-                    "vid": 0
+                    "VID": 0
                 },
-                "name": "eth0",
-                "enabled": true,
-                "parents": [],
-                "id": 35,
+                "Name": "eth0",
+                "Enabled": true,
+                "Parents": [],
+                "ID": 35,
                 "type": "physical",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/interfaces/35/",
-                "tags": [],
-                "links": [
+                "Tags": [],
+                "Links": [
                     {
-                        "id": 82,
+                        "ID": 82,
                         "ip_address": "192.168.100.4",
-                        "subnet": {
-                            "resource_uri": "/MAAS/api/2.0/subnets/1/",
-                            "id": 1,
+                        "Subnet": {
+                            "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+                            "ID": 1,
                             "rdns_mode": 2,
-                            "vlan": {
-                                "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                                "id": 1,
+                            "VLAN": {
+                                "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                                "ID": 1,
                                 "secondary_rack": null,
-                                "mtu": 1500,
+                                "MTU": 1500,
                                 "primary_rack": "4y3h7n",
-                                "name": "untagged",
-                                "fabric": "fabric-0",
+                                "Name": "untagged",
+                                "Fabric": "Fabric-0",
                                 "dhcp_on": true,
-                                "vid": 0
+                                "VID": 0
                             },
                             "dns_servers": [],
                             "space": "space-0",
-                            "name": "192.168.100.0/24",
+                            "Name": "192.168.100.0/24",
                             "gateway_ip": "192.168.100.1",
                             "cidr": "192.168.100.0/24"
                         },
-                        "mode": "auto"
+                        "Mode": "auto"
                     }
                 ]
             },
             {
                 "effective_mtu": 1500,
                 "mac_address": "52:54:00:55:b6:81",
-                "children": [],
+                "Children": [],
                 "discovered": [],
                 "params": "",
-                "vlan": {
-                    "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                    "id": 1,
+                "VLAN": {
+                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                    "ID": 1,
                     "secondary_rack": null,
-                    "mtu": 1500,
+                    "MTU": 1500,
                     "primary_rack": "4y3h7n",
-                    "name": "untagged",
-                    "fabric": "fabric-0",
+                    "Name": "untagged",
+                    "Fabric": "Fabric-0",
                     "dhcp_on": true,
-                    "vid": 0
+                    "VID": 0
                 },
-                "name": "eth0",
-                "enabled": true,
-                "parents": [],
-                "id": 99,
+                "Name": "eth0",
+                "Enabled": true,
+                "Parents": [],
+                "ID": 99,
                 "type": "physical",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/interfaces/99/",
-                "tags": [],
-                "links": [
+                "Tags": [],
+                "Links": [
                     {
-                        "id": 83,
+                        "ID": 83,
                         "ip_address": "192.168.100.5",
-                        "subnet": {
-                            "resource_uri": "/MAAS/api/2.0/subnets/1/",
-                            "id": 1,
+                        "Subnet": {
+                            "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+                            "ID": 1,
                             "rdns_mode": 2,
-                            "vlan": {
-                                "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                                "id": 1,
+                            "VLAN": {
+                                "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                                "ID": 1,
                                 "secondary_rack": null,
-                                "mtu": 1500,
+                                "MTU": 1500,
                                 "primary_rack": "4y3h7n",
-                                "name": "untagged",
-                                "fabric": "fabric-0",
+                                "Name": "untagged",
+                                "Fabric": "Fabric-0",
                                 "dhcp_on": true,
-                                "vid": 0
+                                "VID": 0
                             },
                             "dns_servers": [],
                             "space": "space-0",
-                            "name": "192.168.100.0/24",
+                            "Name": "192.168.100.0/24",
                             "gateway_ip": "192.168.100.1",
                             "cidr": "192.168.100.0/24"
                         },
-                        "mode": "auto"
+                        "Mode": "auto"
                     }
                 ]
             }
         ],
         "resource_uri": "/MAAS/api/2.0/machines/4y3ha3/",
-        "hostname": "untasted-markita",
+        "Hostname": "untasted-markita",
         "status_name": "Deployed",
         "min_hwe_kernel": "",
         "address_ttl": null,
         "boot_interface": {
             "effective_mtu": 1500,
             "mac_address": "52:54:00:55:b6:80",
-            "children": [],
+            "Children": [],
             "discovered": [],
             "params": "",
-            "vlan": {
-                "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                "id": 1,
+            "VLAN": {
+                "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                "ID": 1,
                 "secondary_rack": null,
-                "mtu": 1500,
+                "MTU": 1500,
                 "primary_rack": "4y3h7n",
-                "name": "untagged",
-                "fabric": "fabric-0",
+                "Name": "untagged",
+                "Fabric": "Fabric-0",
                 "dhcp_on": true,
-                "vid": 0
+                "VID": 0
             },
-            "name": "eth0",
-            "enabled": true,
-            "parents": [],
-            "id": 35,
+            "Name": "eth0",
+            "Enabled": true,
+            "Parents": [],
+            "ID": 35,
             "type": "physical",
             "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/interfaces/35/",
-            "tags": [],
-            "links": [
+            "Tags": [],
+            "Links": [
                 {
-                    "id": 82,
+                    "ID": 82,
                     "ip_address": "192.168.100.4",
-                    "subnet": {
-                        "resource_uri": "/MAAS/api/2.0/subnets/1/",
-                        "id": 1,
+                    "Subnet": {
+                        "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+                        "ID": 1,
                         "rdns_mode": 2,
-                        "vlan": {
-                            "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                            "id": 1,
+                        "VLAN": {
+                            "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                            "ID": 1,
                             "secondary_rack": null,
-                            "mtu": 1500,
+                            "MTU": 1500,
                             "primary_rack": "4y3h7n",
-                            "name": "untagged",
-                            "fabric": "fabric-0",
+                            "Name": "untagged",
+                            "Fabric": "Fabric-0",
                             "dhcp_on": true,
-                            "vid": 0
+                            "VID": 0
                         },
                         "dns_servers": [],
                         "space": "space-0",
-                        "name": "192.168.100.0/24",
+                        "Name": "192.168.100.0/24",
                         "gateway_ip": "192.168.100.1",
                         "cidr": "192.168.100.0/24"
                     },
-                    "mode": "auto"
+                    "Mode": "auto"
                 }
             ]
         },
         "power_state": "on",
-        "architecture": "amd64/generic",
+        "Architecture": "amd64/generic",
         "power_type": "virsh",
         "distro_series": "trusty",
         "tag_names": [
@@ -731,122 +731,122 @@ const (
         "swap_size": null,
         "blockdevice_set": [
             {
-                "path": "/dev/disk/by-dname/sda",
+                "Path": "/dev/disk/by-dname/sda",
                 "partition_table_type": "MBR",
-                "name": "sda",
+                "Name": "sda",
                 "used_for": "MBR partitioned with 1 partition",
-                "partitions": [
+                "Partitions": [
                     {
                         "bootable": false,
-                        "id": 1,
-                        "path": "/dev/disk/by-dname/sda-part1",
+                        "ID": 1,
+                        "Path": "/dev/disk/by-dname/sda-part1",
                         "filesystem": {
-                            "fstype": "ext4",
+                            "Type": "ext4",
                             "mount_point": "/",
-                            "label": "root",
+                            "Label": "root",
                             "mount_options": null,
-                            "uuid": "fcd7745e-f1b5-4f5d-9575-9b0bb796b752"
+                            "UUID": "fcd7745e-f1b5-4f5d-9575-9b0bb796b752"
                         },
                         "type": "partition",
                         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/partition/1",
-                        "uuid": "6199b7c9-b66f-40f6-a238-a938a58a0adf",
+                        "UUID": "6199b7c9-b66f-40f6-a238-a938a58a0adf",
                         "used_for": "ext4 formatted filesystem mounted at /",
-                        "size": 8581545984
+                        "Size": 8581545984
                     }
                 ],
                 "filesystem": null,
-                "id_path": "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001",
+                "id_path": "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/",
-                "id": 34,
+                "ID": 34,
                 "serial": "QM00001",
                 "block_size": 4096,
                 "type": "physical",
                 "used_size": 8586788864,
-                "tags": [
+                "Tags": [
                     "rotary"
                 ],
                 "available_size": 0,
-                "uuid": null,
-                "size": 8589934592,
-                "model": "QEMU HARDDISK"
+                "UUID": null,
+                "Size": 8589934592,
+                "Model": "QEMU HARDDISK"
             },
             {
-                "path": "/dev/disk/by-dname/sdb",
-                "name": "sdb",
+                "Path": "/dev/disk/by-dname/sdb",
+                "Name": "sdb",
                 "used_for": "MBR partitioned with 1 partition",
-                "partitions": [
+                "Partitions": [
                     {
                         "bootable": false,
-                        "id": 101,
-                        "path": "/dev/disk/by-dname/sdb-part1",
+                        "ID": 101,
+                        "Path": "/dev/disk/by-dname/sdb-part1",
                         "filesystem": {
-                            "fstype": "ext4",
+                            "Type": "ext4",
                             "mount_point": "/home",
-                            "label": "home",
+                            "Label": "home",
                             "mount_options": null,
-                            "uuid": "fcd7745e-f1b5-4f5d-9575-9b0bb796b753"
+                            "UUID": "fcd7745e-f1b5-4f5d-9575-9b0bb796b753"
                         },
                         "type": "partition",
                         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/98/partition/101",
-                        "uuid": "6199b7c9-b66f-40f6-a238-a938a58a0ae0",
+                        "UUID": "6199b7c9-b66f-40f6-a238-a938a58a0ae0",
                         "used_for": "ext4 formatted filesystem mounted at /home",
-                        "size": 8581545984
+                        "Size": 8581545984
                     }
                 ],
                 "filesystem": null,
-                "id_path": "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00002",
+                "id_path": "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00002",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/98/",
-                "id": 98,
+                "ID": 98,
                 "serial": "QM00002",
                 "type": "physical",
                 "block_size": 4096,
                 "used_size": 8586788864,
                 "available_size": 0,
                 "partition_table_type": "MBR",
-                "uuid": null,
-                "size": 8589934592,
-                "model": "QEMU HARDDISK",
-                "tags": [
+                "UUID": null,
+                "Size": 8589934592,
+                "Model": "QEMU HARDDISK",
+                "Tags": [
                     "rotary"
                 ]
             },
             {
-                "tags": [
+                "Tags": [
                     "raid0"
                 ],
                 "used_size": 0,
-                "path": "/dev/disk/by-dname/md0",
+                "Path": "/dev/disk/by-dname/md0",
                 "serial": null,
                 "available_size": 256599130112,
                 "system_id": "xc3e6q",
-                "uuid": "b76de3fd-d05f-4a3f-b515-189de53d6c03",
+                "UUID": "b76de3fd-d05f-4a3f-b515-189de53d6c03",
                 "block_size": 512,
-                "size": 256599130112,
+                "Size": 256599130112,
                 "type": "virtual",
                 "filesystem": null,
                 "used_for": "Unused",
-                "partitions": [],
-                "id": 23,
-                "name": "md0",
+                "Partitions": [],
+                "ID": 23,
+                "Name": "md0",
                 "partition_table_type": null,
-                "model": null,
+                "Model": null,
                 "id_path": null,
                 "resource_uri": "/MAAS/api/2.0/nodes/xc3e6q/blockdevices/23/"
             }
         ],
-        "zone": {
-            "description": "",
+        "Zone": {
+            "Description": "",
             "resource_uri": "/MAAS/api/2.0/zones/default/",
-            "name": "default"
+            "Name": "default"
         },
-        "fqdn": "untasted-markita.maas",
+        "FQDN": "untasted-markita.maas",
         "storage": 8589.934592,
         "node_type": 0,
         "boot_disk": null,
-        "owner": "thumper",
+        "Owner": "thumper",
         "domain": {
-            "id": 0,
-            "name": "maas",
+            "ID": 0,
+            "Name": "maas",
             "resource_uri": "/MAAS/api/2.0/domains/0/",
             "resource_record_count": 0,
             "ttl": null,
@@ -858,30 +858,30 @@ const (
 
 	createDeviceResponse = `
 {
-	"zone": {
-		"description": "",
+	"Zone": {
+		"Description": "",
 		"resource_uri": "/MAAS/api/2.0/zones/default/",
-		"name": "default"
+		"Name": "default"
 	},
 	"domain": {
 		"resource_record_count": 0,
 		"resource_uri": "/MAAS/api/2.0/domains/0/",
 		"authoritative": true,
-		"name": "maas",
+		"Name": "maas",
 		"ttl": null,
-		"id": 0
+		"ID": 0
 	},
 	"node_type_name": "Device",
 	"address_ttl": null,
-	"hostname": "furnacelike-brittney",
+	"Hostname": "furnacelike-brittney",
 	"node_type": 1,
 	"resource_uri": "/MAAS/api/2.0/devices/4y3haf/",
 	"ip_addresses": ["192.168.100.11"],
-	"owner": "thumper",
+	"Owner": "thumper",
 	"tag_names": [],
-	"fqdn": "furnacelike-brittney.maas",
+	"FQDN": "furnacelike-brittney.maas",
 	"system_id": "4y3haf",
-	"parent": "4y3ha3",
+	"Parent": "4y3ha3",
 	"interface_set": [
 		{
 			"resource_uri": "/MAAS/api/2.0/nodes/4y3haf/interfaces/48/",
@@ -890,25 +890,25 @@ const (
 			"params": "",
 			"discovered": null,
 			"effective_mtu": 1500,
-			"id": 48,
-			"children": [],
-			"links": [],
-			"name": "eth0",
-			"vlan": {
+			"ID": 48,
+			"Children": [],
+			"Links": [],
+			"Name": "eth0",
+			"VLAN": {
 				"secondary_rack": null,
 				"dhcp_on": true,
-				"fabric": "fabric-0",
-				"mtu": 1500,
+				"Fabric": "Fabric-0",
+				"MTU": 1500,
 				"primary_rack": "4y3h7n",
-				"resource_uri": "/MAAS/api/2.0/vlans/1/",
+				"resource_uri": "/MAAS/api/2.0/VLANs/1/",
 				"external_dhcp": null,
-				"name": "untagged",
-				"id": 1,
-				"vid": 0
+				"Name": "untagged",
+				"ID": 1,
+				"VID": 0
 			},
-			"tags": [],
-			"parents": [],
-			"enabled": true
+			"Tags": [],
+			"Parents": [],
+			"Enabled": true
 		}
 	]
 }
@@ -928,7 +928,7 @@ var (
         "system_id": "4y3ha4",
         "ip_addresses": [],
         "virtualblockdevice_set": [],
-        "memory": 1024,
+        "Memory": 1024,
         "cpu_count": 1,
         "hwe_kernel": "",
         "status_action": "",
@@ -943,42 +943,42 @@ var (
         "status": 4,
         "physicalblockdevice_set": [
             {
-                "path": "/dev/disk/by-dname/sda",
-                "name": "sda",
+                "Path": "/dev/disk/by-dname/sda",
+                "Name": "sda",
                 "used_for": "MBR partitioned with 1 partition",
-                "partitions": [
+                "Partitions": [
                     {
                         "bootable": false,
-                        "id": 2,
-                        "path": "/dev/disk/by-dname/sda-part1",
+                        "ID": 2,
+                        "Path": "/dev/disk/by-dname/sda-part1",
                         "filesystem": {
-                            "fstype": "ext4",
+                            "Type": "ext4",
                             "mount_point": "/",
-                            "label": "root",
+                            "Label": "root",
                             "mount_options": null,
-                            "uuid": "7a0e75a8-0bc6-456b-ac92-4769e97baf02"
+                            "UUID": "7a0e75a8-0bc6-456b-ac92-4769e97baf02"
                         },
                         "type": "partition",
                         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha4/blockdevices/35/partition/2",
-                        "uuid": "6fe782cf-ad1a-4b31-8beb-333401b4d4bb",
+                        "UUID": "6fe782cf-ad1a-4b31-8beb-333401b4d4bb",
                         "used_for": "ext4 formatted filesystem mounted at /",
-                        "size": 8581545984
+                        "Size": 8581545984
                     }
                 ],
                 "filesystem": null,
-                "id_path": "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001",
+                "id_path": "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha4/blockdevices/35/",
-                "id": 35,
+                "ID": 35,
                 "serial": "QM00001",
                 "type": "physical",
                 "block_size": 4096,
                 "used_size": 8586788864,
                 "available_size": 0,
                 "partition_table_type": "MBR",
-                "uuid": null,
-                "size": 8589934592,
-                "model": "QEMU HARDDISK",
-                "tags": [
+                "UUID": null,
+                "Size": 8589934592,
+                "Model": "QEMU HARDDISK",
+                "Tags": [
                     "rotary"
                 ]
             }
@@ -987,49 +987,49 @@ var (
             {
                 "effective_mtu": 1500,
                 "mac_address": "52:54:00:33:6b:2c",
-                "children": [],
+                "Children": [],
                 "discovered": [],
                 "params": "",
-                "vlan": {
-                    "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                    "id": 1,
+                "VLAN": {
+                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                    "ID": 1,
                     "secondary_rack": null,
-                    "mtu": 1500,
+                    "MTU": 1500,
                     "primary_rack": "4y3h7n",
-                    "name": "untagged",
-                    "fabric": "fabric-0",
+                    "Name": "untagged",
+                    "Fabric": "Fabric-0",
                     "dhcp_on": true,
-                    "vid": 0
+                    "VID": 0
                 },
-                "name": "eth0",
-                "enabled": true,
-                "parents": [],
-                "id": 39,
+                "Name": "eth0",
+                "Enabled": true,
+                "Parents": [],
+                "ID": 39,
                 "type": "physical",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha4/interfaces/39/",
-                "tags": [],
-                "links": [
+                "Tags": [],
+                "Links": [
                     {
-                        "id": 67,
-                        "mode": "auto",
-                        "subnet": {
-                            "resource_uri": "/MAAS/api/2.0/subnets/1/",
-                            "id": 1,
+                        "ID": 67,
+                        "Mode": "auto",
+                        "Subnet": {
+                            "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+                            "ID": 1,
                             "rdns_mode": 2,
-                            "vlan": {
-                                "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                                "id": 1,
+                            "VLAN": {
+                                "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                                "ID": 1,
                                 "secondary_rack": null,
-                                "mtu": 1500,
+                                "MTU": 1500,
                                 "primary_rack": "4y3h7n",
-                                "name": "untagged",
-                                "fabric": "fabric-0",
+                                "Name": "untagged",
+                                "Fabric": "Fabric-0",
                                 "dhcp_on": true,
-                                "vid": 0
+                                "VID": 0
                             },
                             "dns_servers": [],
                             "space": "space-0",
-                            "name": "192.168.100.0/24",
+                            "Name": "192.168.100.0/24",
                             "gateway_ip": "192.168.100.1",
                             "cidr": "192.168.100.0/24"
                         }
@@ -1038,56 +1038,56 @@ var (
             }
         ],
         "resource_uri": "/MAAS/api/2.0/machines/4y3ha4/",
-        "hostname": "lowlier-glady",
+        "Hostname": "lowlier-glady",
         "status_name": "Ready",
         "min_hwe_kernel": "",
         "address_ttl": null,
         "boot_interface": {
             "effective_mtu": 1500,
             "mac_address": "52:54:00:33:6b:2c",
-            "children": [],
+            "Children": [],
             "discovered": [],
             "params": "",
-            "vlan": {
-                "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                "id": 1,
+            "VLAN": {
+                "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                "ID": 1,
                 "secondary_rack": null,
-                "mtu": 1500,
+                "MTU": 1500,
                 "primary_rack": "4y3h7n",
-                "name": "untagged",
-                "fabric": "fabric-0",
+                "Name": "untagged",
+                "Fabric": "Fabric-0",
                 "dhcp_on": true,
-                "vid": 0
+                "VID": 0
             },
-            "name": "eth0",
-            "enabled": true,
-            "parents": [],
-            "id": 39,
+            "Name": "eth0",
+            "Enabled": true,
+            "Parents": [],
+            "ID": 39,
             "type": "physical",
             "resource_uri": "/MAAS/api/2.0/nodes/4y3ha4/interfaces/39/",
-            "tags": [],
-            "links": [
+            "Tags": [],
+            "Links": [
                 {
-                    "id": 67,
-                    "mode": "auto",
-                    "subnet": {
-                        "resource_uri": "/MAAS/api/2.0/subnets/1/",
-                        "id": 1,
+                    "ID": 67,
+                    "Mode": "auto",
+                    "Subnet": {
+                        "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+                        "ID": 1,
                         "rdns_mode": 2,
-                        "vlan": {
-                            "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                            "id": 1,
+                        "VLAN": {
+                            "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                            "ID": 1,
                             "secondary_rack": null,
-                            "mtu": 1500,
+                            "MTU": 1500,
                             "primary_rack": "4y3h7n",
-                            "name": "untagged",
-                            "fabric": "fabric-0",
+                            "Name": "untagged",
+                            "Fabric": "Fabric-0",
                             "dhcp_on": true,
-                            "vid": 0
+                            "VID": 0
                         },
                         "dns_servers": [],
                         "space": "space-0",
-                        "name": "192.168.100.0/24",
+                        "Name": "192.168.100.0/24",
                         "gateway_ip": "192.168.100.1",
                         "cidr": "192.168.100.0/24"
                     }
@@ -1095,7 +1095,7 @@ var (
             ]
         },
         "power_state": "off",
-        "architecture": "amd64/generic",
+        "Architecture": "amd64/generic",
         "power_type": "virsh",
         "distro_series": "",
         "tag_names": [
@@ -1106,59 +1106,59 @@ var (
         "swap_size": null,
         "blockdevice_set": [
             {
-                "path": "/dev/disk/by-dname/sda",
+                "Path": "/dev/disk/by-dname/sda",
                 "partition_table_type": "MBR",
-                "name": "sda",
+                "Name": "sda",
                 "used_for": "MBR partitioned with 1 partition",
-                "partitions": [
+                "Partitions": [
                     {
                         "bootable": false,
-                        "id": 2,
-                        "path": "/dev/disk/by-dname/sda-part1",
+                        "ID": 2,
+                        "Path": "/dev/disk/by-dname/sda-part1",
                         "filesystem": {
-                            "fstype": "ext4",
+                            "Type": "ext4",
                             "mount_point": "/",
-                            "label": "root",
+                            "Label": "root",
                             "mount_options": null,
-                            "uuid": "7a0e75a8-0bc6-456b-ac92-4769e97baf02"
+                            "UUID": "7a0e75a8-0bc6-456b-ac92-4769e97baf02"
                         },
                         "type": "partition",
                         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha4/blockdevices/35/partition/2",
-                        "uuid": "6fe782cf-ad1a-4b31-8beb-333401b4d4bb",
+                        "UUID": "6fe782cf-ad1a-4b31-8beb-333401b4d4bb",
                         "used_for": "ext4 formatted filesystem mounted at /",
-                        "size": 8581545984
+                        "Size": 8581545984
                     }
                 ],
                 "filesystem": null,
-                "id_path": "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001",
+                "id_path": "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha4/blockdevices/35/",
-                "id": 35,
+                "ID": 35,
                 "serial": "QM00001",
                 "block_size": 4096,
                 "type": "physical",
                 "used_size": 8586788864,
-                "tags": [
+                "Tags": [
                     "rotary"
                 ],
                 "available_size": 0,
-                "uuid": null,
-                "size": 8589934592,
-                "model": "QEMU HARDDISK"
+                "UUID": null,
+                "Size": 8589934592,
+                "Model": "QEMU HARDDISK"
             }
         ],
-        "zone": {
-            "description": "",
+        "Zone": {
+            "Description": "",
             "resource_uri": "/MAAS/api/2.0/zones/default/",
-            "name": "default"
+            "Name": "default"
         },
-        "fqdn": "lowlier-glady.maas",
+        "FQDN": "lowlier-glady.maas",
         "storage": 8589.934592,
         "node_type": 0,
         "boot_disk": null,
-        "owner": null,
+        "Owner": null,
         "domain": {
-            "id": 0,
-            "name": "maas",
+            "ID": 0,
+            "Name": "maas",
             "resource_uri": "/MAAS/api/2.0/domains/0/",
             "resource_record_count": 0,
             "ttl": null,
@@ -1174,7 +1174,7 @@ var (
         "system_id": "4y3ha6",
         "ip_addresses": [],
         "virtualblockdevice_set": [],
-        "memory": 1024,
+        "Memory": 1024,
         "cpu_count": 1,
         "hwe_kernel": "",
         "status_action": "",
@@ -1189,42 +1189,42 @@ var (
         "status": 4,
         "physicalblockdevice_set": [
             {
-                "path": "/dev/disk/by-dname/sda",
-                "name": "sda",
+                "Path": "/dev/disk/by-dname/sda",
+                "Name": "sda",
                 "used_for": "MBR partitioned with 1 partition",
-                "partitions": [
+                "Partitions": [
                     {
                         "bootable": false,
-                        "id": 3,
-                        "path": "/dev/disk/by-dname/sda-part1",
+                        "ID": 3,
+                        "Path": "/dev/disk/by-dname/sda-part1",
                         "filesystem": {
-                            "fstype": "ext4",
+                            "Type": "ext4",
                             "mount_point": "/",
-                            "label": "root",
+                            "Label": "root",
                             "mount_options": null,
-                            "uuid": "f15b4e94-7dc3-460d-8838-0c299905c799"
+                            "UUID": "f15b4e94-7dc3-460d-8838-0c299905c799"
                         },
                         "type": "partition",
                         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha6/blockdevices/36/partition/3",
-                        "uuid": "a20ae130-bd8f-41b5-bdb3-47ab11a621b5",
+                        "UUID": "a20ae130-bd8f-41b5-bdb3-47ab11a621b5",
                         "used_for": "ext4 formatted filesystem mounted at /",
-                        "size": 8581545984
+                        "Size": 8581545984
                     }
                 ],
                 "filesystem": null,
-                "id_path": "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001",
+                "id_path": "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha6/blockdevices/36/",
-                "id": 36,
+                "ID": 36,
                 "serial": "QM00001",
                 "type": "physical",
                 "block_size": 4096,
                 "used_size": 8586788864,
                 "available_size": 0,
                 "partition_table_type": "MBR",
-                "uuid": null,
-                "size": 8589934592,
-                "model": "QEMU HARDDISK",
-                "tags": [
+                "UUID": null,
+                "Size": 8589934592,
+                "Model": "QEMU HARDDISK",
+                "Tags": [
                     "rotary"
                 ]
             }
@@ -1233,49 +1233,49 @@ var (
             {
                 "effective_mtu": 1500,
                 "mac_address": "52:54:00:c9:6a:45",
-                "children": [],
+                "Children": [],
                 "discovered": [],
                 "params": "",
-                "vlan": {
-                    "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                    "id": 1,
+                "VLAN": {
+                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                    "ID": 1,
                     "secondary_rack": null,
-                    "mtu": 1500,
+                    "MTU": 1500,
                     "primary_rack": "4y3h7n",
-                    "name": "untagged",
-                    "fabric": "fabric-0",
+                    "Name": "untagged",
+                    "Fabric": "Fabric-0",
                     "dhcp_on": true,
-                    "vid": 0
+                    "VID": 0
                 },
-                "name": "eth0",
-                "enabled": true,
-                "parents": [],
-                "id": 40,
+                "Name": "eth0",
+                "Enabled": true,
+                "Parents": [],
+                "ID": 40,
                 "type": "physical",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha6/interfaces/40/",
-                "tags": [],
-                "links": [
+                "Tags": [],
+                "Links": [
                     {
-                        "id": 69,
-                        "mode": "auto",
-                        "subnet": {
-                            "resource_uri": "/MAAS/api/2.0/subnets/1/",
-                            "id": 1,
+                        "ID": 69,
+                        "Mode": "auto",
+                        "Subnet": {
+                            "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+                            "ID": 1,
                             "rdns_mode": 2,
-                            "vlan": {
-                                "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                                "id": 1,
+                            "VLAN": {
+                                "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                                "ID": 1,
                                 "secondary_rack": null,
-                                "mtu": 1500,
+                                "MTU": 1500,
                                 "primary_rack": "4y3h7n",
-                                "name": "untagged",
-                                "fabric": "fabric-0",
+                                "Name": "untagged",
+                                "Fabric": "Fabric-0",
                                 "dhcp_on": true,
-                                "vid": 0
+                                "VID": 0
                             },
                             "dns_servers": [],
                             "space": "space-0",
-                            "name": "192.168.100.0/24",
+                            "Name": "192.168.100.0/24",
                             "gateway_ip": "192.168.100.1",
                             "cidr": "192.168.100.0/24"
                         }
@@ -1284,56 +1284,56 @@ var (
             }
         ],
         "resource_uri": "/MAAS/api/2.0/machines/4y3ha6/",
-        "hostname": "icier-nina",
+        "Hostname": "icier-nina",
         "status_name": "Ready",
         "min_hwe_kernel": "",
         "address_ttl": null,
         "boot_interface": {
             "effective_mtu": 1500,
             "mac_address": "52:54:00:c9:6a:45",
-            "children": [],
+            "Children": [],
             "discovered": [],
             "params": "",
-            "vlan": {
-                "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                "id": 1,
+            "VLAN": {
+                "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                "ID": 1,
                 "secondary_rack": null,
-                "mtu": 1500,
+                "MTU": 1500,
                 "primary_rack": "4y3h7n",
-                "name": "untagged",
-                "fabric": "fabric-0",
+                "Name": "untagged",
+                "Fabric": "Fabric-0",
                 "dhcp_on": true,
-                "vid": 0
+                "VID": 0
             },
-            "name": "eth0",
-            "enabled": true,
-            "parents": [],
-            "id": 40,
+            "Name": "eth0",
+            "Enabled": true,
+            "Parents": [],
+            "ID": 40,
             "type": "physical",
             "resource_uri": "/MAAS/api/2.0/nodes/4y3ha6/interfaces/40/",
-            "tags": [],
-            "links": [
+            "Tags": [],
+            "Links": [
                 {
-                    "id": 69,
-                    "mode": "auto",
-                    "subnet": {
-                        "resource_uri": "/MAAS/api/2.0/subnets/1/",
-                        "id": 1,
+                    "ID": 69,
+                    "Mode": "auto",
+                    "Subnet": {
+                        "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+                        "ID": 1,
                         "rdns_mode": 2,
-                        "vlan": {
-                            "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                            "id": 1,
+                        "VLAN": {
+                            "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                            "ID": 1,
                             "secondary_rack": null,
-                            "mtu": 1500,
+                            "MTU": 1500,
                             "primary_rack": "4y3h7n",
-                            "name": "untagged",
-                            "fabric": "fabric-0",
+                            "Name": "untagged",
+                            "Fabric": "Fabric-0",
                             "dhcp_on": true,
-                            "vid": 0
+                            "VID": 0
                         },
                         "dns_servers": [],
                         "space": "space-0",
-                        "name": "192.168.100.0/24",
+                        "Name": "192.168.100.0/24",
                         "gateway_ip": "192.168.100.1",
                         "cidr": "192.168.100.0/24"
                     }
@@ -1341,7 +1341,7 @@ var (
             ]
         },
         "power_state": "off",
-        "architecture": "amd64/generic",
+        "Architecture": "amd64/generic",
         "power_type": "virsh",
         "distro_series": "",
         "tag_names": [
@@ -1352,59 +1352,59 @@ var (
         "swap_size": null,
         "blockdevice_set": [
             {
-                "path": "/dev/disk/by-dname/sda",
+                "Path": "/dev/disk/by-dname/sda",
                 "partition_table_type": "MBR",
-                "name": "sda",
+                "Name": "sda",
                 "used_for": "MBR partitioned with 1 partition",
-                "partitions": [
+                "Partitions": [
                     {
                         "bootable": false,
-                        "id": 3,
-                        "path": "/dev/disk/by-dname/sda-part1",
+                        "ID": 3,
+                        "Path": "/dev/disk/by-dname/sda-part1",
                         "filesystem": {
-                            "fstype": "ext4",
+                            "Type": "ext4",
                             "mount_point": "/",
-                            "label": "root",
+                            "Label": "root",
                             "mount_options": null,
-                            "uuid": "f15b4e94-7dc3-460d-8838-0c299905c799"
+                            "UUID": "f15b4e94-7dc3-460d-8838-0c299905c799"
                         },
                         "type": "partition",
                         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha6/blockdevices/36/partition/3",
-                        "uuid": "a20ae130-bd8f-41b5-bdb3-47ab11a621b5",
+                        "UUID": "a20ae130-bd8f-41b5-bdb3-47ab11a621b5",
                         "used_for": "ext4 formatted filesystem mounted at /",
-                        "size": 8581545984
+                        "Size": 8581545984
                     }
                 ],
                 "filesystem": null,
-                "id_path": "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001",
+                "id_path": "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha6/blockdevices/36/",
-                "id": 36,
+                "ID": 36,
                 "serial": "QM00001",
                 "block_size": 4096,
                 "type": "physical",
                 "used_size": 8586788864,
-                "tags": [
+                "Tags": [
                     "rotary"
                 ],
                 "available_size": 0,
-                "uuid": null,
-                "size": 8589934592,
-                "model": "QEMU HARDDISK"
+                "UUID": null,
+                "Size": 8589934592,
+                "Model": "QEMU HARDDISK"
             }
         ],
-        "zone": {
-            "description": "",
+        "Zone": {
+            "Description": "",
             "resource_uri": "/MAAS/api/2.0/zones/default/",
-            "name": "default"
+            "Name": "default"
         },
-        "fqdn": "icier-nina.maas",
+        "FQDN": "icier-nina.maas",
         "storage": 8589.934592,
         "node_type": 0,
         "boot_disk": null,
-        "owner": null,
+        "Owner": null,
         "domain": {
-            "id": 0,
-            "name": "maas",
+            "ID": 0,
+            "Name": "maas",
             "resource_uri": "/MAAS/api/2.0/domains/0/",
             "resource_record_count": 0,
             "ttl": null,

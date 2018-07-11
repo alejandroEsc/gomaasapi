@@ -66,14 +66,16 @@ func main() {
 // it uploads a files and then fetches it, making sure the received content
 // is the same as the one that was sent.
 func ManipulateFiles(maas *gomaasapi.MAASObject) {
-	files := maas.GetSubObject("files")
+
+	files, err := maas.GetSubObject("files")
+	checkError(err)
 	fileContent := []byte("test file content")
 	fileName := "filename"
 	filesToUpload := map[string][]byte{"file": fileContent}
 
 	// Upload a file.
 	fmt.Println("Uploading a file...")
-	_, err := files.CallPostFiles("add", url.Values{"filename": {fileName}}, filesToUpload)
+	_, err = files.CallPostFiles("add", url.Values{"filename": {fileName}}, filesToUpload)
 	checkError(err)
 	fmt.Println("File sent.")
 
@@ -114,7 +116,8 @@ func ManipulateFiles(maas *gomaasapi.MAASObject) {
 // it lists the existing nodes, creates a new node, updates it and then
 // deletes it.
 func ManipulateNodes(maas *gomaasapi.MAASObject) {
-	nodeListing := maas.GetSubObject("nodes")
+	nodeListing, err := maas.GetSubObject("nodes")
+	checkError(err)
 
 	// List nodes.
 	fmt.Println("Fetching list of nodes...")

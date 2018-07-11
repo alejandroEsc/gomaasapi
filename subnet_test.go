@@ -15,12 +15,12 @@ var _ = gc.Suite(&subnetSuite{})
 
 func (*subnetSuite) TestNilVLAN(c *gc.C) {
 	var empty subnet
-	c.Check(empty.VLAN() == nil, jc.IsTrue)
+	c.Check(empty.VLAN == nil, jc.IsTrue)
 }
 
 func (*subnetSuite) TestReadSubnetsBadSchema(c *gc.C) {
 	_, err := readSubnets(twoDotOh, "wat?")
-	c.Assert(err.Error(), gc.Equals, `subnet base schema check failed: expected list, got string("wat?")`)
+	c.Assert(err.Error(), gc.Equals, `Subnet base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*subnetSuite) TestReadSubnets(c *gc.C) {
@@ -29,20 +29,20 @@ func (*subnetSuite) TestReadSubnets(c *gc.C) {
 	c.Assert(subnets, gc.HasLen, 2)
 
 	subnet := subnets[0]
-	c.Assert(subnet.ID(), gc.Equals, 1)
-	c.Assert(subnet.Name(), gc.Equals, "192.168.100.0/24")
-	c.Assert(subnet.Space(), gc.Equals, "space-0")
-	c.Assert(subnet.Gateway(), gc.Equals, "192.168.100.1")
-	c.Assert(subnet.CIDR(), gc.Equals, "192.168.100.0/24")
-	vlan := subnet.VLAN()
+	c.Assert(subnet.ID, gc.Equals, 1)
+	c.Assert(subnet.Name, gc.Equals, "192.168.100.0/24")
+	c.Assert(subnet.Space, gc.Equals, "space-0")
+	c.Assert(subnet.Gateway, gc.Equals, "192.168.100.1")
+	c.Assert(subnet.CIDR, gc.Equals, "192.168.100.0/24")
+	vlan := subnet.VLAN
 	c.Assert(vlan, gc.NotNil)
-	c.Assert(vlan.Name(), gc.Equals, "untagged")
-	c.Assert(subnet.DNSServers(), jc.DeepEquals, []string{"8.8.8.8", "8.8.4.4"})
+	c.Assert(vlan.Name, gc.Equals, "untagged")
+	c.Assert(subnet.DNSServers, jc.DeepEquals, []string{"8.8.8.8", "8.8.4.4"})
 }
 
 func (*subnetSuite) TestLowVersion(c *gc.C) {
 	_, err := readSubnets(version.MustParse("1.9.0"), parseJSON(c, subnetResponse))
-	c.Assert(err.Error(), gc.Equals, `no subnet read func for version 1.9.0`)
+	c.Assert(err.Error(), gc.Equals, `no Subnet read func for version 1.9.0`)
 }
 
 func (*subnetSuite) TestHighVersion(c *gc.C) {
@@ -55,42 +55,42 @@ var subnetResponse = `
 [
     {
         "gateway_ip": "192.168.100.1",
-        "name": "192.168.100.0/24",
-        "vlan": {
-            "fabric": "fabric-0",
-            "resource_uri": "/MAAS/api/2.0/vlans/1/",
-            "name": "untagged",
+        "Name": "192.168.100.0/24",
+        "VLAN": {
+            "Fabric": "Fabric-0",
+            "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+            "Name": "untagged",
             "secondary_rack": null,
             "primary_rack": "4y3h7n",
-            "vid": 0,
+            "VID": 0,
             "dhcp_on": true,
-            "id": 1,
-            "mtu": 1500
+            "ID": 1,
+            "MTU": 1500
         },
         "space": "space-0",
-        "id": 1,
-        "resource_uri": "/MAAS/api/2.0/subnets/1/",
+        "ID": 1,
+        "resource_uri": "/MAAS/api/2.0/Subnets/1/",
         "dns_servers": ["8.8.8.8", "8.8.4.4"],
         "cidr": "192.168.100.0/24",
         "rdns_mode": 2
     },
     {
         "gateway_ip": null,
-        "name": "192.168.122.0/24",
-        "vlan": {
-            "fabric": "fabric-1",
-            "resource_uri": "/MAAS/api/2.0/vlans/5001/",
-            "name": "untagged",
+        "Name": "192.168.122.0/24",
+        "VLAN": {
+            "Fabric": "Fabric-1",
+            "resource_uri": "/MAAS/api/2.0/VLANs/5001/",
+            "Name": "untagged",
             "secondary_rack": null,
             "primary_rack": null,
-            "vid": 0,
+            "VID": 0,
             "dhcp_on": false,
-            "id": 5001,
-            "mtu": 1500
+            "ID": 5001,
+            "MTU": 1500
         },
         "space": "space-0",
-        "id": 34,
-        "resource_uri": "/MAAS/api/2.0/subnets/34/",
+        "ID": 34,
+        "resource_uri": "/MAAS/api/2.0/Subnets/34/",
         "dns_servers": null,
         "cidr": "192.168.122.0/24",
         "rdns_mode": 2

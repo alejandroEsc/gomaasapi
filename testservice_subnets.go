@@ -16,55 +16,55 @@ import (
 )
 
 func getSubnetsEndpoint(version string) string {
-	return fmt.Sprintf("/api/%s/subnets/", version)
+	return fmt.Sprintf("/api/%s/Subnets/", version)
 }
 
-// CreateSubnet is used to receive new subnets via the MAAS API
+// CreateSubnet is used to receive new Subnets via the MAAS API
 type CreateSubnet struct {
 	DNSServers []string `json:"dns_servers"`
-	Name       string   `json:"name"`
+	Name       string   `json:"Name"`
 	Space      string   `json:"space"`
 	GatewayIP  string   `json:"gateway_ip"`
 	CIDR       string   `json:"cidr"`
 
-	// VLAN this subnet belongs to. Currently ignored.
+	// VLAN this Subnet belongs to. Currently ignored.
 	// TODO: Defaults to the default VLAN
-	// for the provided fabric or defaults to the default VLAN
-	// in the default fabric.
-	VLAN *uint `json:"vlan"`
+	// for the provided Fabric or defaults to the default VLAN
+	// in the default Fabric.
+	VLAN *uint `json:"VLAN"`
 
-	// Fabric for the subnet. Currently ignored.
-	// TODO: Defaults to the fabric the provided
-	// VLAN belongs to or defaults to the default fabric.
-	Fabric *uint `json:"fabric"`
+	// Fabric for the Subnet. Currently ignored.
+	// TODO: Defaults to the Fabric the provided
+	// VLAN belongs to or defaults to the default Fabric.
+	Fabric *uint `json:"Fabric"`
 
-	// VID of the VLAN this subnet belongs to. Currently ignored.
-	// TODO: Only used when vlan
+	// VID of the VLAN this Subnet belongs to. Currently ignored.
+	// TODO: Only used when VLAN
 	// is not provided. Picks the VLAN with this VID in the provided
-	// fabric or the default fabric if one is not given.
-	VID *uint `json:"vid"`
+	// Fabric or the default Fabric if one is not given.
+	VID *uint `json:"VID"`
 
 	// This is used for updates (PUT) and is ignored by create (POST)
-	ID uint `json:"id"`
+	ID uint `json:"ID"`
 }
 
-// TestSubnet is the MAAS API subnet representation
+// TestSubnet is the MAAS API Subnet representation
 type TestSubnet struct {
 	DNSServers []string `json:"dns_servers"`
-	Name       string   `json:"name"`
+	Name       string   `json:"Name"`
 	Space      string   `json:"space"`
-	VLAN       TestVLAN `json:"vlan"`
+	VLAN       TestVLAN `json:"VLAN"`
 	GatewayIP  string   `json:"gateway_ip"`
 	CIDR       string   `json:"cidr"`
 
 	ResourceURI        string         `json:"resource_uri"`
-	ID                 uint           `json:"id"`
+	ID                 uint           `json:"ID"`
 	InUseIPAddresses   []IP           `json:"-"`
 	FixedAddressRanges []AddressRange `json:"-"`
 }
 
 // AddFixedAddressRange adds an AddressRange to the list of fixed address ranges
-// that subnet stores.
+// that Subnet stores.
 func (server *TestServer) AddFixedAddressRange(subnetID uint, ar AddressRange) {
 	subnet := server.subnets[subnetID]
 	ar.startUint = IPFromString(ar.Start).UInt64()
@@ -73,14 +73,14 @@ func (server *TestServer) AddFixedAddressRange(subnetID uint, ar AddressRange) {
 	server.subnets[subnetID] = subnet
 }
 
-// subnetsHandler handles requests for '/api/<version>/subnets/'.
+// subnetsHandler handles requests for '/api/<version>/Subnets/'.
 func subnetsHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 	var err error
 	values, err := url.ParseQuery(r.URL.RawQuery)
 	checkError(err)
 	op := values.Get("op")
 	includeRangesString := strings.ToLower(values.Get("include_ranges"))
-	subnetsURLRE := regexp.MustCompile(`/subnets/(.+?)/`)
+	subnetsURLRE := regexp.MustCompile(`/Subnets/(.+?)/`)
 	subnetsURLMatch := subnetsURLRE.FindStringSubmatch(r.URL.Path)
 	subnetsURL := getSubnetsEndpoint(server.version)
 
@@ -107,9 +107,9 @@ func subnetsHandler(server *TestServer, w http.ResponseWriter, r *http.Request) 
 	case "GET":
 		w.Header().Set("Content-Type", "application/vnd.api+json")
 		if len(server.subnets) == 0 {
-			// Until a subnet is registered, behave as if the endpoint
+			// Until a Subnet is registered, behave as if the endpoint
 			// does not exist. This way we can simulate older MAAS
-			// servers that do not support subnets.
+			// servers that do not support Subnets.
 			http.NotFoundHandler().ServeHTTP(w, r)
 			return
 		}
@@ -192,13 +192,13 @@ func appendRangesToIPList(subnet TestSubnet, ipAddresses *[]IP) {
 }
 
 func (server *TestServer) subnetUnreservedIPRanges(subnet TestSubnet) []AddressRange {
-	// Make a sorted copy of subnet.InUseIPAddresses
+	// Make a sorted copy of Subnet.InUseIPAddresses
 	ipAddresses := make([]IP, len(subnet.InUseIPAddresses))
 	copy(ipAddresses, subnet.InUseIPAddresses)
 	appendRangesToIPList(subnet, &ipAddresses)
 	sort.Sort(addressList(ipAddresses))
 
-	// We need the first and last address in the subnet
+	// We need the first and last address in the Subnet
 	var ranges AddressRangeList
 	var startIP, endIP, lastUsableIP IP
 
@@ -213,7 +213,7 @@ func (server *TestServer) subnetUnreservedIPRanges(subnet TestSubnet) []AddressR
 	set := ^((^uint64(0)) << uint(bits-ones))
 
 	// The last usable address is one below the broadcast address, which is
-	// what you get by bitwise ORing 'set' with any IP address in the subnet.
+	// what you get by bitwise ORing 'set' with any IP address in the Subnet.
 	lastUsableIP.SetUInt64((startIP.UInt64() | set) - 1)
 
 	for _, endIP = range ipAddresses {
@@ -245,7 +245,7 @@ func (server *TestServer) subnetReservedIPRanges(subnet TestSubnet) []AddressRan
 	var ranges AddressRangeList
 	var startIP, thisIP IP
 
-	// Make a sorted copy of subnet.InUseIPAddresses
+	// Make a sorted copy of Subnet.InUseIPAddresses
 	ipAddresses := make([]IP, len(subnet.InUseIPAddresses))
 	copy(ipAddresses, subnet.InUseIPAddresses)
 	appendRangesToIPList(subnet, &ipAddresses)
@@ -281,7 +281,7 @@ func (server *TestServer) subnetReservedIPRanges(subnet TestSubnet) []AddressRan
 	return ranges.ar
 }
 
-// SubnetStats holds statistics about a subnet
+// SubnetStats holds statistics about a Subnet
 type SubnetStats struct {
 	NumAvailable     uint           `json:"num_available"`
 	LargestAvailable uint           `json:"largest_available"`
@@ -330,7 +330,7 @@ func decodePostedSubnet(subnetJSON io.Reader) CreateSubnet {
 	return postedSubnet
 }
 
-// UpdateSubnet creates a subnet in the test server
+// UpdateSubnet creates a Subnet in the test server
 func (server *TestServer) UpdateSubnet(subnetJSON io.Reader) TestSubnet {
 	postedSubnet := decodePostedSubnet(subnetJSON)
 	updatedSubnet := subnetFromCreateSubnet(postedSubnet)
@@ -338,7 +338,7 @@ func (server *TestServer) UpdateSubnet(subnetJSON io.Reader) TestSubnet {
 	return updatedSubnet
 }
 
-// NewSubnet creates a subnet in the test server
+// NewSubnet creates a Subnet in the test server
 func (server *TestServer) NewSubnet(subnetJSON io.Reader) *TestSubnet {
 	postedSubnet := decodePostedSubnet(subnetJSON)
 	newSubnet := subnetFromCreateSubnet(postedSubnet)
@@ -352,8 +352,8 @@ func (server *TestServer) NewSubnet(subnetJSON io.Reader) *TestSubnet {
 
 // NodeNetworkInterface represents a network interface attached to a node
 type NodeNetworkInterface struct {
-	Name  string        `json:"name"`
-	Links []NetworkLink `json:"links"`
+	Name  string        `json:"Name"`
+	Links []NetworkLink `json:"Links"`
 }
 
 // Node represents a node
@@ -364,12 +364,12 @@ type Node struct {
 
 // NetworkLink represents a MAAS network link
 type NetworkLink struct {
-	ID     uint        `json:"id"`
-	Mode   string      `json:"mode"`
-	Subnet *TestSubnet `json:"subnet"`
+	ID     uint        `json:"ID"`
+	Mode   string      `json:"Mode"`
+	Subnet *TestSubnet `json:"Subnet"`
 }
 
-// SetNodeNetworkLink records that the given node + interface are in subnet
+// SetNodeNetworkLink records that the given node + interface are in Subnet
 func (server *TestServer) SetNodeNetworkLink(SystemID string, nodeNetworkInterface NodeNetworkInterface) {
 	for i, ni := range server.nodeMetadata[SystemID].Interfaces {
 		if ni.Name == nodeNetworkInterface.Name {
@@ -382,7 +382,7 @@ func (server *TestServer) SetNodeNetworkLink(SystemID string, nodeNetworkInterfa
 	server.nodeMetadata[SystemID] = n
 }
 
-// subnetFromCreateSubnet creates a subnet in the test server
+// subnetFromCreateSubnet creates a Subnet in the test server
 func subnetFromCreateSubnet(postedSubnet CreateSubnet) TestSubnet {
 	var newSubnet TestSubnet
 	newSubnet.DNSServers = postedSubnet.DNSServers

@@ -134,7 +134,7 @@ func (client Client) GetURL(uri *url.URL) *url.URL {
 }
 
 // Get performs an HTTP "GET" to the API.  This may be either an API method
-// invocation (if you pass its name in "operation") or plain resource
+// invocation (if you pass its Name in "operation") or plain resource
 // retrieval (if you leave "operation" blank).
 func (client Client) Get(uri *url.URL, operation string, parameters url.Values) ([]byte, error) {
 	if parameters == nil {
@@ -226,7 +226,7 @@ func (client Client) nonIdempotentRequest(method string, uri *url.URL, parameter
 }
 
 // Post performs an HTTP "POST" to the API.  This may be either an API method
-// invocation (if you pass its name in "operation") or plain resource
+// invocation (if you pass its Name in "operation") or plain resource
 // retrieval (if you leave "operation" blank).
 func (client Client) Post(uri *url.URL, operation string, parameters url.Values, files map[string][]byte) ([]byte, error) {
 	queryParams := url.Values{"op": {operation}}
@@ -290,10 +290,10 @@ func SplitVersionedURL(url string) (string, string, bool) {
 	return baseURL, version, true
 }
 
-// NewAnonymousClient creates a client that issues anonymous requests.
-// BaseURL should refer to the root of the MAAS server path, e.g.
+// NewAnonymousClient creates a Client that issues anonymous requests.
+// BaseURL should refer to the root of the MAAS server Path, e.g.
 // http://my.maas.server.example.com/MAAS/
-// apiVersion should contain the version of the MAAS API that you want to use.
+// APIVersion should contain the version of the MAAS API that you want to use.
 func NewAnonymousClient(BaseURL string, apiVersion string) (*Client, error) {
 	versionedURL := AddAPIVersionToURL(BaseURL, apiVersion)
 	parsedURL, err := url.Parse(versionedURL)

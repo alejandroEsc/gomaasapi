@@ -44,11 +44,6 @@ type JSONObject struct {
 	isNull bool
 }
 
-// Our JSON processor distinguishes a MAASObject from a jsonMap by the fact
-// that it contains a key "resource_uri".  (A regular map might contain the
-// same key through sheer coincide, but never mind: you can still treat it
-// as a jsonMap and never notice the difference.)
-const resourceURI = "resource_uri"
 
 // maasify turns a completely untyped json.Unmarshal result into a JSONObject
 // (with the appropriate implementation of course).  This function is

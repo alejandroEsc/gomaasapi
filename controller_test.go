@@ -47,7 +47,7 @@ func (s *controllerSuite) SetUpTest(c *gc.C) {
 	server.AddGetResponse("/api/2.0/fabrics/", http.StatusOK, fabricResponse)
 	server.AddGetResponse("/api/2.0/files/", http.StatusOK, filesResponse)
 	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, machinesResponse)
-	server.AddGetResponse("/api/2.0/machines/?hostname=untasted-markita", http.StatusOK, "["+machineResponse+"]")
+	server.AddGetResponse("/api/2.0/machines/?Hostname=untasted-markita", http.StatusOK, "["+machineResponse+"]")
 	server.AddGetResponse("/api/2.0/spaces/", http.StatusOK, spacesResponse)
 	server.AddGetResponse("/api/2.0/static-routes/", http.StatusOK, staticRoutesResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -141,7 +141,7 @@ func (s *controllerSuite) TestNewControllerKnownVersion(c *gc.C) {
 	c.Assert(err, jc.ErrorIsNil)
 	rawController, ok := officialController.(*controller)
 	c.Assert(ok, jc.IsTrue)
-	c.Assert(rawController.apiVersion, gc.Equals, version.Number{
+	c.Assert(rawController.APIVersion, gc.Equals, version.Number{
 		Major: 2,
 		Minor: 0,
 	})
@@ -256,7 +256,7 @@ func (s *controllerSuite) TestDevicesArgs(c *gc.C) {
 	controller := s.getController(c)
 	// This will fail with a 404 due to the test server not having something  at
 	// that address, but we don't care, all we want to do is capture the request
-	// and make sure that all the values were set.
+	// and make sure that all the Values were set.
 	controller.Devices(DevicesArgs{
 		Hostname:     []string{"untasted-markita"},
 		MACAddresses: []string{"something"},
@@ -266,7 +266,7 @@ func (s *controllerSuite) TestDevicesArgs(c *gc.C) {
 		AgentName:    "agent 42",
 	})
 	request := s.server.LastRequest()
-	// There should be one entry in the form values for each of the args.
+	// There should be one entry in the form Values for each of the args.
 	c.Assert(request.URL.Query(), gc.HasLen, 6)
 }
 
@@ -300,18 +300,18 @@ func (s *controllerSuite) TestCreateDeviceBadRequest(c *gc.C) {
 func (s *controllerSuite) TestCreateDeviceArgs(c *gc.C) {
 	s.server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, deviceResponse)
 	controller := s.getController(c)
-	// Create an arg structure that sets all the values.
+	// Create an arg structure that sets all the Values.
 	args := CreateDeviceArgs{
 		Hostname:     "foobar",
 		MACAddresses: []string{"an-address"},
 		Domain:       "a domain",
-		Parent:       "parent",
+		Parent:       "Parent",
 	}
 	_, err := controller.CreateDevice(args)
 	c.Assert(err, jc.ErrorIsNil)
 
 	request := s.server.LastRequest()
-	// There should be one entry in the form values for each of the args.
+	// There should be one entry in the form Values for each of the args.
 	c.Assert(request.PostForm, gc.HasLen, 4)
 }
 
@@ -402,7 +402,7 @@ func (s *controllerSuite) TestMachinesArgs(c *gc.C) {
 	controller := s.getController(c)
 	// This will fail with a 404 due to the test server not having something  at
 	// that address, but we don't care, all we want to do is capture the request
-	// and make sure that all the values were set.
+	// and make sure that all the Values were set.
 	controller.Machines(MachinesArgs{
 		Hostnames:    []string{"untasted-markita"},
 		MACAddresses: []string{"something"},
@@ -412,7 +412,7 @@ func (s *controllerSuite) TestMachinesArgs(c *gc.C) {
 		AgentName:    "agent 42",
 	})
 	request := s.server.LastRequest()
-	// There should be one entry in the form values for each of the args.
+	// There should be one entry in the form Values for each of the args.
 	c.Assert(request.URL.Query(), gc.HasLen, 6)
 }
 
@@ -508,7 +508,7 @@ func (s *controllerSuite) TestAllocateMachineArgs(c *gc.C) {
 				{Label: "foo", Size: 400, Tags: []string{"ssd"}},
 			},
 		},
-		err: `reusing storage label "foo" not valid`,
+		err: `reusing storage Label "foo" not valid`,
 	}, {
 		args: AllocateMachineArgs{
 			Interfaces: []InterfaceSpec{{}},
@@ -529,7 +529,7 @@ func (s *controllerSuite) TestAllocateMachineArgs(c *gc.C) {
 				{Label: "foo", Space: "other"},
 			},
 		},
-		err: `reusing interface label "foo" not valid`,
+		err: `reusing interface Label "foo" not valid`,
 	}, {
 		args: AllocateMachineArgs{
 			NotSpace: []string{""},
@@ -675,7 +675,7 @@ func (s *controllerSuite) TestAllocateMachineStorageMatchMissing(c *gc.C) {
 func (s *controllerSuite) TestAllocateMachineArgsForm(c *gc.C) {
 	s.addAllocateResponse(c, http.StatusOK, nil, nil)
 	controller := s.getController(c)
-	// Create an arg structure that sets all the values.
+	// Create an arg structure that sets all the Values.
 	args := AllocateMachineArgs{
 		Hostname:     "foobar",
 		SystemId:     "some_id",
@@ -697,7 +697,7 @@ func (s *controllerSuite) TestAllocateMachineArgsForm(c *gc.C) {
 	c.Assert(err, jc.ErrorIsNil)
 
 	request := s.server.LastRequest()
-	// There should be one entry in the form values for each of the args.
+	// There should be one entry in the form Values for each of the args.
 	form := request.PostForm
 	c.Assert(form, gc.HasLen, 15)
 	// Positive space check.
@@ -730,7 +730,7 @@ func (s *controllerSuite) TestReleaseMachines(c *gc.C) {
 	c.Assert(err, jc.ErrorIsNil)
 
 	request := s.server.LastRequest()
-	// There should be one entry in the form values for each of the args.
+	// There should be one entry in the form Values for each of the args.
 	c.Assert(request.PostForm["machines"], jc.SameContents, []string{"this", "that"})
 	c.Assert(request.PostForm.Get("comment"), gc.Equals, "all good")
 }
@@ -756,13 +756,13 @@ func (s *controllerSuite) TestReleaseMachinesForbidden(c *gc.C) {
 }
 
 func (s *controllerSuite) TestReleaseMachinesConflict(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusConflict, "machine busy")
+	s.server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusConflict, "Machine busy")
 	controller := s.getController(c)
 	err := controller.ReleaseMachines(ReleaseMachinesArgs{
 		SystemIDs: []string{"this", "that"},
 	})
 	c.Assert(err, jc.Satisfies, IsCannotCompleteError)
-	c.Assert(err.Error(), gc.Equals, "machine busy")
+	c.Assert(err.Error(), gc.Equals, "Machine busy")
 }
 
 func (s *controllerSuite) TestReleaseMachinesUnexpected(c *gc.C) {
@@ -876,7 +876,7 @@ func (s *controllerSuite) TestAddFileValidates(c *gc.C) {
 
 func (s *controllerSuite) assertFile(c *gc.C, request *http.Request, filename, content string) {
 	form := request.Form
-	c.Check(form.Get("filename"), gc.Equals, filename)
+	c.Check(form.Get("Filename"), gc.Equals, filename)
 	fileHeader := request.MultipartForm.File["file"][0]
 	f, err := fileHeader.Open()
 	c.Assert(err, jc.ErrorIsNil)
@@ -913,15 +913,15 @@ func (s *controllerSuite) TestAddFileReader(c *gc.C) {
 	s.assertFile(c, request, "foo.txt", "test\n")
 }
 
-var versionResponse = `{"version": "unknown", "subversion": "", "capabilities": ["networks-management", "static-ipaddresses", "ipv6-deployment-ubuntu", "devices-management", "storage-deployment-ubuntu", "network-deployment-ubuntu"]}`
+var versionResponse = `{"version": "unknown", "subversion": "", "Capabilities": ["networks-management", "static-ipaddresses", "ipv6-deployment-ubuntu", "devices-management", "storage-deployment-ubuntu", "network-deployment-ubuntu"]}`
 
 type cleanup interface {
 	AddCleanup(func(*gc.C))
 }
 
-// createTestServerController creates a controller backed on to a test server
+// createTestServerController creates a Controller backed on to a test server
 // that has sufficient knowledge of versions and users to be able to create a
-// valid controller.
+// valid Controller.
 func createTestServerController(c *gc.C, suite cleanup) (*SimpleTestServer, Controller) {
 	server := NewSimpleServer()
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)

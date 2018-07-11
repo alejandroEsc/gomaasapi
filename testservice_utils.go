@@ -14,7 +14,7 @@ import (
 )
 
 // NameOrIDToID takes a string that contains eiter an integer ID or the
-// name of a thing. It returns the integer ID contained or mapped to or panics.
+// Name of a thing. It returns the integer ID contained or mapped to or panics.
 func NameOrIDToID(v string, nameToID map[string]uint, minID, maxID uint) (ID uint, err error) {
 	ID, ok := nameToID[v]
 	if !ok {

@@ -10,35 +10,17 @@ import (
 )
 
 type space struct {
-	// Add the controller in when we need to do things with the space.
-	// controller Controller
+	// Add the Controller in when we need to do things with the space.
+	// Controller Controller
 
-	resourceURI string
+	ResourceURI string
 
-	id   int
-	name string
+	ID   int
+	Name string
 
-	subnets []*subnet
+	Subnets []*subnet
 }
 
-// Id implements Space.
-func (s *space) ID() int {
-	return s.id
-}
-
-// Name implements Space.
-func (s *space) Name() string {
-	return s.name
-}
-
-// Subnets implements Space.
-func (s *space) Subnets() []Subnet {
-	var result []Subnet
-	for _, subnet := range s.subnets {
-		result = append(result, subnet)
-	}
-	return result
-}
 
 func readSpaces(controllerVersion version.Number, source interface{}) ([]*space, error) {
 	checker := schema.List(schema.StringMap(schema.Any()))
@@ -61,7 +43,7 @@ func readSpaces(controllerVersion version.Number, source interface{}) ([]*space,
 	return readSpaceList(valid, readFunc)
 }
 
-// readSpaceList expects the values of the sourceList to be string maps.
+// readSpaceList expects the Values of the sourceList to be string maps.
 func readSpaceList(sourceList []interface{}, readFunc spaceDeserializationFunc) ([]*space, error) {
 	result := make([]*space, 0, len(sourceList))
 	for i, value := range sourceList {
@@ -87,9 +69,9 @@ var spaceDeserializationFuncs = map[version.Number]spaceDeserializationFunc{
 func space_2_0(source map[string]interface{}) (*space, error) {
 	fields := schema.Fields{
 		"resource_uri": schema.String(),
-		"id":           schema.ForceInt(),
-		"name":         schema.String(),
-		"subnets":      schema.List(schema.StringMap(schema.Any())),
+		"ID":           schema.ForceInt(),
+		"Name":         schema.String(),
+		"Subnets":      schema.List(schema.StringMap(schema.Any())),
 	}
 	checker := schema.FieldMap(fields, nil) // no defaults
 	coerced, err := checker.Coerce(source, nil)
@@ -100,16 +82,16 @@ func space_2_0(source map[string]interface{}) (*space, error) {
 	// From here we know that the map returned from the schema coercion
 	// contains fields of the right type.
 
-	subnets, err := readSubnetList(valid["subnets"].([]interface{}), subnet_2_0)
+	subnets, err := readSubnetList(valid["Subnets"].([]interface{}), subnet_2_0)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 
 	result := &space{
-		resourceURI: valid["resource_uri"].(string),
-		id:          valid["id"].(int),
-		name:        valid["name"].(string),
-		subnets:     subnets,
+		ResourceURI: valid["resource_uri"].(string),
+		ID:          valid["ID"].(int),
+		Name:        valid["Name"].(string),
+		Subnets:     subnets,
 	}
 	return result, nil
 }

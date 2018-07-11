@@ -51,61 +51,61 @@ func (*staticRouteSuite) TestHighVersion(c *gc.C) {
 var staticRoutesResponse = `
 [
     {
-        "destination": {
+        "Destination": {
             "active_discovery": false,
-            "id": 3,
-            "resource_uri": "/MAAS/api/2.0/subnets/3/",
+            "ID": 3,
+            "resource_uri": "/MAAS/api/2.0/Subnets/3/",
             "allow_proxy": true,
             "rdns_mode": 2,
             "dns_servers": [
                 "8.8.8.8"
             ],
-            "name": "Local-192",
+            "Name": "Local-192",
             "cidr": "192.168.0.0/16",
             "space": "space-0",
-            "vlan": {
-                "fabric": "fabric-1",
-                "id": 5002,
+            "VLAN": {
+                "Fabric": "Fabric-1",
+                "ID": 5002,
                 "dhcp_on": false,
                 "primary_rack": null,
-                "resource_uri": "/MAAS/api/2.0/vlans/5002/",
-                "mtu": 1500,
+                "resource_uri": "/MAAS/api/2.0/VLANs/5002/",
+                "MTU": 1500,
                 "fabric_id": 1,
                 "secondary_rack": null,
-                "name": "untagged",
+                "Name": "untagged",
                 "external_dhcp": null,
-                "vid": 0
+                "VID": 0
             },
             "gateway_ip": "192.168.0.1"
         },
-        "source": {
+        "Source": {
             "active_discovery": false,
-            "id": 1,
-            "resource_uri": "/MAAS/api/2.0/subnets/1/",
+            "ID": 1,
+            "resource_uri": "/MAAS/api/2.0/Subnets/1/",
             "allow_proxy": true,
             "rdns_mode": 2,
             "dns_servers": [],
-            "name": "192.168.0.0/24",
+            "Name": "192.168.0.0/24",
             "cidr": "192.168.0.0/24",
             "space": "space-0",
-            "vlan": {
-                "fabric": "fabric-0",
-                "id": 5001,
+            "VLAN": {
+                "Fabric": "Fabric-0",
+                "ID": 5001,
                 "dhcp_on": false,
                 "primary_rack": null,
-                "resource_uri": "/MAAS/api/2.0/vlans/5001/",
-                "mtu": 1500,
+                "resource_uri": "/MAAS/api/2.0/VLANs/5001/",
+                "MTU": 1500,
                 "fabric_id": 0,
                 "secondary_rack": null,
-                "name": "untagged",
+                "Name": "untagged",
                 "external_dhcp": "192.168.0.1",
-                "vid": 0
+                "VID": 0
             },
             "gateway_ip": null
         },
-        "id": 2,
+        "ID": 2,
         "resource_uri": "/MAAS/api/2.0/static-routes/2/",
-        "metric": 0,
+        "Metric": 0,
         "gateway_ip": "192.168.0.1"
     }
 ]

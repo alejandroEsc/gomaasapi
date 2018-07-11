@@ -93,7 +93,7 @@ type TestServer struct {
 	nodegroupsInterfaces map[string][]JSONObject
 
 	// versionJSON is the response to the /version/ endpoint listing the
-	// capabilities of the MAAS server.
+	// Capabilities of the MAAS server.
 	versionJSON string
 
 	// devices is a map of device UUIDs to devices.
@@ -153,7 +153,7 @@ func getFilesEndpoint(version string) string {
 }
 
 func getFileURL(version, filename string) string {
-	// Uses URL object so filename is correctly percent-escaped
+	// Uses URL object so Filename is correctly percent-escaped
 	url := url.URL{}
 	url.Path = fmt.Sprintf("/api/%s/files/%s/", version, filename)
 	return url.String()
@@ -212,15 +212,15 @@ func getZonesEndpoint(version string) string {
 }
 
 func getTagsEndpoint(version string) string {
-	return fmt.Sprintf("/api/%s/tags/", version)
+	return fmt.Sprintf("/api/%s/Tags/", version)
 }
 
 func getTagURL(version, tag_name string) string {
-	return fmt.Sprintf("/api/%s/tags/%s/", version, tag_name)
+	return fmt.Sprintf("/api/%s/Tags/%s/", version, tag_name)
 }
 
 func getTagURLRE(version string) *regexp.Regexp {
-	reString := fmt.Sprintf("^/api/%s/tags/([^/]*)/$", regexp.QuoteMeta(version))
+	reString := fmt.Sprintf("^/api/%s/Tags/([^/]*)/$", regexp.QuoteMeta(version))
 	return regexp.MustCompile(reString)
 }
 
@@ -245,7 +245,7 @@ func (server *TestServer) Clear() {
 	server.nodegroupsInterfaces = make(map[string][]JSONObject)
 	server.zones = make(map[string]JSONObject)
 	server.tags = make(map[string]JSONObject)
-	server.versionJSON = `{"capabilities": ["networks-management","static-ipaddresses","devices-management","network-deployment-ubuntu"]}`
+	server.versionJSON = `{"Capabilities": ["networks-management","static-ipaddresses","devices-management","network-deployment-ubuntu"]}`
 	server.devices = make(map[string]*TestDevice)
 	server.subnets = make(map[uint]TestSubnet)
 	server.subnetNameToID = make(map[string]uint)
@@ -259,7 +259,7 @@ func (server *TestServer) Clear() {
 	server.nextStaticRoute = 1
 }
 
-// SetVersionJSON sets the JSON response (capabilities) returned from the
+// SetVersionJSON sets the JSON response (Capabilities) returned from the
 // /version/ endpoint.
 func (server *TestServer) SetVersionJSON(json string) {
 	server.versionJSON = json
@@ -368,8 +368,8 @@ func (server *TestServer) NewFile(filename string, filecontent []byte) MAASObjec
 	attrs := make(map[string]interface{})
 	attrs[resourceURI] = getFileURL(server.version, filename)
 	base64Content := base64.StdEncoding.EncodeToString(filecontent)
-	attrs["content"] = base64Content
-	attrs["filename"] = filename
+	attrs["Content"] = base64Content
+	attrs["Filename"] = filename
 
 	// Allocate an arbitrary URL here.  It would be nice if the caller
 	// could do this, but that would change the API and require many
@@ -396,14 +396,14 @@ func (server *TestServer) ChangeNode(systemId, key, value string) {
 }
 
 // NewIPAddress creates a new static IP address reservation for the
-// given network/subnet and ipAddress. While networks is being deprecated
-// try the given name as both a netowrk and a subnet.
+// given network/Subnet and IPAddress. While networks is being deprecated
+// try the given Name as both a netowrk and a Subnet.
 func (server *TestServer) NewIPAddress(ipAddress, networkOrSubnet string) {
 	_, foundNetwork := server.networks[networkOrSubnet]
 	subnetID, foundSubnet := server.subnetNameToID[networkOrSubnet]
 
 	if (foundNetwork || foundSubnet) == false {
-		panic("No such network or subnet: " + networkOrSubnet)
+		panic("No such network or Subnet: " + networkOrSubnet)
 	}
 	if foundNetwork {
 		ips, found := server.ipAddressesPerNetwork[networkOrSubnet]
@@ -426,7 +426,7 @@ func (server *TestServer) NewIPAddress(ipAddress, networkOrSubnet string) {
 	}
 }
 
-// RemoveIPAddress removes the given existing ipAddress and returns
+// RemoveIPAddress removes the given existing IPAddress and returns
 // whether it was actually removed.
 func (server *TestServer) RemoveIPAddress(ipAddress string) bool {
 	for network, ips := range server.ipAddressesPerNetwork {
@@ -450,7 +450,7 @@ func (server *TestServer) RemoveIPAddress(ipAddress string) bool {
 }
 
 // IPAddresses returns the map with network names as keys and slices
-// of IP addresses belonging to each network as values.
+// of IP addresses belonging to each network as Values.
 func (server *TestServer) IPAddresses() map[string][]string {
 	return server.ipAddressesPerNetwork
 }
@@ -460,11 +460,11 @@ func (server *TestServer) NewNetwork(jsonText string) MAASObject {
 	var attrs map[string]interface{}
 	err := json.Unmarshal([]byte(jsonText), &attrs)
 	checkError(err)
-	nameEntry, hasName := attrs["name"]
+	nameEntry, hasName := attrs["Name"]
 	_, hasIP := attrs["ip"]
 	_, hasNetmask := attrs["netmask"]
 	if !hasName || !hasIP || !hasNetmask {
-		panic("The given map json string does not contain a 'name', 'ip', or 'netmask' value.")
+		panic("The given map json string does not contain a 'Name', 'ip', or 'netmask' value.")
 	}
 	// TODO(gz): Sanity checking done on other fields
 	name := nameEntry.(string)
@@ -484,7 +484,7 @@ func (server *TestServer) NewNodegroupInterface(uuid, jsonText string) JSONObjec
 	var attrs map[string]interface{}
 	err := json.Unmarshal([]byte(jsonText), &attrs)
 	checkError(err)
-	requiredMembers := []string{"ip_range_high", "ip_range_low", "broadcast_ip", "static_ip_range_low", "static_ip_range_high", "name", "ip", "subnet_mask", "management", "interface"}
+	requiredMembers := []string{"ip_range_high", "ip_range_low", "broadcast_ip", "static_ip_range_low", "static_ip_range_high", "Name", "ip", "subnet_mask", "management", "interface"}
 	for _, member := range requiredMembers {
 		_, hasMember := attrs[member]
 		if !hasMember {
@@ -499,11 +499,11 @@ func (server *TestServer) NewNodegroupInterface(uuid, jsonText string) JSONObjec
 func (server *TestServer) ConnectNodeToNetwork(systemId, name string) {
 	_, hasNode := server.nodes[systemId]
 	if !hasNode {
-		panic("no node with the given system id")
+		panic("no node with the given system ID")
 	}
 	_, hasNetwork := server.networks[name]
 	if !hasNetwork {
-		panic("no network with the given name")
+		panic("no network with the given Name")
 	}
 	networkNames, _ := server.networksPerNode[systemId]
 	server.networksPerNode[systemId] = append(networkNames, name)
@@ -512,10 +512,10 @@ func (server *TestServer) ConnectNodeToNetwork(systemId, name string) {
 func (server *TestServer) ConnectNodeToNetworkWithMACAddress(systemId, networkName, macAddress string) {
 	node, hasNode := server.nodes[systemId]
 	if !hasNode {
-		panic("no node with the given system id")
+		panic("no node with the given system ID")
 	}
 	if _, hasNetwork := server.networks[networkName]; !hasNetwork {
-		panic("no network with the given name")
+		panic("no network with the given Name")
 	}
 	networkNames, _ := server.networksPerNode[systemId]
 	server.networksPerNode[systemId] = append(networkNames, networkName)
@@ -543,8 +543,8 @@ func (server *TestServer) AddBootImage(nodegroupUUID string, jsonText string) {
 	var attrs map[string]interface{}
 	err := json.Unmarshal([]byte(jsonText), &attrs)
 	checkError(err)
-	if _, ok := attrs["architecture"]; !ok {
-		panic("The boot-image json string does not contain an 'architecture' value.")
+	if _, ok := attrs["Architecture"]; !ok {
+		panic("The boot-image json string does not contain an 'Architecture' value.")
 	}
 	if _, ok := attrs["release"]; !ok {
 		panic("The boot-image json string does not contain a 'release' value.")
@@ -553,11 +553,11 @@ func (server *TestServer) AddBootImage(nodegroupUUID string, jsonText string) {
 	server.bootImages[nodegroupUUID] = append(server.bootImages[nodegroupUUID], obj)
 }
 
-// AddZone adds a physical zone to the server.
+// AddZone adds a physical Zone to the server.
 func (server *TestServer) AddZone(name, description string) {
 	attrs := map[string]interface{}{
-		"name":        name,
-		"description": description,
+		"Name":        name,
+		"Description": description,
 	}
 	obj := maasify(server.client, attrs)
 	server.zones[name] = obj
@@ -566,7 +566,7 @@ func (server *TestServer) AddZone(name, description string) {
 // AddTah adds a tag to the server.
 func (server *TestServer) AddTag(name, comment string) {
 	attrs := map[string]interface{}{
-		"name":      name,
+		"Name":      name,
 		"comment":   comment,
 		resourceURI: getTagURL(server.version, name),
 	}
@@ -693,7 +693,7 @@ func devicesHandler(server *TestServer, w http.ResponseWriter, r *http.Request) 
 }
 
 // devicesTopLevelHandler handles a request for /api/<version>/devices/
-// (with no device id following as part of the path).
+// (with no device ID following as part of the Path).
 func devicesTopLevelHandler(server *TestServer, w http.ResponseWriter, r *http.Request, op string) {
 	switch {
 	case r.Method == "GET" && op == "list":
@@ -714,7 +714,7 @@ func macMatches(mac string, device *TestDevice) bool {
 func deviceListingHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 	values, err := url.ParseQuery(r.URL.RawQuery)
 	checkError(err)
-	// TODO(mfoord): support filtering by hostname and id
+	// TODO(mfoord): support filtering by Hostname and ID
 	macs, hasMac := values["mac_address"]
 	var matchedDevices []*TestDevice
 	if !hasMac {
@@ -774,16 +774,16 @@ const (
 		"mac_address": "{{.}}"
 	    }{{end}}
 	],
-	"zone": {
+	"Zone": {
 	    "resource_uri": "/MAAS/api/{{.APIVersion}}/zones/default/",
-	    "name": "default",
-	    "description": ""
+	    "Name": "default",
+	    "Description": ""
 	},
-	"parent": "{{.Parent}}",
+	"Parent": "{{.Parent}}",
 	"ip_addresses": [{{.IPAddresses | quotedList }}],
-	"hostname": "{{.Hostname}}",
+	"Hostname": "{{.Hostname}}",
 	"tag_names": [],
-	"owner": "maas-admin",
+	"Owner": "maas-admin",
 	"system_id": "{{.SystemId}}",
 	"resource_uri": "/MAAS/api/{{.APIVersion}}/devices/{{.SystemId}}/"
 }`
@@ -831,7 +831,7 @@ func newDeviceHandler(server *TestServer, w http.ResponseWriter, r *http.Request
 	checkError(err)
 	values := r.PostForm
 
-	// TODO(mfood): generate a "proper" uuid for the system Id.
+	// TODO(mfood): generate a "proper" UUID for the system Id.
 	uuid, err := generateNonce()
 	checkError(err)
 	systemId := fmt.Sprintf("node-%v", uuid)
@@ -839,10 +839,10 @@ func newDeviceHandler(server *TestServer, w http.ResponseWriter, r *http.Request
 	// TODO(mfoord) we only support a single MAC in the test server.
 	macs, hasMacs := getValues(values, "mac_addresses")
 
-	// hostname and parent are optional.
+	// Hostname and Parent are optional.
 	// TODO(mfoord): we require both to be set in the test server.
-	hostname, hasHostname := getValue(values, "hostname")
-	parent, hasParent := getValue(values, "parent")
+	hostname, hasHostname := getValue(values, "Hostname")
+	parent, hasParent := getValue(values, "Parent")
 	if !hasHostname || !hasMacs || !hasParent {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -943,11 +943,11 @@ func nodeHandler(server *TestServer, w http.ResponseWriter, r *http.Request, sys
 		http.NotFoundHandler().ServeHTTP(w, r)
 		return
 	}
-	UUID, UUIDError := node.values["system_id"].GetString()
+	UUID, UUIDError := node.Values["system_id"].GetString()
 	if UUIDError == nil {
 		i, err := JSONObjectFromStruct(server.client, server.nodeMetadata[UUID].Interfaces)
 		checkError(err)
-		node.values["interface_set"] = i
+		node.Values["interface_set"] = i
 	}
 
 	if r.Method == "GET" {
@@ -1002,7 +1002,7 @@ func contains(slice []string, val string) bool {
 func nodeListingHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 	values, err := url.ParseQuery(r.URL.RawQuery)
 	checkError(err)
-	ids, hasId := values["id"]
+	ids, hasId := values["ID"]
 	var convertedNodes = []map[string]JSONObject{}
 	for systemId, node := range server.nodes {
 		if !hasId || contains(ids, systemId) {
@@ -1054,11 +1054,11 @@ func findFreeNode(server *TestServer, filter url.Values) *MAASObject {
 				switch k {
 				case "agent_name":
 					agentName = filter.Get(k)
-				case "name":
+				case "Name":
 					nodeName = filter.Get(k)
-				case "zone":
+				case "Zone":
 					zoneName = filter.Get(k)
-				case "tags":
+				case "Tags":
 					tagName = filter.Get(k)
 				case "mem":
 					mem = filter.Get(k)
@@ -1068,19 +1068,19 @@ func findFreeNode(server *TestServer, filter url.Values) *MAASObject {
 					cpuCores = filter.Get(k)
 				}
 			}
-			if nodeName != "" && !matchField(node, "hostname", nodeName) {
+			if nodeName != "" && !matchField(node, "Hostname", nodeName) {
 				continue
 			}
-			if zoneName != "" && !matchField(node, "zone", zoneName) {
+			if zoneName != "" && !matchField(node, "Zone", zoneName) {
 				continue
 			}
 			if tagName != "" && !matchField(node, "tag_names", tagName) {
 				continue
 			}
-			if mem != "" && !matchNumericField(node, "memory", mem) {
+			if mem != "" && !matchNumericField(node, "Memory", mem) {
 				continue
 			}
-			if arch != "" && !matchArchitecture(node, "architecture", arch) {
+			if arch != "" && !matchArchitecture(node, "Architecture", arch) {
 				continue
 			}
 			if cpuCores != "" && !matchNumericField(node, "cpu_count", cpuCores) {
@@ -1182,7 +1182,7 @@ func nodesReleaseHandler(server *TestServer, w http.ResponseWriter, r *http.Requ
 }
 
 // nodesTopLevelHandler handles a request for /api/<version>/nodes/
-// (with no node id following as part of the path).
+// (with no node ID following as part of the Path).
 func nodesTopLevelHandler(server *TestServer, w http.ResponseWriter, r *http.Request, op string) {
 	switch {
 	case r.Method == "GET" && op == "list":
@@ -1204,14 +1204,14 @@ func nodesTopLevelHandler(server *TestServer, w http.ResponseWriter, r *http.Req
 func (server *TestServer) AddNodeDetails(systemId, xmlText string) {
 	_, hasNode := server.nodes[systemId]
 	if !hasNode {
-		panic("no node with the given system id")
+		panic("no node with the given system ID")
 	}
 	server.nodeDetails[systemId] = xmlText
 }
 
 const lldpXML = `
 <?xml version="1.0" encoding="UTF-8"?>
-<lldp label="LLDP neighbors"/>`
+<lldp Label="LLDP neighbors"/>`
 
 // nodeDetailesHandler handles requests for '/api/<version>/nodes/<system_id>/?op=details'.
 func nodeDetailsHandler(server *TestServer, w http.ResponseWriter, r *http.Request, systemId string) {
@@ -1266,11 +1266,11 @@ func listFilenames(server *TestServer, prefix string) []string {
 }
 
 // stripFileContent copies a map of attributes representing an uploaded file,
-// but with the "content" attribute removed.
+// but with the "Content" attribute removed.
 func stripContent(original map[string]JSONObject) map[string]JSONObject {
 	newMap := make(map[string]JSONObject, len(original)-1)
 	for key, value := range original {
-		if key != "content" {
+		if key != "Content" {
 			newMap[key] = value
 		}
 	}
@@ -1287,7 +1287,7 @@ func fileListingHandler(server *TestServer, w http.ResponseWriter, r *http.Reque
 	// Build a sorted list of the files as map[string]JSONObject objects.
 	convertedFiles := make([]map[string]JSONObject, 0)
 	for _, filename := range filenames {
-		// The "content" attribute is not in the listing.
+		// The "Content" attribute is not in the listing.
 		fileMap := stripContent(server.files[filename].GetMap())
 		convertedFiles = append(convertedFiles, fileMap)
 	}
@@ -1297,14 +1297,14 @@ func fileListingHandler(server *TestServer, w http.ResponseWriter, r *http.Reque
 	fmt.Fprint(w, string(res))
 }
 
-// fileHandler handles requests for '/api/<version>/files/<filename>/'.
+// fileHandler handles requests for '/api/<version>/files/<Filename>/'.
 func fileHandler(server *TestServer, w http.ResponseWriter, r *http.Request, filename string, operation string) {
 	switch {
 	case r.Method == "DELETE":
 		delete(server.files, filename)
 		w.WriteHeader(http.StatusOK)
 	case r.Method == "GET":
-		// Retrieve a file's information (including content) as a JSON
+		// Retrieve a file's information (including Content) as a JSON
 		// object.
 		file, ok := server.files[filename]
 		if !ok {
@@ -1329,17 +1329,17 @@ func InternalError(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 // getFileHandler handles requests for
-// '/api/<version>/files/?op=get&filename=filename'.
+// '/api/<version>/files/?op=get&Filename=Filename'.
 func getFileHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 	values, err := url.ParseQuery(r.URL.RawQuery)
 	checkError(err)
-	filename := values.Get("filename")
+	filename := values.Get("Filename")
 	file, found := server.files[filename]
 	if !found {
 		http.NotFoundHandler().ServeHTTP(w, r)
 		return
 	}
-	base64Content, err := file.GetField("content")
+	base64Content, err := file.GetField("Content")
 	if err != nil {
 		InternalError(w, r, err)
 		return
@@ -1362,14 +1362,14 @@ func readMultipart(upload *multipart.FileHeader) ([]byte, error) {
 	return ioutil.ReadAll(reader)
 }
 
-// filesHandler handles requests for '/api/<version>/files/?op=add&filename=filename'.
+// filesHandler handles requests for '/api/<version>/files/?op=add&Filename=Filename'.
 func addFileHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10000000)
 	checkError(err)
 
-	filename := r.Form.Get("filename")
+	filename := r.Form.Get("Filename")
 	if filename == "" {
-		panic("upload has no filename")
+		panic("upload has no Filename")
 	}
 
 	uploads := r.MultipartForm.File
@@ -1426,7 +1426,7 @@ func networksHandler(server *TestServer, w http.ResponseWriter, r *http.Request)
 		panic("only list_connected_macs and default operations implemented")
 	}
 	if systemId == "" {
-		panic("network missing associated node system id")
+		panic("network missing associated node system ID")
 	}
 	networks := []MAASObject{}
 	if networkNames, hasNetworks := server.networksPerNode[systemId]; hasNetworks {
@@ -1526,7 +1526,7 @@ func reserveIPAddressHandler(server *TestServer, w http.ResponseWriter, r *http.
 			return
 		}
 	}
-	// Find the network name matching the parsed CIDR.
+	// Find the network Name matching the parsed CIDR.
 	foundNetworkName := ""
 	for netName, netObj := range server.networks {
 		// Get the "ip" and "netmask" attributes of the network.
@@ -1639,7 +1639,7 @@ func nodegroupsTopLevelHandler(server *TestServer, w http.ResponseWriter, r *htt
 	nodegroups := []JSONObject{}
 	for uuid := range server.bootImages {
 		attrs := map[string]interface{}{
-			"uuid":      uuid,
+			"UUID":      uuid,
 			resourceURI: getNodegroupURL(server.version, uuid),
 		}
 		obj := maasify(server.client, attrs)
@@ -1652,7 +1652,7 @@ func nodegroupsTopLevelHandler(server *TestServer, w http.ResponseWriter, r *htt
 	fmt.Fprint(w, string(res))
 }
 
-// bootimagesHandler handles requests for '/api/<version>/nodegroups/<uuid>/boot-images/'.
+// bootimagesHandler handles requests for '/api/<version>/nodegroups/<UUID>/boot-images/'.
 func bootimagesHandler(server *TestServer, w http.ResponseWriter, r *http.Request, nodegroupUUID, op string) {
 	if r.Method != "GET" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -1671,7 +1671,7 @@ func bootimagesHandler(server *TestServer, w http.ResponseWriter, r *http.Reques
 	fmt.Fprint(w, string(res))
 }
 
-// nodegroupsInterfacesHandler handles requests for '/api/<version>/nodegroups/<uuid>/interfaces/'
+// nodegroupsInterfacesHandler handles requests for '/api/<version>/nodegroups/<UUID>/interfaces/'
 func nodegroupsInterfacesHandler(server *TestServer, w http.ResponseWriter, r *http.Request, nodegroupUUID, op string) {
 	if r.Method != "GET" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -1702,7 +1702,7 @@ func zonesHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(server.zones) == 0 {
-		// Until a zone is registered, behave as if the endpoint
+		// Until a Zone is registered, behave as if the endpoint
 		// does not exist. This way we can simulate older MAAS
 		// servers that do not support zones.
 		http.NotFoundHandler().ServeHTTP(w, r)
@@ -1719,7 +1719,7 @@ func zonesHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(res))
 }
 
-// tagsHandler handles requests for '/api/<version>/tags/'.
+// tagsHandler handles requests for '/api/<version>/Tags/'.
 func tagsHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 	tagURLRE := getTagURLRE(server.version)
 	tagURLMatch := tagURLRE.FindStringSubmatch(r.URL.Path)
@@ -1727,7 +1727,7 @@ func tagsHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	checkError(err)
 	values := r.PostForm
-	names, hasName := getValues(values, "name")
+	names, hasName := getValues(values, "Name")
 	quary, err := url.ParseQuery(r.URL.RawQuery)
 	checkError(err)
 	op := quary.Get("op")
@@ -1766,13 +1766,13 @@ func newTagHandler(server *TestServer, w http.ResponseWriter, r *http.Request, n
 	var attrs map[string]interface{}
 	if hascomment {
 		attrs = map[string]interface{}{
-			"name":      name,
+			"Name":      name,
 			"comment":   comment,
 			resourceURI: getTagURL(server.version, name),
 		}
 	} else {
 		attrs = map[string]interface{}{
-			"name":      name,
+			"Name":      name,
 			resourceURI: getTagURL(server.version, name),
 		}
 	}
@@ -1784,7 +1784,7 @@ func newTagHandler(server *TestServer, w http.ResponseWriter, r *http.Request, n
 	fmt.Fprint(w, res)
 }
 
-// tagHandler handles requests for '/api/<version>/tag/<name>/'.
+// tagHandler handles requests for '/api/<version>/tag/<Name>/'.
 func tagHandler(server *TestServer, w http.ResponseWriter, r *http.Request, name string, operation string, values url.Values) {
 	switch r.Method {
 	case "GET":
@@ -1837,7 +1837,7 @@ func tagHandler(server *TestServer, w http.ResponseWriter, r *http.Request, name
 				tagNamesObj := JSONObject{
 					value: newTagsObj,
 				}
-				server.nodes[systemID].values["tag_names"] = tagNamesObj
+				server.nodes[systemID].Values["tag_names"] = tagNamesObj
 			}
 			for _, systemID := range delNodes {
 				_, ok := server.nodes[systemID]
@@ -1859,7 +1859,7 @@ func tagHandler(server *TestServer, w http.ResponseWriter, r *http.Request, name
 				tagNamesObj := JSONObject{
 					value: newTagsObj,
 				}
-				server.nodes[systemID].values["tag_names"] = tagNamesObj
+				server.nodes[systemID].Values["tag_names"] = tagNamesObj
 			}
 			res, err := json.MarshalIndent(addremovecount, "", "  ")
 			checkError(err)

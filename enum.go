@@ -4,7 +4,7 @@
 package gomaasapi
 
 const (
-	// NodeStatus* values represent the vocabulary of a Node‘s possible statuses.
+	// NodeStatus* Values represent the vocabulary of a Node‘s possible statuses.
 
 	// The node has been created and has a system ID assigned to it.
 	NodeStatusDeclared = "0"

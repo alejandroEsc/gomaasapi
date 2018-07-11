@@ -25,18 +25,18 @@ func (*blockdeviceSuite) TestReadBlockDevices(c *gc.C) {
 	c.Assert(blockdevices, gc.HasLen, 1)
 	blockdevice := blockdevices[0]
 
-	c.Check(blockdevice.ID(), gc.Equals, 34)
-	c.Check(blockdevice.Name(), gc.Equals, "sda")
-	c.Check(blockdevice.Model(), gc.Equals, "QEMU HARDDISK")
-	c.Check(blockdevice.Path(), gc.Equals, "/dev/disk/by-dname/sda")
-	c.Check(blockdevice.IDPath(), gc.Equals, "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001")
-	c.Check(blockdevice.UsedFor(), gc.Equals, "MBR partitioned with 1 partition")
-	c.Check(blockdevice.Tags(), jc.DeepEquals, []string{"rotary"})
-	c.Check(blockdevice.BlockSize(), gc.Equals, uint64(4096))
-	c.Check(blockdevice.UsedSize(), gc.Equals, uint64(8586788864))
-	c.Check(blockdevice.Size(), gc.Equals, uint64(8589934592))
+	c.Check(blockdevice.ID, gc.Equals, 34)
+	c.Check(blockdevice.Name, gc.Equals, "sda")
+	c.Check(blockdevice.Model, gc.Equals, "QEMU HARDDISK")
+	c.Check(blockdevice.Path, gc.Equals, "/dev/disk/by-dname/sda")
+	c.Check(blockdevice.IDPath, gc.Equals, "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001")
+	c.Check(blockdevice.UsedFor, gc.Equals, "MBR partitioned with 1 partition")
+	c.Check(blockdevice.Tags, jc.DeepEquals, []string{"rotary"})
+	c.Check(blockdevice.BlockSize, gc.Equals, uint64(4096))
+	c.Check(blockdevice.UsedSize, gc.Equals, uint64(8586788864))
+	c.Check(blockdevice.Size, gc.Equals, uint64(8589934592))
 
-	partitions := blockdevice.Partitions()
+	partitions := blockdevice.Partitions
 	c.Assert(partitions, gc.HasLen, 1)
 	partition := partitions[0]
 	c.Check(partition.ID(), gc.Equals, 1)
@@ -49,8 +49,8 @@ func (*blockdeviceSuite) TestReadBlockDevicesWithNulls(c *gc.C) {
 	c.Assert(blockdevices, gc.HasLen, 1)
 	blockdevice := blockdevices[0]
 
-	c.Check(blockdevice.Model(), gc.Equals, "")
-	c.Check(blockdevice.IDPath(), gc.Equals, "")
+	c.Check(blockdevice.Model, gc.Equals, "")
+	c.Check(blockdevice.IDPath, gc.Equals, "")
 }
 
 func (*blockdeviceSuite) TestLowVersion(c *gc.C) {
@@ -67,42 +67,42 @@ func (*blockdeviceSuite) TestHighVersion(c *gc.C) {
 var blockdevicesResponse = `
 [
     {
-        "path": "/dev/disk/by-dname/sda",
-        "name": "sda",
+        "Path": "/dev/disk/by-dname/sda",
+        "Name": "sda",
         "used_for": "MBR partitioned with 1 partition",
-        "partitions": [
+        "Partitions": [
             {
                 "bootable": false,
-                "id": 1,
-                "path": "/dev/disk/by-dname/sda-part1",
+                "ID": 1,
+                "Path": "/dev/disk/by-dname/sda-part1",
                 "filesystem": {
-                    "fstype": "ext4",
+                    "Type": "ext4",
                     "mount_point": "/",
-                    "label": "root",
+                    "Label": "root",
                     "mount_options": null,
-                    "uuid": "fcd7745e-f1b5-4f5d-9575-9b0bb796b752"
+                    "UUID": "fcd7745e-f1b5-4f5d-9575-9b0bb796b752"
                 },
                 "type": "partition",
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/partition/1",
-                "uuid": "6199b7c9-b66f-40f6-a238-a938a58a0adf",
+                "UUID": "6199b7c9-b66f-40f6-a238-a938a58a0adf",
                 "used_for": "ext4 formatted filesystem mounted at /",
-                "size": 8581545984
+                "Size": 8581545984
             }
         ],
         "filesystem": null,
-        "id_path": "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001",
+        "id_path": "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001",
         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/",
-        "id": 34,
+        "ID": 34,
         "serial": "QM00001",
         "type": "physical",
         "block_size": 4096,
         "used_size": 8586788864,
         "available_size": 0,
         "partition_table_type": "MBR",
-        "uuid": null,
-        "size": 8589934592,
-        "model": "QEMU HARDDISK",
-        "tags": [
+        "UUID": null,
+        "Size": 8589934592,
+        "Model": "QEMU HARDDISK",
+        "Tags": [
             "rotary"
         ]
     }
@@ -112,24 +112,24 @@ var blockdevicesResponse = `
 var blockdevicesWithNullsResponse = `
 [
     {
-        "path": "/dev/disk/by-dname/sda",
-        "name": "sda",
+        "Path": "/dev/disk/by-dname/sda",
+        "Name": "sda",
         "used_for": "MBR partitioned with 1 partition",
-        "partitions": [],
+        "Partitions": [],
         "filesystem": null,
         "id_path": null,
         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/",
-        "id": 34,
+        "ID": 34,
         "serial": null,
         "type": "physical",
         "block_size": 4096,
         "used_size": 8586788864,
         "available_size": 0,
         "partition_table_type": null,
-        "uuid": null,
-        "size": 8589934592,
-        "model": null,
-        "tags": []
+        "UUID": null,
+        "Size": 8589934592,
+        "Model": null,
+        "Tags": []
     }
 ]
 `

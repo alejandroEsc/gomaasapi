@@ -13,48 +13,22 @@ import (
 )
 
 type bootResource struct {
-	// Add the controller in when we need to do things with the bootResource.
-	// controller Controller
-
-	resourceURI string
-
-	id           int
-	name         string
-	type_        string
-	architecture string
-	subArches    string
-	kernelFlavor string
-}
-
-// ID implements BootResource.
-func (b *bootResource) ID() int {
-	return b.id
-}
-
-// Name implements BootResource.
-func (b *bootResource) Name() string {
-	return b.name
-}
-
-// Name implements BootResource.
-func (b *bootResource) Type() string {
-	return b.type_
-}
-
-// Name implements BootResource.
-func (b *bootResource) Architecture() string {
-	return b.architecture
+	// Add the Controller in when we need to do things with the bootResource.
+	// Controller Controller
+	ResourceURI string `json:"resource_uri,omitempty"`
+	ID           int `json:"ID,omitempty"`
+	Name         string `json:"Name,omitempty"`
+	Type         string `json:"type,omitempty"`
+	Architecture string `json:"Architecture,omitempty"`
+	SubArches    string `json:"subarches,omitempty"`
+	KernelFlavor string `json:"kflavor,omitempty"`
 }
 
 // SubArchitectures implements BootResource.
 func (b *bootResource) SubArchitectures() set.Strings {
-	return set.NewStrings(strings.Split(b.subArches, ",")...)
+	return set.NewStrings(strings.Split(b.SubArches, ",")...)
 }
 
-// KernelFlavor implements BootResource.
-func (b *bootResource) KernelFlavor() string {
-	return b.kernelFlavor
-}
 
 func readBootResources(controllerVersion version.Number, source interface{}) ([]*bootResource, error) {
 	checker := schema.List(schema.StringMap(schema.Any()))
@@ -77,7 +51,7 @@ func readBootResources(controllerVersion version.Number, source interface{}) ([]
 	return readBootResourceList(valid, readFunc)
 }
 
-// readBootResourceList expects the values of the sourceList to be string maps.
+// readBootResourceList expects the Values of the sourceList to be string maps.
 func readBootResourceList(sourceList []interface{}, readFunc bootResourceDeserializationFunc) ([]*bootResource, error) {
 	result := make([]*bootResource, 0, len(sourceList))
 	for i, value := range sourceList {
@@ -103,10 +77,10 @@ var bootResourceDeserializationFuncs = map[version.Number]bootResourceDeserializ
 func bootResource_2_0(source map[string]interface{}) (*bootResource, error) {
 	fields := schema.Fields{
 		"resource_uri": schema.String(),
-		"id":           schema.ForceInt(),
-		"name":         schema.String(),
+		"ID":           schema.ForceInt(),
+		"Name":         schema.String(),
 		"type":         schema.String(),
-		"architecture": schema.String(),
+		"Architecture": schema.String(),
 		"subarches":    schema.String(),
 		"kflavor":      schema.String(),
 	}
@@ -124,13 +98,13 @@ func bootResource_2_0(source map[string]interface{}) (*bootResource, error) {
 	// contains fields of the right type.
 
 	result := &bootResource{
-		resourceURI:  valid["resource_uri"].(string),
-		id:           valid["id"].(int),
-		name:         valid["name"].(string),
-		type_:        valid["type"].(string),
-		architecture: valid["architecture"].(string),
-		subArches:    valid["subarches"].(string),
-		kernelFlavor: valid["kflavor"].(string),
+		ResourceURI:  valid["resource_uri"].(string),
+		ID:           valid["ID"].(int),
+		Name:         valid["Name"].(string),
+		Type:         valid["type"].(string),
+		Architecture: valid["Architecture"].(string),
+		SubArches:    valid["subarches"].(string),
+		KernelFlavor: valid["kflavor"].(string),
 	}
 	return result, nil
 }

@@ -15,7 +15,7 @@ var _ = gc.Suite(&vlanSuite{})
 
 func (*vlanSuite) TestReadVLANsBadSchema(c *gc.C) {
 	_, err := readVLANs(twoDotOh, "wat?")
-	c.Assert(err.Error(), gc.Equals, `vlan base schema check failed: expected list, got string("wat?")`)
+	c.Assert(err.Error(), gc.Equals, `VLAN base schema check failed: expected list, got string("wat?")`)
 }
 
 func (s *vlanSuite) TestReadVLANsWithName(c *gc.C) {
@@ -24,26 +24,26 @@ func (s *vlanSuite) TestReadVLANsWithName(c *gc.C) {
 	c.Assert(vlans, gc.HasLen, 1)
 	readVLAN := vlans[0]
 	s.assertVLAN(c, readVLAN, &vlan{
-		id:            1,
-		name:          "untagged",
-		fabric:        "fabric-0",
-		vid:           2,
-		mtu:           1500,
-		dhcp:          true,
-		primaryRack:   "a-rack",
-		secondaryRack: "",
+		ID:            1,
+		Name:          "untagged",
+		Fabric:        "Fabric-0",
+		VID:           2,
+		MTU:           1500,
+		DHCP:          true,
+		PrimaryRack:   "a-rack",
+		SecondaryRack: "",
 	})
 }
 
 func (*vlanSuite) assertVLAN(c *gc.C, givenVLAN, expectedVLAN *vlan) {
-	c.Check(givenVLAN.ID(), gc.Equals, expectedVLAN.id)
-	c.Check(givenVLAN.Name(), gc.Equals, expectedVLAN.name)
-	c.Check(givenVLAN.Fabric(), gc.Equals, expectedVLAN.fabric)
-	c.Check(givenVLAN.VID(), gc.Equals, expectedVLAN.vid)
-	c.Check(givenVLAN.MTU(), gc.Equals, expectedVLAN.mtu)
-	c.Check(givenVLAN.DHCP(), gc.Equals, expectedVLAN.dhcp)
-	c.Check(givenVLAN.PrimaryRack(), gc.Equals, expectedVLAN.primaryRack)
-	c.Check(givenVLAN.SecondaryRack(), gc.Equals, expectedVLAN.secondaryRack)
+	c.Check(givenVLAN.ID(), gc.Equals, expectedVLAN.ID)
+	c.Check(givenVLAN.Name(), gc.Equals, expectedVLAN.Name)
+	c.Check(givenVLAN.Fabric(), gc.Equals, expectedVLAN.Fabric)
+	c.Check(givenVLAN.VID(), gc.Equals, expectedVLAN.VID)
+	c.Check(givenVLAN.MTU(), gc.Equals, expectedVLAN.MTU)
+	c.Check(givenVLAN.DHCP(), gc.Equals, expectedVLAN.DHCP)
+	c.Check(givenVLAN.PrimaryRack(), gc.Equals, expectedVLAN.PrimaryRack)
+	c.Check(givenVLAN.SecondaryRack(), gc.Equals, expectedVLAN.SecondaryRack)
 }
 
 func (s *vlanSuite) TestReadVLANsWithoutName(c *gc.C) {
@@ -52,20 +52,20 @@ func (s *vlanSuite) TestReadVLANsWithoutName(c *gc.C) {
 	c.Assert(vlans, gc.HasLen, 1)
 	readVLAN := vlans[0]
 	s.assertVLAN(c, readVLAN, &vlan{
-		id:            5006,
-		name:          "",
-		fabric:        "maas-management",
-		vid:           30,
-		mtu:           1500,
-		dhcp:          true,
-		primaryRack:   "4y3h7n",
-		secondaryRack: "",
+		ID:            5006,
+		Name:          "",
+		Fabric:        "maas-management",
+		VID:           30,
+		MTU:           1500,
+		DHCP:          true,
+		PrimaryRack:   "4y3h7n",
+		SecondaryRack: "",
 	})
 }
 
 func (*vlanSuite) TestLowVersion(c *gc.C) {
 	_, err := readVLANs(version.MustParse("1.9.0"), parseJSON(c, vlanResponseWithName))
-	c.Assert(err.Error(), gc.Equals, `no vlan read func for version 1.9.0`)
+	c.Assert(err.Error(), gc.Equals, `no VLAN read func for version 1.9.0`)
 }
 
 func (*vlanSuite) TestHighVersion(c *gc.C) {
@@ -78,14 +78,14 @@ const (
 	vlanResponseWithName = `
 [
     {
-        "name": "untagged",
-        "vid": 2,
+        "Name": "untagged",
+        "VID": 2,
         "primary_rack": "a-rack",
-        "resource_uri": "/MAAS/api/2.0/vlans/1/",
-        "id": 1,
+        "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+        "ID": 1,
         "secondary_rack": null,
-        "fabric": "fabric-0",
-        "mtu": 1500,
+        "Fabric": "Fabric-0",
+        "MTU": 1500,
         "dhcp_on": true
     }
 ]
@@ -94,14 +94,14 @@ const (
 [
     {
         "dhcp_on": true,
-        "id": 5006,
-        "mtu": 1500,
-        "fabric": "maas-management",
-        "vid": 30,
+        "ID": 5006,
+        "MTU": 1500,
+        "Fabric": "maas-management",
+        "VID": 30,
         "primary_rack": "4y3h7n",
-        "name": null,
+        "Name": null,
         "external_dhcp": null,
-        "resource_uri": "/MAAS/api/2.0/vlans/5006/",
+        "resource_uri": "/MAAS/api/2.0/VLANs/5006/",
         "secondary_rack": null
     }
 ]

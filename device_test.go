@@ -48,8 +48,8 @@ func (*deviceSuite) TestReadDevices(c *gc.C) {
 func (*deviceSuite) TestReadDevicesNils(c *gc.C) {
 	json := parseJSON(c, devicesResponse)
 	deviceMap := json.([]interface{})[0].(map[string]interface{})
-	deviceMap["owner"] = nil
-	deviceMap["parent"] = nil
+	deviceMap["Owner"] = nil
+	deviceMap["Parent"] = nil
 	devices, err := readDevices(twoDotOh, json)
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(devices, gc.HasLen, 1)
@@ -133,10 +133,10 @@ func (s *deviceSuite) TestCreateInterface(c *gc.C) {
 
 	request := server.LastRequest()
 	form := request.PostForm
-	c.Assert(form.Get("name"), gc.Equals, "eth43")
+	c.Assert(form.Get("Name"), gc.Equals, "eth43")
 	c.Assert(form.Get("mac_address"), gc.Equals, "some-mac-address")
-	c.Assert(form.Get("vlan"), gc.Equals, "33")
-	c.Assert(form.Get("tags"), gc.Equals, "foo,bar")
+	c.Assert(form.Get("VLAN"), gc.Equals, "33")
+	c.Assert(form.Get("Tags"), gc.Equals, "foo,bar")
 }
 
 func minimalCreateInterfaceArgs() CreateInterfaceArgs {
@@ -200,28 +200,28 @@ func (s *deviceSuite) getServerAndDevice(c *gc.C) (*SimpleTestServer, *device) {
 func (s *deviceSuite) TestDelete(c *gc.C) {
 	server, device := s.getServerAndDevice(c)
 	// Successful delete is 204 - StatusNoContent
-	server.AddDeleteResponse(device.resourceURI, http.StatusNoContent, "")
+	server.AddDeleteResponse(device.ResourceURI, http.StatusNoContent, "")
 	err := device.Delete()
 	c.Assert(err, jc.ErrorIsNil)
 }
 
 func (s *deviceSuite) TestDelete404(c *gc.C) {
 	_, device := s.getServerAndDevice(c)
-	// No path, so 404
+	// No Path, so 404
 	err := device.Delete()
 	c.Assert(err, jc.Satisfies, IsNoMatchError)
 }
 
 func (s *deviceSuite) TestDeleteForbidden(c *gc.C) {
 	server, device := s.getServerAndDevice(c)
-	server.AddDeleteResponse(device.resourceURI, http.StatusForbidden, "")
+	server.AddDeleteResponse(device.ResourceURI, http.StatusForbidden, "")
 	err := device.Delete()
 	c.Assert(err, jc.Satisfies, IsPermissionError)
 }
 
 func (s *deviceSuite) TestDeleteUnknown(c *gc.C) {
 	server, device := s.getServerAndDevice(c)
-	server.AddDeleteResponse(device.resourceURI, http.StatusConflict, "")
+	server.AddDeleteResponse(device.ResourceURI, http.StatusConflict, "")
 	err := device.Delete()
 	c.Assert(err, jc.Satisfies, IsUnexpectedError)
 }
@@ -229,30 +229,30 @@ func (s *deviceSuite) TestDeleteUnknown(c *gc.C) {
 const (
 	deviceResponse = `
     {
-        "zone": {
-            "description": "",
+        "Zone": {
+            "Description": "",
             "resource_uri": "/MAAS/api/2.0/zones/default/",
-            "name": "default"
+            "Name": "default"
         },
         "domain": {
             "resource_record_count": 0,
             "resource_uri": "/MAAS/api/2.0/domains/0/",
             "authoritative": true,
-            "name": "maas",
+            "Name": "maas",
             "ttl": null,
-            "id": 0
+            "ID": 0
         },
         "node_type_name": "Device",
         "address_ttl": null,
-        "hostname": "furnacelike-brittney",
+        "Hostname": "furnacelike-brittney",
         "node_type": 1,
         "resource_uri": "/MAAS/api/2.0/devices/4y3haf/",
         "ip_addresses": ["192.168.100.11"],
-        "owner": "thumper",
+        "Owner": "thumper",
         "tag_names": [],
-        "fqdn": "furnacelike-brittney.maas",
+        "FQDN": "furnacelike-brittney.maas",
         "system_id": "4y3haf",
-        "parent": "4y3ha3",
+        "Parent": "4y3ha3",
         "interface_set": [
             {
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3haf/interfaces/48/",
@@ -261,25 +261,25 @@ const (
                 "params": "",
                 "discovered": null,
                 "effective_mtu": 1500,
-                "id": 48,
-                "children": [],
-                "links": [],
-                "name": "eth0",
-                "vlan": {
+                "ID": 48,
+                "Children": [],
+                "Links": [],
+                "Name": "eth0",
+                "VLAN": {
                     "secondary_rack": null,
                     "dhcp_on": true,
-                    "fabric": "fabric-0",
-                    "mtu": 1500,
+                    "Fabric": "Fabric-0",
+                    "MTU": 1500,
                     "primary_rack": "4y3h7n",
-                    "resource_uri": "/MAAS/api/2.0/vlans/1/",
+                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
                     "external_dhcp": null,
-                    "name": "untagged",
-                    "id": 1,
-                    "vid": 0
+                    "Name": "untagged",
+                    "ID": 1,
+                    "VID": 0
                 },
-                "tags": [],
-                "parents": [],
-                "enabled": true
+                "Tags": [],
+                "Parents": [],
+                "Enabled": true
             },
             {
                 "resource_uri": "/MAAS/api/2.0/nodes/4y3haf/interfaces/49/",
@@ -288,30 +288,30 @@ const (
                 "params": {},
                 "discovered": null,
                 "effective_mtu": 1500,
-                "id": 49,
-                "children": [],
-                "links": [
+                "ID": 49,
+                "Children": [],
+                "Links": [
                     {
-                        "mode": "link_up",
-                        "id": 101
+                        "Mode": "link_up",
+                        "ID": 101
                     }
                 ],
-                "name": "eth1",
-                "vlan": {
+                "Name": "eth1",
+                "VLAN": {
                     "secondary_rack": null,
                     "dhcp_on": true,
-                    "fabric": "fabric-0",
-                    "mtu": 1500,
+                    "Fabric": "Fabric-0",
+                    "MTU": 1500,
                     "primary_rack": "4y3h7n",
-                    "resource_uri": "/MAAS/api/2.0/vlans/1/",
+                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
                     "external_dhcp": null,
-                    "name": "untagged",
-                    "id": 1,
-                    "vid": 0
+                    "Name": "untagged",
+                    "ID": 1,
+                    "VID": 0
                 },
-                "tags": [],
-                "parents": [],
-                "enabled": true
+                "Tags": [],
+                "Parents": [],
+                "Enabled": true
             }
         ]
     }

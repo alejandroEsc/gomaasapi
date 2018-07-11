@@ -10,65 +10,29 @@ import (
 )
 
 type subnet struct {
-	// Add the controller in when we need to do things with the subnet.
-	// controller Controller
+	// Add the Controller in when we need to do things with the Subnet.
+	// Controller Controller
 
-	resourceURI string
+	ResourceURI string
 
-	id    int
-	name  string
-	space string
-	vlan  *vlan
+	ID    int
+	Name  string
+	Space string
+	VLAN  *vlan
 
-	gateway string
-	cidr    string
-
-	dnsServers []string
+	Gateway string
+	CIDR    string
+	// DNSServers is a list of ip addresses of the DNS servers for the Subnet.
+	// This list may be empty.
+	DNSServers []string
 }
 
-// ID implements Subnet.
-func (s *subnet) ID() int {
-	return s.id
-}
-
-// Name implements Subnet.
-func (s *subnet) Name() string {
-	return s.name
-}
-
-// Space implements Subnet.
-func (s *subnet) Space() string {
-	return s.space
-}
-
-// VLAN implements Subnet.
-func (s *subnet) VLAN() VLAN {
-	if s.vlan == nil {
-		return nil
-	}
-	return s.vlan
-}
-
-// Gateway implements Subnet.
-func (s *subnet) Gateway() string {
-	return s.gateway
-}
-
-// CIDR implements Subnet.
-func (s *subnet) CIDR() string {
-	return s.cidr
-}
-
-// DNSServers implements Subnet.
-func (s *subnet) DNSServers() []string {
-	return s.dnsServers
-}
 
 func readSubnets(controllerVersion version.Number, source interface{}) ([]*subnet, error) {
 	checker := schema.List(schema.StringMap(schema.Any()))
 	coerced, err := checker.Coerce(source, nil)
 	if err != nil {
-		return nil, errors.Annotatef(err, "subnet base schema check failed")
+		return nil, errors.Annotatef(err, "Subnet base schema check failed")
 	}
 	valid := coerced.([]interface{})
 
@@ -79,23 +43,23 @@ func readSubnets(controllerVersion version.Number, source interface{}) ([]*subne
 		}
 	}
 	if deserialisationVersion == version.Zero {
-		return nil, errors.Errorf("no subnet read func for version %s", controllerVersion)
+		return nil, errors.Errorf("no Subnet read func for version %s", controllerVersion)
 	}
 	readFunc := subnetDeserializationFuncs[deserialisationVersion]
 	return readSubnetList(valid, readFunc)
 }
 
-// readSubnetList expects the values of the sourceList to be string maps.
+// readSubnetList expects the Values of the sourceList to be string maps.
 func readSubnetList(sourceList []interface{}, readFunc subnetDeserializationFunc) ([]*subnet, error) {
 	result := make([]*subnet, 0, len(sourceList))
 	for i, value := range sourceList {
 		source, ok := value.(map[string]interface{})
 		if !ok {
-			return nil, errors.Errorf("unexpected value for subnet %d, %T", i, value)
+			return nil, errors.Errorf("unexpected value for Subnet %d, %T", i, value)
 		}
 		subnet, err := readFunc(source)
 		if err != nil {
-			return nil, errors.Annotatef(err, "subnet %d", i)
+			return nil, errors.Annotatef(err, "Subnet %d", i)
 		}
 		result = append(result, subnet)
 	}
@@ -111,24 +75,24 @@ var subnetDeserializationFuncs = map[version.Number]subnetDeserializationFunc{
 func subnet_2_0(source map[string]interface{}) (*subnet, error) {
 	fields := schema.Fields{
 		"resource_uri": schema.String(),
-		"id":           schema.ForceInt(),
-		"name":         schema.String(),
+		"ID":           schema.ForceInt(),
+		"Name":         schema.String(),
 		"space":        schema.String(),
 		"gateway_ip":   schema.OneOf(schema.Nil(""), schema.String()),
 		"cidr":         schema.String(),
-		"vlan":         schema.StringMap(schema.Any()),
+		"VLAN":         schema.StringMap(schema.Any()),
 		"dns_servers":  schema.OneOf(schema.Nil(""), schema.List(schema.String())),
 	}
 	checker := schema.FieldMap(fields, nil) // no defaults
 	coerced, err := checker.Coerce(source, nil)
 	if err != nil {
-		return nil, errors.Annotatef(err, "subnet 2.0 schema check failed")
+		return nil, errors.Annotatef(err, "Subnet 2.0 schema check failed")
 	}
 	valid := coerced.(map[string]interface{})
 	// From here we know that the map returned from the schema coercion
 	// contains fields of the right type.
 
-	vlan, err := vlan_2_0(valid["vlan"].(map[string]interface{}))
+	vlan, err := vlan_2_0(valid["VLAN"].(map[string]interface{}))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -139,14 +103,14 @@ func subnet_2_0(source map[string]interface{}) (*subnet, error) {
 	gateway, _ := valid["gateway_ip"].(string)
 
 	result := &subnet{
-		resourceURI: valid["resource_uri"].(string),
-		id:          valid["id"].(int),
-		name:        valid["name"].(string),
-		space:       valid["space"].(string),
-		vlan:        vlan,
-		gateway:     gateway,
-		cidr:        valid["cidr"].(string),
-		dnsServers:  convertToStringSlice(valid["dns_servers"]),
+		ResourceURI: valid["resource_uri"].(string),
+		ID:          valid["ID"].(int),
+		Name:        valid["Name"].(string),
+		Space:       valid["space"].(string),
+		VLAN:        vlan,
+		Gateway:     gateway,
+		CIDR:        valid["cidr"].(string),
+		DNSServers:  convertToStringSlice(valid["dns_servers"]),
 	}
 	return result, nil
 }

@@ -18,12 +18,12 @@ func getStaticRoutesEndpoint(version string) string {
 
 // TestStaticRoute is the MAAS API Static Route representation
 type TestStaticRoute struct {
-	Destination TestSubnet `json:"destination"`
-	Source      TestSubnet `json:"source"`
-	Metric      uint       `json:"metric"`
+	Destination TestSubnet `json:"Destination"`
+	Source      TestSubnet `json:"Source"`
+	Metric      uint       `json:"Metric"`
 	GatewayIP   string     `json:"gateway_ip"`
 	ResourceURI string     `json:"resource_uri"`
-	ID          uint       `json:"id"`
+	ID          uint       `json:"ID"`
 	// These are internal bookkeeping, and not part of the public API, so
 	// should not be in the JSON
 	sourceCIDR      string `json:"-"`
@@ -72,7 +72,7 @@ func staticRoutesHandler(server *TestServer, w http.ResponseWriter, r *http.Requ
 
 		if r.URL.Path == staticRoutesURL {
 			var routes []*TestStaticRoute
-			// Iterating by id rather than a dictionary iteration
+			// Iterating by ID rather than a dictionary iteration
 			// preserves the order of the routes in the result.
 			for i := uint(1); i < server.nextStaticRoute; i++ {
 				route, ok := server.staticRoutes[i]
@@ -107,10 +107,10 @@ func staticRoutesHandler(server *TestServer, w http.ResponseWriter, r *http.Requ
 
 // CreateStaticRoute is used to create new Static Routes on the server.
 type CreateStaticRoute struct {
-	SourceCIDR      string `json:"source"`
-	DestinationCIDR string `json:"destination"`
+	SourceCIDR      string `json:"Source"`
+	DestinationCIDR string `json:"Destination"`
 	GatewayIP       string `json:"gateway_ip"`
-	Metric          uint   `json:"metric"`
+	Metric          uint   `json:"Metric"`
 }
 
 func decodePostedStaticRoute(staticRouteJSON io.Reader) CreateStaticRoute {
@@ -141,7 +141,7 @@ func (server *TestServer) NewStaticRoute(staticRouteJSON io.Reader) *TestStaticR
 	return newStaticRoute
 }
 
-// setSubnetsOnStaticRoutes fetches the subnets for the specified static route
+// setSubnetsOnStaticRoutes fetches the Subnets for the specified static route
 // and adds them to it.
 func (server *TestServer) setSubnetsOnStaticRoute(staticRoute *TestStaticRoute) {
 	for i := uint(1); i < server.nextSubnet; i++ {

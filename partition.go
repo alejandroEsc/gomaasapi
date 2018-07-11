@@ -10,49 +10,16 @@ import (
 )
 
 type partition struct {
-	resourceURI string
+	ResourceURI string
 
-	id   int
-	path string
-	uuid string
+	ID   int
+	Path string
+	UUID string
 
-	usedFor string
-	size    uint64
+	UsedFor string
+	Size    uint64
 
-	filesystem *filesystem
-}
-
-// ID implements Partition.
-func (p *partition) ID() int {
-	return p.id
-}
-
-// Path implements Partition.
-func (p *partition) Path() string {
-	return p.path
-}
-
-// FileSystem implements Partition.
-func (p *partition) FileSystem() FileSystem {
-	if p.filesystem == nil {
-		return nil
-	}
-	return p.filesystem
-}
-
-// UUID implements Partition.
-func (p *partition) UUID() string {
-	return p.uuid
-}
-
-// UsedFor implements Partition.
-func (p *partition) UsedFor() string {
-	return p.usedFor
-}
-
-// Size implements Partition.
-func (p *partition) Size() uint64 {
-	return p.size
+	FileSystem *filesystem
 }
 
 func readPartitions(controllerVersion version.Number, source interface{}) ([]*partition, error) {
@@ -76,7 +43,7 @@ func readPartitions(controllerVersion version.Number, source interface{}) ([]*pa
 	return readPartitionList(valid, readFunc)
 }
 
-// readPartitionList expects the values of the sourceList to be string maps.
+// readPartitionList expects the Values of the sourceList to be string maps.
 func readPartitionList(sourceList []interface{}, readFunc partitionDeserializationFunc) ([]*partition, error) {
 	result := make([]*partition, 0, len(sourceList))
 	for i, value := range sourceList {
@@ -103,17 +70,17 @@ func partition_2_0(source map[string]interface{}) (*partition, error) {
 	fields := schema.Fields{
 		"resource_uri": schema.String(),
 
-		"id":   schema.ForceInt(),
-		"path": schema.String(),
-		"uuid": schema.OneOf(schema.Nil(""), schema.String()),
+		"ID":   schema.ForceInt(),
+		"Path": schema.String(),
+		"UUID": schema.OneOf(schema.Nil(""), schema.String()),
 
 		"used_for": schema.String(),
-		"size":     schema.ForceUint(),
+		"Size":     schema.ForceUint(),
 
 		"filesystem": schema.OneOf(schema.Nil(""), schema.StringMap(schema.Any())),
 	}
 	defaults := schema.Defaults{
-		"uuid": "",
+		"UUID": "",
 	}
 	checker := schema.FieldMap(fields, defaults)
 	coerced, err := checker.Coerce(source, nil)
@@ -131,15 +98,15 @@ func partition_2_0(source map[string]interface{}) (*partition, error) {
 			return nil, errors.Trace(err)
 		}
 	}
-	uuid, _ := valid["uuid"].(string)
+	uuid, _ := valid["UUID"].(string)
 	result := &partition{
-		resourceURI: valid["resource_uri"].(string),
-		id:          valid["id"].(int),
-		path:        valid["path"].(string),
-		uuid:        uuid,
-		usedFor:     valid["used_for"].(string),
-		size:        valid["size"].(uint64),
-		filesystem:  filesystem,
+		ResourceURI: valid["resource_uri"].(string),
+		ID:          valid["ID"].(int),
+		Path:        valid["Path"].(string),
+		UUID:        uuid,
+		UsedFor:     valid["used_for"].(string),
+		Size:        valid["Size"].(uint64),
+		FileSystem:  filesystem,
 	}
 	return result, nil
 }

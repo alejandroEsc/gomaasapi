@@ -8,7 +8,7 @@ import (
 	"net/url"
 )
 
-// URLParams wraps url.Values to easily add values, but skipping empty ones.
+// URLParams wraps url.Values to easily add Values, but skipping empty ones.
 type URLParams struct {
 	Values url.Values
 }
@@ -18,28 +18,28 @@ func NewURLParams() *URLParams {
 	return &URLParams{Values: make(url.Values)}
 }
 
-// MaybeAdd adds the (name, value) pair iff value is not empty.
+// MaybeAdd adds the (Name, value) pair iff value is not empty.
 func (p *URLParams) MaybeAdd(name, value string) {
 	if value != "" {
 		p.Values.Add(name, value)
 	}
 }
 
-// MaybeAddInt adds the (name, value) pair iff value is not zero.
+// MaybeAddInt adds the (Name, value) pair iff value is not zero.
 func (p *URLParams) MaybeAddInt(name string, value int) {
 	if value != 0 {
 		p.Values.Add(name, fmt.Sprint(value))
 	}
 }
 
-// MaybeAddBool adds the (name, value) pair iff value is true.
+// MaybeAddBool adds the (Name, value) pair iff value is true.
 func (p *URLParams) MaybeAddBool(name string, value bool) {
 	if value {
 		p.Values.Add(name, fmt.Sprint(value))
 	}
 }
 
-// MaybeAddMany adds the (name, value) for each value in values iff
+// MaybeAddMany adds the (Name, value) for each value in Values iff
 // value is not empty.
 func (p *URLParams) MaybeAddMany(name string, values []string) {
 	for _, value := range values {

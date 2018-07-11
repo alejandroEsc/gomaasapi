@@ -14,28 +14,22 @@ import (
 )
 
 type file struct {
-	controller *controller
+	Controller *controller
 
-	resourceURI  string
-	filename     string
-	anonymousURI *url.URL
-	content      string
+	ResourceURI  string
+	// Filename is the Name of the file. No Path, just the Filename.
+	Filename     string
+	// AnonymousURL is a URL that can be used to retrieve the conents of the
+	// file without credentials.
+	AnonymousURI *url.URL
+	Content      string
 }
 
-// Filename implements File.
-func (f *file) Filename() string {
-	return f.filename
-}
 
-// AnonymousURL implements File.
-func (f *file) AnonymousURL() string {
-	url := f.controller.client.GetURL(f.anonymousURI)
-	return url.String()
-}
 
 // Delete implements File.
 func (f *file) Delete() error {
-	err := f.controller.delete(f.resourceURI)
+	err := f.Controller.delete(f.ResourceURI)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
 			switch svrErr.StatusCode {
@@ -52,10 +46,10 @@ func (f *file) Delete() error {
 
 // ReadAll implements File.
 func (f *file) ReadAll() ([]byte, error) {
-	if f.content == "" {
+	if f.Content == "" {
 		return f.readFromServer()
 	}
-	bytes, err := base64.StdEncoding.DecodeString(f.content)
+	bytes, err := base64.StdEncoding.DecodeString(f.Content)
 	if err != nil {
 		return nil, NewUnexpectedError(err)
 	}
@@ -63,10 +57,10 @@ func (f *file) ReadAll() ([]byte, error) {
 }
 
 func (f *file) readFromServer() ([]byte, error) {
-	// If the content is available, it is base64 encoded, so
+	// If the Content is available, it is base64 encoded, so
 	args := make(url.Values)
-	args.Add("filename", f.filename)
-	bytes, err := f.controller._getRaw("files", "get", args)
+	args.Add("Filename", f.Filename)
+	bytes, err := f.Controller._getRaw("files", "get", args)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
 			switch svrErr.StatusCode {
@@ -124,7 +118,7 @@ func getFileDeserializationFunc(controllerVersion version.Number) (fileDeseriali
 	return fileDeserializationFuncs[deserialisationVersion], nil
 }
 
-// readFileList expects the values of the sourceList to be string maps.
+// readFileList expects the Values of the sourceList to be string maps.
 func readFileList(sourceList []interface{}, readFunc fileDeserializationFunc) ([]*file, error) {
 	result := make([]*file, 0, len(sourceList))
 	for i, value := range sourceList {
@@ -150,12 +144,12 @@ var fileDeserializationFuncs = map[version.Number]fileDeserializationFunc{
 func file_2_0(source map[string]interface{}) (*file, error) {
 	fields := schema.Fields{
 		"resource_uri":      schema.String(),
-		"filename":          schema.String(),
+		"Filename":          schema.String(),
 		"anon_resource_uri": schema.String(),
-		"content":           schema.String(),
+		"Content":           schema.String(),
 	}
 	defaults := schema.Defaults{
-		"content": "",
+		"Content": "",
 	}
 	checker := schema.FieldMap(fields, defaults)
 	coerced, err := checker.Coerce(source, nil)
@@ -172,10 +166,10 @@ func file_2_0(source map[string]interface{}) (*file, error) {
 	}
 
 	result := &file{
-		resourceURI:  valid["resource_uri"].(string),
-		filename:     valid["filename"].(string),
-		anonymousURI: anonURI,
-		content:      valid["content"].(string),
+		ResourceURI:  valid["resource_uri"].(string),
+		Filename:     valid["Filename"].(string),
+		AnonymousURI: anonURI,
+		Content:      valid["Content"].(string),
 	}
 	return result, nil
 }

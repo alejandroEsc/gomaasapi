@@ -15,7 +15,7 @@ var _ = gc.Suite(&fabricSuite{})
 
 func (*fabricSuite) TestReadFabricsBadSchema(c *gc.C) {
 	_, err := readFabrics(twoDotOh, "wat?")
-	c.Assert(err.Error(), gc.Equals, `fabric base schema check failed: expected list, got string("wat?")`)
+	c.Assert(err.Error(), gc.Equals, `Fabric base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*fabricSuite) TestReadFabrics(c *gc.C) {
@@ -25,7 +25,7 @@ func (*fabricSuite) TestReadFabrics(c *gc.C) {
 
 	fabric := fabrics[0]
 	c.Assert(fabric.ID(), gc.Equals, 0)
-	c.Assert(fabric.Name(), gc.Equals, "fabric-0")
+	c.Assert(fabric.Name(), gc.Equals, "Fabric-0")
 	c.Assert(fabric.ClassType(), gc.Equals, "")
 	vlans := fabric.VLANs()
 	c.Assert(vlans, gc.HasLen, 1)
@@ -34,7 +34,7 @@ func (*fabricSuite) TestReadFabrics(c *gc.C) {
 
 func (*fabricSuite) TestLowVersion(c *gc.C) {
 	_, err := readFabrics(version.MustParse("1.9.0"), parseJSON(c, fabricResponse))
-	c.Assert(err.Error(), gc.Equals, `no fabric read func for version 1.9.0`)
+	c.Assert(err.Error(), gc.Equals, `no Fabric read func for version 1.9.0`)
 }
 
 func (*fabricSuite) TestHighVersion(c *gc.C) {
@@ -46,38 +46,38 @@ func (*fabricSuite) TestHighVersion(c *gc.C) {
 var fabricResponse = `
 [
     {
-        "name": "fabric-0",
-        "id": 0,
+        "Name": "Fabric-0",
+        "ID": 0,
         "class_type": null,
-        "vlans": [
+        "VLANs": [
             {
-                "name": "untagged",
-                "vid": 0,
+                "Name": "untagged",
+                "VID": 0,
                 "primary_rack": "4y3h7n",
-                "resource_uri": "/MAAS/api/2.0/vlans/1/",
-                "id": 1,
+                "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                "ID": 1,
                 "secondary_rack": null,
-                "fabric": "fabric-0",
-                "mtu": 1500,
+                "Fabric": "Fabric-0",
+                "MTU": 1500,
                 "dhcp_on": true
             }
         ],
         "resource_uri": "/MAAS/api/2.0/fabrics/0/"
     },
     {
-        "name": "fabric-1",
-        "id": 1,
+        "Name": "Fabric-1",
+        "ID": 1,
         "class_type": null,
-        "vlans": [
+        "VLANs": [
             {
-                "name": "untagged",
-                "vid": 0,
+                "Name": "untagged",
+                "VID": 0,
                 "primary_rack": null,
-                "resource_uri": "/MAAS/api/2.0/vlans/5001/",
-                "id": 5001,
+                "resource_uri": "/MAAS/api/2.0/VLANs/5001/",
+                "ID": 5001,
                 "secondary_rack": null,
-                "fabric": "fabric-1",
-                "mtu": 1500,
+                "Fabric": "Fabric-1",
+                "MTU": 1500,
                 "dhcp_on": false
             }
         ],

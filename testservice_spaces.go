@@ -18,10 +18,10 @@ func getSpacesEndpoint(version string) string {
 
 // TestSpace is the MAAS API space representation
 type TestSpace struct {
-	Name        string       `json:"name"`
-	Subnets     []TestSubnet `json:"subnets"`
+	Name        string       `json:"Name"`
+	Subnets     []TestSubnet `json:"Subnets"`
 	ResourceURI string       `json:"resource_uri"`
-	ID          uint         `json:"id"`
+	ID          uint         `json:"ID"`
 }
 
 // spacesHandler handles requests for '/api/<version>/spaces/'.
@@ -64,7 +64,7 @@ func spacesHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 
 		if r.URL.Path == spacesURL {
 			var spaces []*TestSpace
-			// Iterating by id rather than a dictionary iteration
+			// Iterating by ID rather than a dictionary iteration
 			// preserves the order of the spaces in the result.
 			for i := uint(1); i < server.nextSpace; i++ {
 				s, ok := server.spaces[i]
@@ -94,7 +94,7 @@ func spacesHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 
 // CreateSpace is used to create new spaces on the server.
 type CreateSpace struct {
-	Name string `json:"name"`
+	Name string `json:"Name"`
 }
 
 func decodePostedSpace(spaceJSON io.Reader) CreateSpace {
@@ -118,7 +118,7 @@ func (server *TestServer) NewSpace(spaceJSON io.Reader) *TestSpace {
 	return newSpace
 }
 
-// setSubnetsOnSpace fetches the subnets for the specified space and adds them
+// setSubnetsOnSpace fetches the Subnets for the specified space and adds them
 // to it.
 func (server *TestServer) setSubnetsOnSpace(space *TestSpace) {
 	subnets := []TestSubnet{}

@@ -54,7 +54,7 @@ func (suite *TestServerSuite) TestGetResourceURI(c *C) {
 }
 
 func (suite *TestServerSuite) TestSetVersionJSON(c *C) {
-	capabilities := `{"capabilities": ["networks-management","static-ipaddresses", "devices-management"]}`
+	capabilities := `{"Capabilities": ["networks-management","static-ipaddresses", "devices-management"]}`
 	suite.server.SetVersionJSON(capabilities)
 
 	url := fmt.Sprintf("/api/%s/version/", suite.server.version)
@@ -72,8 +72,8 @@ func (suite *TestServerSuite) createDevice(c *C, macs, hostname, parent string) 
 	for _, mac := range strings.Split(macs, ",") {
 		values.Add("mac_addresses", mac)
 	}
-	values.Add("hostname", hostname)
-	values.Add("parent", parent)
+	values.Add("Hostname", hostname)
+	values.Add("Parent", parent)
 	result := suite.post(c, devicesURL, values)
 	resultMap, err := result.GetMap()
 	c.Assert(err, IsNil)
@@ -126,9 +126,9 @@ func checkDevice(c *C, device map[string]JSONObject, macs, hostname, parent stri
 		c.Check(actualMac, Equals, macSlice[i])
 	}
 
-	actualParent := getString(c, device, "parent")
+	actualParent := getString(c, device, "Parent")
 	c.Assert(actualParent, Equals, parent)
-	actualHostname := getString(c, device, "hostname")
+	actualHostname := getString(c, device, "Hostname")
 	c.Assert(actualHostname, Equals, hostname)
 }
 
@@ -149,18 +149,18 @@ func (suite *TestServerSuite) TestNewDeviceRequiredParameters(c *C) {
 	devicesURL := fmt.Sprintf("/api/%s/devices/", suite.server.version) + "?op=new"
 	values := url.Values{}
 	values.Add("mac_addresses", "foo")
-	values.Add("hostname", "bar")
+	values.Add("Hostname", "bar")
 	post := func(values url.Values) int {
 		resp, err := http.Post(suite.server.Server.URL+devicesURL, "application/x-www-form-urlencoded", strings.NewReader(values.Encode()))
 		c.Assert(err, IsNil)
 		return resp.StatusCode
 	}
 	c.Check(post(values), Equals, http.StatusBadRequest)
-	values.Del("hostname")
-	values.Add("parent", "baz")
+	values.Del("Hostname")
+	values.Add("Parent", "baz")
 	c.Check(post(values), Equals, http.StatusBadRequest)
 	values.Del("mac_addresses")
-	values.Add("hostname", "bam")
+	values.Add("Hostname", "bam")
 	c.Check(post(values), Equals, http.StatusBadRequest)
 }
 
@@ -169,8 +169,8 @@ func (suite *TestServerSuite) TestNewDevice(c *C) {
 
 	values := url.Values{}
 	values.Add("mac_addresses", "foo")
-	values.Add("hostname", "bar")
-	values.Add("parent", "baz")
+	values.Add("Hostname", "bar")
+	values.Add("Parent", "baz")
 	result := suite.post(c, devicesURL, values)
 
 	resultMap, err := result.GetMap()
@@ -185,9 +185,9 @@ func (suite *TestServerSuite) TestNewDevice(c *C) {
 	mac := getString(c, macMap, "mac_address")
 	c.Assert(mac, Equals, "foo")
 
-	parent := getString(c, resultMap, "parent")
+	parent := getString(c, resultMap, "Parent")
 	c.Assert(parent, Equals, "baz")
-	hostname := getString(c, resultMap, "hostname")
+	hostname := getString(c, resultMap, "Hostname")
 	c.Assert(hostname, Equals, "bar")
 
 	addresses, err := resultMap["ip_addresses"].GetArray()
@@ -247,7 +247,7 @@ func (suite *TestServerSuite) TestDevicesList(c *C) {
 		case secondId:
 			checkDevice(c, deviceMap, "bam", "bing", "bong")
 		default:
-			c.Fatalf("unknown system id %q", systemId)
+			c.Fatalf("unknown system ID %q", systemId)
 		}
 	}
 }
@@ -343,7 +343,7 @@ func (suite *TestServerSuite) TestInvalidOperationOnNodesIsBadRequest(c *C) {
 }
 
 func (suite *TestServerSuite) TestHandlesNodeListingUnknownPath(c *C) {
-	invalidPath := fmt.Sprintf("/api/%s/nodes/invalid/path/", suite.server.version)
+	invalidPath := fmt.Sprintf("/api/%s/nodes/invalid/Path/", suite.server.version)
 	resp, err := http.Get(suite.server.Server.URL + invalidPath)
 
 	c.Check(err, IsNil)
@@ -498,17 +498,17 @@ func uploadTo(url, fileName string, fileContent []byte) (*http.Response, error) 
 }
 
 func (suite *TestServerSuite) TestHandlesUploadFile(c *C) {
-	fileContent := []byte("test file content")
-	postURL := suite.server.Server.URL + fmt.Sprintf("/api/%s/files/?op=add&filename=filename", suite.server.version)
+	fileContent := []byte("test file Content")
+	postURL := suite.server.Server.URL + fmt.Sprintf("/api/%s/files/?op=add&Filename=Filename", suite.server.version)
 
 	resp, err := uploadTo(postURL, "upload", fileContent)
 
 	c.Check(err, IsNil)
 	c.Check(resp.StatusCode, Equals, http.StatusOK)
 	c.Check(len(suite.server.files), Equals, 1)
-	file, ok := suite.server.files["filename"]
+	file, ok := suite.server.files["Filename"]
 	c.Assert(ok, Equals, true)
-	field, err := file.GetField("content")
+	field, err := file.GetField("Content")
 	c.Assert(err, IsNil)
 	c.Check(field, Equals, base64.StdEncoding.EncodeToString(fileContent))
 }
@@ -526,7 +526,7 @@ func (suite *TestServerSuite) TestNewFileEscapesName(c *C) {
 
 func (suite *TestServerSuite) TestHandlesFile(c *C) {
 	const filename = "my-file"
-	const fileContent = "test file content"
+	const fileContent = "test file Content"
 	file := suite.server.NewFile(filename, []byte(fileContent))
 	getURI := fmt.Sprintf("/api/%s/files/%s/", suite.server.version, filename)
 	fileURI, err := file.GetField("anon_resource_uri")
@@ -544,7 +544,7 @@ func (suite *TestServerSuite) TestHandlesFile(c *C) {
 	anon_url, ok := obj["anon_resource_uri"]
 	c.Check(ok, Equals, true)
 	c.Check(anon_url.(string), Equals, fileURI)
-	base64Content, ok := obj["content"]
+	base64Content, ok := obj["Content"]
 	c.Check(ok, Equals, true)
 	decodedContent, err := base64.StdEncoding.DecodeString(base64Content.(string))
 	c.Assert(err, IsNil)
@@ -552,10 +552,10 @@ func (suite *TestServerSuite) TestHandlesFile(c *C) {
 }
 
 func (suite *TestServerSuite) TestHandlesGetFile(c *C) {
-	fileContent := []byte("test file content")
-	fileName := "filename"
+	fileContent := []byte("test file Content")
+	fileName := "Filename"
 	suite.server.NewFile(fileName, fileContent)
-	getURI := fmt.Sprintf("/api/%s/files/?op=get&filename=filename", suite.server.version)
+	getURI := fmt.Sprintf("/api/%s/files/?op=get&Filename=Filename", suite.server.version)
 
 	resp, err := http.Get(suite.server.Server.URL + getURI)
 
@@ -569,9 +569,9 @@ func (suite *TestServerSuite) TestHandlesGetFile(c *C) {
 
 func (suite *TestServerSuite) TestHandlesListReturnsSortedFilenames(c *C) {
 	fileName1 := "filename1"
-	suite.server.NewFile(fileName1, []byte("test file content"))
+	suite.server.NewFile(fileName1, []byte("test file Content"))
 	fileName2 := "filename2"
-	suite.server.NewFile(fileName2, []byte("test file content"))
+	suite.server.NewFile(fileName2, []byte("test file Content"))
 	getURI := fmt.Sprintf("/api/%s/files/?op=list", suite.server.version)
 
 	resp, err := http.Get(suite.server.Server.URL + getURI)
@@ -583,15 +583,15 @@ func (suite *TestServerSuite) TestHandlesListReturnsSortedFilenames(c *C) {
 	err = json.Unmarshal(content, &files)
 	c.Assert(err, IsNil)
 	c.Check(len(files), Equals, 2)
-	c.Check(files[0]["filename"], Equals, fileName1)
-	c.Check(files[1]["filename"], Equals, fileName2)
+	c.Check(files[0]["Filename"], Equals, fileName1)
+	c.Check(files[1]["Filename"], Equals, fileName2)
 }
 
 func (suite *TestServerSuite) TestHandlesListFiltersFiles(c *C) {
 	fileName1 := "filename1"
-	suite.server.NewFile(fileName1, []byte("test file content"))
+	suite.server.NewFile(fileName1, []byte("test file Content"))
 	fileName2 := "prefixFilename"
-	suite.server.NewFile(fileName2, []byte("test file content"))
+	suite.server.NewFile(fileName2, []byte("test file Content"))
 	getURI := fmt.Sprintf("/api/%s/files/?op=list&prefix=prefix", suite.server.version)
 
 	resp, err := http.Get(suite.server.Server.URL + getURI)
@@ -604,12 +604,12 @@ func (suite *TestServerSuite) TestHandlesListFiltersFiles(c *C) {
 	err = json.Unmarshal(content, &files)
 	c.Assert(err, IsNil)
 	c.Check(len(files), Equals, 1)
-	c.Check(files[0]["filename"], Equals, fileName2)
+	c.Check(files[0]["Filename"], Equals, fileName2)
 }
 
 func (suite *TestServerSuite) TestHandlesListOmitsContent(c *C) {
 	const filename = "myfile"
-	fileContent := []byte("test file content")
+	fileContent := []byte("test file Content")
 	suite.server.NewFile(filename, fileContent)
 	getURI := fmt.Sprintf("/api/%s/files/?op=list", suite.server.version)
 
@@ -621,13 +621,13 @@ func (suite *TestServerSuite) TestHandlesListOmitsContent(c *C) {
 	var files []map[string]string
 	err = json.Unmarshal(content, &files)
 
-	// The resulting dict does not have a "content" entry.
+	// The resulting dict does not have a "Content" entry.
 	file := files[0]
-	_, ok := file["content"]
+	_, ok := file["Content"]
 	c.Check(ok, Equals, false)
 
 	// But the original as stored in the test service still has it.
-	contentAfter, err := suite.server.files[filename].GetField("content")
+	contentAfter, err := suite.server.files[filename].GetField("Content")
 	c.Assert(err, IsNil)
 	bytes, err := base64.StdEncoding.DecodeString(contentAfter)
 	c.Assert(err, IsNil)
@@ -636,7 +636,7 @@ func (suite *TestServerSuite) TestHandlesListOmitsContent(c *C) {
 
 func (suite *TestServerSuite) TestDeleteFile(c *C) {
 	fileName1 := "filename1"
-	suite.server.NewFile(fileName1, []byte("test file content"))
+	suite.server.NewFile(fileName1, []byte("test file Content"))
 	deleteURI := fmt.Sprintf("/api/%s/files/filename1/", suite.server.version)
 
 	req, err := http.NewRequest("DELETE", suite.server.Server.URL+deleteURI, nil)
@@ -1020,7 +1020,7 @@ func (suite *TestServerSuite) TestSubnetStats(c *C) {
 	suite.server.NewSubnet(subnetJSON(defaultSubnet()))
 
 	stats := suite.getSubnetStats(c, 1)
-	// There are 254 usable addresses in a class C subnet, so these
+	// There are 254 usable addresses in a class C Subnet, so these
 	// stats are fixed
 	expected := SubnetStats{
 		NumAvailable:     254,
@@ -1059,7 +1059,7 @@ func (suite *TestServerSuite) TestSubnetStats(c *C) {
 }
 
 func (suite *TestServerSuite) TestSubnetsInNodes(c *C) {
-	// Create a subnet
+	// Create a Subnet
 	subnet := suite.server.NewSubnet(subnetJSON(defaultSubnet()))
 
 	// Create a node
@@ -1067,7 +1067,7 @@ func (suite *TestServerSuite) TestSubnetsInNodes(c *C) {
 	node.SystemID = "node-89d832ca-8877-11e5-b5a5-00163e86022b"
 	suite.server.NewNode(fmt.Sprintf(`{"system_id": "%s"}`, "node-89d832ca-8877-11e5-b5a5-00163e86022b"))
 
-	// Put the node in the subnet
+	// Put the node in the Subnet
 	var nni NodeNetworkInterface
 	nni.Name = "eth0"
 	nni.Links = append(nni.Links, NetworkLink{uint(1), "auto", subnet})
@@ -1200,7 +1200,7 @@ func (suite *TestMAASObjectSuite) TestListNodes(c *C) {
 
 func (suite *TestMAASObjectSuite) TestSubnetReservedIPRangesNoAddresses(c *C) {
 	suite.TestMAASObject.TestServer.NewSubnet(subnetJSON(defaultSubnet()))
-	subnetsListing := suite.TestMAASObject.GetSubObject("subnets").GetSubObject("1")
+	subnetsListing := suite.TestMAASObject.GetSubObject("Subnets").GetSubObject("1")
 	rangesJson, err := subnetsListing.CallGet("reserved_ip_ranges", url.Values{})
 	c.Check(err, IsNil)
 	ranges, err := rangesJson.GetArray()
@@ -1226,7 +1226,7 @@ func (suite *TestMAASObjectSuite) TestListNodesSelectedNodes(c *C) {
 	suite.TestMAASObject.TestServer.NewNode(input2)
 	nodeListing := suite.TestMAASObject.GetSubObject("nodes")
 
-	listNodeObjects, err := nodeListing.CallGet("list", url.Values{"id": {"mysystemid2"}})
+	listNodeObjects, err := nodeListing.CallGet("list", url.Values{"ID": {"mysystemid2"}})
 
 	c.Check(err, IsNil)
 	listNodes, err := listNodeObjects.GetArray()
@@ -1262,7 +1262,7 @@ func (suite *TestMAASObjectSuite) TestNodePostPopulatesInterfaces(c *C) {
 	input := `{"system_id": "mysystemid"}`
 	node := server.NewNode(input)
 	subnet := server.NewSubnet(subnetJSON(defaultSubnet()))
-	// Put the node in the subnet
+	// Put the node in the Subnet
 	var nni NodeNetworkInterface
 	nni.Name = "eth0"
 	nni.Links = append(nni.Links, NetworkLink{uint(1), "auto", subnet})
@@ -1358,7 +1358,7 @@ func (suite *TestMAASObjectSuite) TestUploadFile(c *C) {
 	const filename = "myfile.txt"
 	const fileContent = "uploaded contents"
 	files := suite.TestMAASObject.GetSubObject("files")
-	params := url.Values{"filename": {filename}}
+	params := url.Values{"Filename": {filename}}
 	filesMap := map[string][]byte{"file": []byte(fileContent)}
 
 	// Upload a file.
@@ -1374,10 +1374,10 @@ func (suite *TestMAASObjectSuite) TestUploadFile(c *C) {
 }
 
 func (suite *TestMAASObjectSuite) TestFileNamesMayContainSlashes(c *C) {
-	const filename = "filename/with/slashes/in/it"
+	const filename = "Filename/with/slashes/in/it"
 	const fileContent = "file contents"
 	files := suite.TestMAASObject.GetSubObject("files")
-	params := url.Values{"filename": {filename}}
+	params := url.Values{"Filename": {filename}}
 	filesMap := map[string][]byte{"file": []byte(fileContent)}
 
 	_, err := files.CallPostFiles("add", params, filesMap)
@@ -1385,7 +1385,7 @@ func (suite *TestMAASObjectSuite) TestFileNamesMayContainSlashes(c *C) {
 
 	file, err := files.GetSubObject(filename).Get()
 	c.Assert(err, IsNil)
-	field, err := file.GetField("content")
+	field, err := file.GetField("Content")
 	c.Assert(err, IsNil)
 	c.Check(field, Equals, base64.StdEncoding.EncodeToString([]byte(fileContent)))
 }
@@ -1450,7 +1450,7 @@ func (suite *TestMAASObjectSuite) TestReleaseNodeReleasesAcquiredNode(c *C) {
 func (suite *TestMAASObjectSuite) TestGetNetworks(c *C) {
 	nodeJSON := `{"system_id": "mysystemid"}`
 	suite.TestMAASObject.TestServer.NewNode(nodeJSON)
-	networkJSON := `{"name": "mynetworkname", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`
+	networkJSON := `{"Name": "mynetworkname", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`
 	suite.TestMAASObject.TestServer.NewNetwork(networkJSON)
 	suite.TestMAASObject.TestServer.ConnectNodeToNetwork("mysystemid", "mynetworkname")
 
@@ -1466,7 +1466,7 @@ func (suite *TestMAASObjectSuite) TestGetNetworks(c *C) {
 	listNetworks, err := networkJSONArray[0].GetMAASObject()
 	c.Assert(err, IsNil)
 
-	networkName, err := listNetworks.GetField("name")
+	networkName, err := listNetworks.GetField("Name")
 	c.Assert(err, IsNil)
 	ip, err := listNetworks.GetField("ip")
 	c.Assert(err, IsNil)
@@ -1494,7 +1494,7 @@ func (suite *TestMAASObjectSuite) TestGetNetworksNone(c *C) {
 func (suite *TestMAASObjectSuite) TestListNodesWithNetworks(c *C) {
 	nodeJSON := `{"system_id": "mysystemid"}`
 	suite.TestMAASObject.TestServer.NewNode(nodeJSON)
-	networkJSON := `{"name": "mynetworkname", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`
+	networkJSON := `{"Name": "mynetworkname", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`
 	suite.TestMAASObject.TestServer.NewNetwork(networkJSON)
 	suite.TestMAASObject.TestServer.ConnectNodeToNetworkWithMACAddress("mysystemid", "mynetworkname", "aa:bb:cc:dd:ee:ff")
 
@@ -1537,10 +1537,10 @@ func (suite *TestMAASObjectSuite) TestListNetworkConnectedMACAddresses(c *C) {
 	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "node_1"}`)
 	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "node_2"}`)
 	suite.TestMAASObject.TestServer.NewNetwork(
-		`{"name": "net_1", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`,
+		`{"Name": "net_1", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`,
 	)
 	suite.TestMAASObject.TestServer.NewNetwork(
-		`{"name": "net_2", "ip": "0.2.2.0", "netmask": "255.255.255.0"}`,
+		`{"Name": "net_2", "ip": "0.2.2.0", "netmask": "255.255.255.0"}`,
 	)
 	suite.TestMAASObject.TestServer.ConnectNodeToNetworkWithMACAddress("node_2", "net_2", "aa:bb:cc:dd:ee:22")
 	suite.TestMAASObject.TestServer.ConnectNodeToNetworkWithMACAddress("node_1", "net_1", "aa:bb:cc:dd:ee:11")
@@ -1595,7 +1595,7 @@ func (suite *TestMAASObjectSuite) TestGetVersion(c *C) {
 
 	versionMap, err := versionObject.GetMap()
 	c.Assert(err, IsNil)
-	jsonArray, ok := versionMap["capabilities"]
+	jsonArray, ok := versionMap["Capabilities"]
 	c.Check(ok, Equals, true)
 	capArray, err := jsonArray.GetArray()
 	for _, capJSONName := range capArray {
@@ -1647,10 +1647,10 @@ func (suite *TestMAASObjectSuite) TestListIPAddresses(c *C) {
 
 	// Add two networks and some addresses to each one.
 	suite.TestMAASObject.TestServer.NewNetwork(
-		`{"name": "net_1", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`,
+		`{"Name": "net_1", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`,
 	)
 	suite.TestMAASObject.TestServer.NewNetwork(
-		`{"name": "net_2", "ip": "0.2.2.0", "netmask": "255.255.255.0"}`,
+		`{"Name": "net_2", "ip": "0.2.2.0", "netmask": "255.255.255.0"}`,
 	)
 	suite.TestMAASObject.TestServer.NewIPAddress("0.1.2.3", "net_1")
 	suite.TestMAASObject.TestServer.NewIPAddress("0.1.2.4", "net_1")
@@ -1699,7 +1699,7 @@ func (suite *TestMAASObjectSuite) TestListIPAddresses(c *C) {
 
 func (suite *TestMAASObjectSuite) TestReserveIPAddress(c *C) {
 	suite.TestMAASObject.TestServer.NewNetwork(
-		`{"name": "net_1", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`,
+		`{"Name": "net_1", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`,
 	)
 	ipAddresses := suite.TestMAASObject.GetSubObject("ipaddresses")
 	// First try "reserve" with requested_address set.
@@ -1717,7 +1717,7 @@ func (suite *TestMAASObjectSuite) TestReserveIPAddress(c *C) {
 
 func (suite *TestMAASObjectSuite) TestReleaseIPAddress(c *C) {
 	suite.TestMAASObject.TestServer.NewNetwork(
-		`{"name": "net_1", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`,
+		`{"Name": "net_1", "ip": "0.1.2.0", "netmask": "255.255.255.0"}`,
 	)
 	suite.TestMAASObject.TestServer.NewIPAddress("0.1.2.3", "net_1")
 	ipAddresses := suite.TestMAASObject.GetSubObject("ipaddresses")
@@ -1742,8 +1742,8 @@ func (suite *TestMAASObjectSuite) TestReleaseIPAddress(c *C) {
 
 const nodeDetailsXML = `<?xml version="1.0" standalone="yes" ?>
 <list>
-<node id="node2" claimed="true" class="system" handle="DMI:0001">
- <description>Computer</description>
+<node ID="node2" claimed="true" class="system" handle="DMI:0001">
+ <Description>Computer</Description>
 </node>
 </list>`
 
@@ -1754,7 +1754,7 @@ func (suite *TestMAASObjectSuite) TestNodeDetails(c *C) {
 
 	obj := suite.TestMAASObject.GetSubObject("nodes").GetSubObject("mysystemid")
 	uri := obj.URI()
-	result, err := obj.client.Get(uri, "details", nil)
+	result, err := obj.Client.Get(uri, "details", nil)
 	c.Assert(err, IsNil)
 
 	bsonObj := map[string]interface{}{}
@@ -1769,8 +1769,8 @@ func (suite *TestMAASObjectSuite) TestNodeDetails(c *C) {
 }
 
 func (suite *TestMAASObjectSuite) TestListNodegroups(c *C) {
-	suite.TestMAASObject.TestServer.AddBootImage("uuid-0", `{"architecture": "arm64", "release": "trusty"}`)
-	suite.TestMAASObject.TestServer.AddBootImage("uuid-1", `{"architecture": "amd64", "release": "precise"}`)
+	suite.TestMAASObject.TestServer.AddBootImage("UUID-0", `{"Architecture": "arm64", "release": "trusty"}`)
+	suite.TestMAASObject.TestServer.AddBootImage("UUID-1", `{"Architecture": "amd64", "release": "precise"}`)
 
 	nodegroupListing := suite.TestMAASObject.GetSubObject("nodegroups")
 	result, err := nodegroupListing.CallGet("list", nil)
@@ -1783,7 +1783,7 @@ func (suite *TestMAASObjectSuite) TestListNodegroups(c *C) {
 	for _, obj := range nodegroups {
 		nodegroup, err := obj.GetMAASObject()
 		c.Assert(err, IsNil)
-		uuid, err := nodegroup.GetField("uuid")
+		uuid, err := nodegroup.GetField("UUID")
 		c.Assert(err, IsNil)
 
 		nodegroupResourceURI, err := nodegroup.GetField(resourceURI)
@@ -1805,13 +1805,13 @@ func (suite *TestMAASObjectSuite) TestListNodegroupsEmptyList(c *C) {
 }
 
 func (suite *TestMAASObjectSuite) TestListNodegroupInterfaces(c *C) {
-	suite.TestMAASObject.TestServer.AddBootImage("uuid-0", `{"architecture": "arm64", "release": "trusty"}`)
+	suite.TestMAASObject.TestServer.AddBootImage("UUID-0", `{"Architecture": "arm64", "release": "trusty"}`)
 	jsonText := `{
             "ip_range_high": "172.16.0.128",
             "ip_range_low": "172.16.0.2",
             "broadcast_ip": "172.16.0.255",
             "static_ip_range_low": "172.16.0.129",
-            "name": "eth0",
+            "Name": "eth0",
             "ip": "172.16.0.2",
             "subnet_mask": "255.255.255.0",
             "management": 2,
@@ -1819,8 +1819,8 @@ func (suite *TestMAASObjectSuite) TestListNodegroupInterfaces(c *C) {
             "interface": "eth0"
         }`
 
-	suite.TestMAASObject.TestServer.NewNodegroupInterface("uuid-0", jsonText)
-	nodegroupsInterfacesListing := suite.TestMAASObject.GetSubObject("nodegroups").GetSubObject("uuid-0").GetSubObject("interfaces")
+	suite.TestMAASObject.TestServer.NewNodegroupInterface("UUID-0", jsonText)
+	nodegroupsInterfacesListing := suite.TestMAASObject.GetSubObject("nodegroups").GetSubObject("UUID-0").GetSubObject("interfaces")
 	result, err := nodegroupsInterfacesListing.CallGet("list", nil)
 	c.Assert(err, IsNil)
 
@@ -1841,7 +1841,7 @@ func (suite *TestMAASObjectSuite) TestListNodegroupInterfaces(c *C) {
 	checkMember("broadcast_ip", "172.16.0.255")
 	checkMember("static_ip_range_low", "172.16.0.129")
 	checkMember("static_ip_range_high", "172.16.0.255")
-	checkMember("name", "eth0")
+	checkMember("Name", "eth0")
 	checkMember("ip", "172.16.0.2")
 	checkMember("subnet_mask", "255.255.255.0")
 	checkMember("interface", "eth0")
@@ -1852,8 +1852,8 @@ func (suite *TestMAASObjectSuite) TestListNodegroupInterfaces(c *C) {
 }
 
 func (suite *TestMAASObjectSuite) TestListNodegroupsInterfacesEmptyList(c *C) {
-	suite.TestMAASObject.TestServer.AddBootImage("uuid-0", `{"architecture": "arm64", "release": "trusty"}`)
-	nodegroupsInterfacesListing := suite.TestMAASObject.GetSubObject("nodegroups").GetSubObject("uuid-0").GetSubObject("interfaces")
+	suite.TestMAASObject.TestServer.AddBootImage("UUID-0", `{"Architecture": "arm64", "release": "trusty"}`)
+	nodegroupsInterfacesListing := suite.TestMAASObject.GetSubObject("nodegroups").GetSubObject("UUID-0").GetSubObject("interfaces")
 	result, err := nodegroupsInterfacesListing.CallGet("list", nil)
 	c.Assert(err, IsNil)
 
@@ -1863,11 +1863,11 @@ func (suite *TestMAASObjectSuite) TestListNodegroupsInterfacesEmptyList(c *C) {
 }
 
 func (suite *TestMAASObjectSuite) TestListBootImages(c *C) {
-	suite.TestMAASObject.TestServer.AddBootImage("uuid-0", `{"architecture": "arm64", "release": "trusty"}`)
-	suite.TestMAASObject.TestServer.AddBootImage("uuid-1", `{"architecture": "amd64", "release": "precise"}`)
-	suite.TestMAASObject.TestServer.AddBootImage("uuid-1", `{"architecture": "ppc64el", "release": "precise"}`)
+	suite.TestMAASObject.TestServer.AddBootImage("UUID-0", `{"Architecture": "arm64", "release": "trusty"}`)
+	suite.TestMAASObject.TestServer.AddBootImage("UUID-1", `{"Architecture": "amd64", "release": "precise"}`)
+	suite.TestMAASObject.TestServer.AddBootImage("UUID-1", `{"Architecture": "ppc64el", "release": "precise"}`)
 
-	bootImageListing := suite.TestMAASObject.GetSubObject("nodegroups").GetSubObject("uuid-1").GetSubObject("boot-images")
+	bootImageListing := suite.TestMAASObject.GetSubObject("nodegroups").GetSubObject("UUID-1").GetSubObject("boot-images")
 	result, err := bootImageListing.CallGet("", nil)
 	c.Assert(err, IsNil)
 
@@ -1880,7 +1880,7 @@ func (suite *TestMAASObjectSuite) TestListBootImages(c *C) {
 	for i, obj := range bootImageObjects {
 		bootimage, err := obj.GetMap()
 		c.Assert(err, IsNil)
-		architecture, err := bootimage["architecture"].GetString()
+		architecture, err := bootimage["Architecture"].GetString()
 		c.Assert(err, IsNil)
 		release, err := bootimage["release"].GetString()
 		c.Assert(err, IsNil)
@@ -1911,9 +1911,9 @@ func (suite *TestMAASObjectSuite) TestListZones(c *C) {
 	for _, item := range list {
 		itemMap, err := item.GetMap()
 		c.Assert(err, IsNil)
-		name, err := itemMap["name"].GetString()
+		name, err := itemMap["Name"].GetString()
 		c.Assert(err, IsNil)
-		desc, err := itemMap["description"].GetString()
+		desc, err := itemMap["Description"].GetString()
 		c.Assert(err, IsNil)
 		m[name] = desc
 	}
@@ -1929,7 +1929,7 @@ func (suite *TestMAASObjectSuite) TestListTags(c *C) {
 		suite.TestMAASObject.TestServer.AddTag(name, comment)
 	}
 
-	result, err := suite.TestMAASObject.GetSubObject("tags").CallGet("", nil)
+	result, err := suite.TestMAASObject.GetSubObject("Tags").CallGet("", nil)
 	c.Assert(err, IsNil)
 	c.Assert(result, NotNil)
 
@@ -1941,7 +1941,7 @@ func (suite *TestMAASObjectSuite) TestListTags(c *C) {
 	for _, item := range list {
 		itemMap, err := item.GetMap()
 		c.Assert(err, IsNil)
-		name, err := itemMap["name"].GetString()
+		name, err := itemMap["Name"].GetString()
 		c.Assert(err, IsNil)
 		comment, err := itemMap["comment"].GetString()
 		c.Assert(err, IsNil)
@@ -1953,15 +1953,15 @@ func (suite *TestMAASObjectSuite) TestListTags(c *C) {
 func (suite *TestMAASObjectSuite) TestAcquireNodeZone(c *C) {
 	suite.TestMAASObject.TestServer.AddZone("z0", "rox")
 	suite.TestMAASObject.TestServer.AddZone("z1", "sux")
-	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n0", "zone": "z0"}`)
-	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n1", "zone": "z1"}`)
-	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n2", "zone": "z1"}`)
+	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n0", "Zone": "z0"}`)
+	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n1", "Zone": "z1"}`)
+	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n2", "Zone": "z1"}`)
 	nodesObj := suite.TestMAASObject.GetSubObject("nodes")
 
 	acquire := func(zone string) (string, string, error) {
 		var params url.Values
 		if zone != "" {
-			params = url.Values{"zone": []string{zone}}
+			params = url.Values{"Zone": []string{zone}}
 		}
 		jsonResponse, err := nodesObj.CallPost("acquire", params)
 		if err != nil {
@@ -1971,7 +1971,7 @@ func (suite *TestMAASObjectSuite) TestAcquireNodeZone(c *C) {
 		c.Assert(err, IsNil)
 		systemId, err := acquiredNode.GetField("system_id")
 		c.Assert(err, IsNil)
-		assignedZone, err := acquiredNode.GetField("zone")
+		assignedZone, err := acquiredNode.GetField("Zone")
 		c.Assert(err, IsNil)
 		if zone != "" {
 			c.Assert(assignedZone, Equals, zone)
@@ -1994,14 +1994,14 @@ func (suite *TestMAASObjectSuite) TestAcquireNodeZone(c *C) {
 }
 
 func (suite *TestMAASObjectSuite) TestAcquireFilterMemory(c *C) {
-	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n0", "memory": 1024}`)
-	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n1", "memory": 2048}`)
+	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n0", "Memory": 1024}`)
+	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n1", "Memory": 2048}`)
 	nodeListing := suite.TestMAASObject.GetSubObject("nodes")
 	jsonResponse, err := nodeListing.CallPost("acquire", url.Values{"mem": []string{"2048"}})
 	c.Assert(err, IsNil)
 	acquiredNode, err := jsonResponse.GetMAASObject()
 	c.Assert(err, IsNil)
-	mem, err := acquiredNode.GetMap()["memory"].GetFloat64()
+	mem, err := acquiredNode.GetMap()["Memory"].GetFloat64()
 	c.Assert(err, IsNil)
 	c.Assert(mem, Equals, float64(2048))
 }
@@ -2020,14 +2020,14 @@ func (suite *TestMAASObjectSuite) TestAcquireFilterCpuCores(c *C) {
 }
 
 func (suite *TestMAASObjectSuite) TestAcquireFilterArch(c *C) {
-	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n0", "architecture": "amd64"}`)
-	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n1", "architecture": "arm/generic"}`)
+	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n0", "Architecture": "amd64"}`)
+	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n1", "Architecture": "arm/generic"}`)
 	nodeListing := suite.TestMAASObject.GetSubObject("nodes")
 	jsonResponse, err := nodeListing.CallPost("acquire", url.Values{"arch": []string{"arm"}})
 	c.Assert(err, IsNil)
 	acquiredNode, err := jsonResponse.GetMAASObject()
 	c.Assert(err, IsNil)
-	arch, _ := acquiredNode.GetField("architecture")
+	arch, _ := acquiredNode.GetField("Architecture")
 	c.Assert(arch, Equals, "arm/generic")
 }
 
@@ -2035,7 +2035,7 @@ func (suite *TestMAASObjectSuite) TestAcquireFilterTag(c *C) {
 	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n0", "tag_names": "Develop"}`)
 	suite.TestMAASObject.TestServer.NewNode(`{"system_id": "n1", "tag_names": "GPU"}`)
 	nodeListing := suite.TestMAASObject.GetSubObject("nodes")
-	jsonResponse, err := nodeListing.CallPost("acquire", url.Values{"tags": []string{"GPU"}})
+	jsonResponse, err := nodeListing.CallPost("acquire", url.Values{"Tags": []string{"GPU"}})
 	c.Assert(err, IsNil)
 	acquiredNode, err := jsonResponse.GetMAASObject()
 	c.Assert(err, IsNil)
