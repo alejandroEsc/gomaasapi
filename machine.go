@@ -10,41 +10,33 @@ import (
 
 	"encoding/json"
 	"github.com/juju/errors"
-	"github.com/juju/schema"
-	"github.com/juju/version"
 )
 
 // MachineInterface represents a physical MachineInterface.
 type Machine struct {
 	Controller *controller
 
-	ResourceURI string
-
-	SystemID  string
-	Hostname  string
-	FQDN      string
-	Tags      []string
-	OwnerData map[string]string
-
+	ResourceURI     string `json:"resource_uri,omitempty"`
+	SystemID        string
+	Hostname        string
+	FQDN            string
+	Tags            []string
+	OwnerData       map[string]string
 	OperatingSystem string
 	DistroSeries    string
 	Architecture    string
 	Memory          int
 	CPUCount        int
-
-	IPAddresses []string
-	PowerState  string
-
+	IPAddresses     []string
+	PowerState      string
 	// NOTE: consider some form of status struct
 	StatusName    string
 	StatusMessage string
-
 	// BootInterface returns the interface that was used to boot the MachineInterface.
 	BootInterface *Interface
 	// InterfaceSet returns all the interfaces for the MachineInterface.
 	InterfaceSet []*Interface
 	Zone         *zone
-
 	// Don't really know the difference between these two lists:
 
 	// PhysicalBlockDevice returns the physical block device for the MachineInterface
@@ -81,8 +73,8 @@ type CreateMachineDeviceArgs struct {
 	Hostname      string
 	InterfaceName string
 	MACAddress    string
-	Subnet        subnet
-	VLAN          vlan
+	Subnet        *subnet
+	VLAN          *vlan
 }
 
 // MachineNetworkInterface implements Machine.
@@ -117,17 +109,17 @@ func (m *Machine) BlockDevice(id int) *blockdevice {
 }
 
 // Devices implements Machine.
-func (m *Machine) Devices(args DevicesArgs) ([]DeviceInterface, error) {
+func (m *Machine) Devices(args DevicesArgs) ([]device, error) {
 	// Perhaps in the future, MAAS will give us a way to query just for the
 	// devices for a particular Parent.
 	devices, err := m.Controller.Devices(args)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []DeviceInterface
-	for _, device := range devices {
-		if device.Parent == m.SystemID {
-			result = append(result, device)
+	var result []device
+	for _, d := range devices {
+		if d.Parent == m.SystemID {
+			result = append(result, d)
 		}
 	}
 	return result, nil
@@ -188,7 +180,7 @@ func (a *CreateMachineDeviceArgs) Validate() error {
 	if a.Subnet != nil && a.VLAN != nil && a.Subnet.VLAN != a.VLAN {
 		msg := fmt.Sprintf(
 			"given Subnet %q on VLAN %d does not match given VLAN %d",
-			a.Subnet.CIDR, a.Subnet.VLAN.ID, a.VLAN.ID(),
+			a.Subnet.CIDR, a.Subnet.VLAN.ID, a.VLAN.ID,
 		)
 		return errors.NewNotValid(nil, msg)
 	}
@@ -197,11 +189,11 @@ func (a *CreateMachineDeviceArgs) Validate() error {
 }
 
 // CreateDevice implements Machine
-func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (_ DeviceInterface, err error) {
+func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*device, error) {
 	if err := args.Validate(); err != nil {
 		return nil, errors.Trace(err)
 	}
-	device, err := m.Controller.CreateDevice(CreateDeviceArgs{
+	d, err := m.Controller.CreateDevice(CreateDeviceArgs{
 		Hostname:     args.Hostname,
 		MACAddresses: []string{args.MACAddress},
 		Parent:       m.SystemID,
@@ -213,8 +205,8 @@ func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (_ DeviceInterface,
 	defer func(err *error) {
 		// If there is an error return, at least try to delete the device we just created.
 		if *err != nil {
-			if innerErr := device.Delete(); innerErr != nil {
-				logger.Warningf("could not delete device %q", device.SystemID())
+			if innerErr := d.Delete(); innerErr != nil {
+				logger.Warningf("could not delete device %q", d.SystemID)
 			}
 		}
 	}(&err)
@@ -227,7 +219,7 @@ func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (_ DeviceInterface,
 
 	// There should be one interface created for each MAC Address, and since we
 	// only specified one, there should just be one response.
-	interfaces := device.InterfaceSet()
+	interfaces := device.InterfaceSet
 	if count := len(interfaces); count != 1 {
 		err := errors.Errorf("unexpected interface count for device: %d", count)
 		return nil, NewUnexpectedError(err)
@@ -251,7 +243,7 @@ func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (_ DeviceInterface,
 	return device, nil
 }
 
-func (m *Machine) updateDeviceInterface(iface MachineNetworkInterface, nameToUse string, vlanToUse VLAN) error {
+func (m *Machine) updateDeviceInterface(iface MachineNetworkInterface, nameToUse string, vlanToUse vlan) error {
 	updateArgs := UpdateInterfaceArgs{}
 	updateArgs.Name = nameToUse
 
@@ -260,13 +252,13 @@ func (m *Machine) updateDeviceInterface(iface MachineNetworkInterface, nameToUse
 	}
 
 	if err := iface.Update(updateArgs); err != nil {
-		return errors.Annotatef(err, "updating device interface %q failed", iface.Name())
+		return errors.Annotatef(err, "updating device interface %q failed", iface.Name)
 	}
 
 	return nil
 }
 
-func (m *Machine) linkDeviceInterfaceToSubnet(iface MachineNetworkInterface, subnetToUse Subnet) error {
+func (m *Machine) linkDeviceInterfaceToSubnet(iface MachineNetworkInterface, subnetToUse subnet) error {
 	err := iface.LinkSubnet(LinkSubnetArgs{
 		Mode:   LinkModeStatic,
 		Subnet: subnetToUse,
@@ -274,7 +266,7 @@ func (m *Machine) linkDeviceInterfaceToSubnet(iface MachineNetworkInterface, sub
 	if err != nil {
 		return errors.Annotatef(
 			err, "linking device interface %q to Subnet %q failed",
-			iface.Name(), subnetToUse.CIDR())
+			iface.Name, subnetToUse.CIDR)
 	}
 
 	return nil
@@ -290,10 +282,13 @@ func (m *Machine) SetOwnerData(ownerData map[string]string) error {
 	if err != nil {
 		return errors.Trace(err)
 	}
-	machine, err := readmachine(m.Controller.APIVersion, result)
+
+	var machine *Machine
+	err = json.Unmarshal(result, &machine)
 	if err != nil {
 		return errors.Trace(err)
 	}
+
 	m.updateFrom(machine)
 	return nil
 }
@@ -306,20 +301,6 @@ func convertToStringSlice(field interface{}) []string {
 	result := make([]string, len(fieldSlice))
 	for i, value := range fieldSlice {
 		result[i] = value.(string)
-	}
-	return result
-}
-
-func convertToStringMap(field interface{}) map[string]string {
-	if field == nil {
-		return nil
-	}
-	// This function is only called after a schema Coerce, so it's
-	// safe.
-	fieldMap := field.(map[string]interface{})
-	result := make(map[string]string)
-	for key, value := range fieldMap {
-		result[key] = value.(string)
 	}
 	return result
 }

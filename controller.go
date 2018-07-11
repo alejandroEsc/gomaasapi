@@ -228,7 +228,7 @@ type DevicesArgs struct {
 }
 
 // Devices implements ControllerInterface.
-func (c *controller) Devices(args DevicesArgs) ([]DeviceInterface, error) {
+func (c *controller) Devices(args DevicesArgs) ([]device, error) {
 	params := NewURLParams()
 	params.MaybeAddMany("Hostname", args.Hostname)
 	params.MaybeAddMany("mac_address", args.MACAddresses)
@@ -240,11 +240,13 @@ func (c *controller) Devices(args DevicesArgs) ([]DeviceInterface, error) {
 	if err != nil {
 		return nil, NewUnexpectedError(err)
 	}
-	devices, err := readDevices(c.APIVersion, source)
+
+	var devices []device
+	err = json.Unmarshal(source, &devices)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []DeviceInterface
+	var result []device
 	for _, d := range devices {
 		d.Controller = c
 		result = append(result, d)
@@ -261,7 +263,7 @@ type CreateDeviceArgs struct {
 }
 
 // Devices implements ControllerInterface.
-func (c *controller) CreateDevice(args CreateDeviceArgs) (DeviceInterface, error) {
+func (c *controller) CreateDevice(args CreateDeviceArgs) (*device, error) {
 	// There must be at least one mac address.
 	if len(args.MACAddresses) == 0 {
 		return nil, NewBadRequestError("at least one MAC address must be specified")
@@ -282,12 +284,13 @@ func (c *controller) CreateDevice(args CreateDeviceArgs) (DeviceInterface, error
 		return nil, NewUnexpectedError(err)
 	}
 
-	device, err := readDevice(c.APIVersion, result)
+	var d device
+	err = json.Unmarshal(result, &d)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	device.Controller = c
-	return device, nil
+	d.Controller = c
+	return &d, nil
 }
 
 // MachinesArgs is a argument struct for selecting Machines.
@@ -517,7 +520,7 @@ type ConstraintMatches struct {
 //
 // Returns an error that satisfies IsNoMatchError if the requested
 // constraints cannot be met.
-func (c *controller) AllocateMachine(args AllocateMachineArgs) (MachineInterface, ConstraintMatches, error) {
+func (c *controller) AllocateMachine(args AllocateMachineArgs) (*MachineInterface, ConstraintMatches, error) {
 	var matches ConstraintMatches
 	params := NewURLParams()
 	params.MaybeAdd("Name", args.Hostname)
@@ -547,7 +550,8 @@ func (c *controller) AllocateMachine(args AllocateMachineArgs) (MachineInterface
 		return nil, matches, NewUnexpectedError(err)
 	}
 
-	machine, err := readMachine(c.APIVersion, result)
+	var machine *Machine
+	err = json.Unmarshal(result, &machine)
 	if err != nil {
 		return nil, matches, errors.Trace(err)
 	}
@@ -605,6 +609,7 @@ func (c *controller) Files(prefix string) ([]FileInterface, error) {
 	if err != nil {
 		return nil, NewUnexpectedError(err)
 	}
+
 	files, err := readFiles(c.APIVersion, source)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -714,7 +719,7 @@ func (c *controller) checkCreds() error {
 	return nil
 }
 
-func (c *controller) put(path string, params url.Values) (interface{}, error) {
+func (c *controller) put(path string, params url.Values) ([]byte, error) {
 	path = EnsureTrailingSlash(path)
 	requestID := nextRequestID()
 	logger.Tracef("request %x: PUT %s%s, params: %s", requestID, c.Client.APIURL, path, params.Encode())
@@ -724,14 +729,7 @@ func (c *controller) put(path string, params url.Values) (interface{}, error) {
 		logger.Tracef("error detail: %#v", err)
 		return nil, errors.Trace(err)
 	}
-	logger.Tracef("response %x: %s", requestID, string(bytes))
-
-	var parsed interface{}
-	err = json.Unmarshal(bytes, &parsed)
-	if err != nil {
-		return nil, errors.Trace(err)
-	}
-	return parsed, nil
+	return bytes, nil
 }
 
 func (c *controller) post(path, op string, params url.Values) ([]byte, error) {
@@ -782,15 +780,15 @@ func (c *controller) delete(path string) error {
 	return nil
 }
 
-func (c *controller) getQuery(path string, params url.Values) (interface{}, error) {
+func (c *controller) getQuery(path string, params url.Values) ([]byte, error) {
 	return c._get(path, "", params)
 }
 
-func (c *controller) get(path string) (interface{}, error) {
+func (c *controller) get(path string) ([]byte, error) {
 	return c._get(path, "", nil)
 }
 
-func (c *controller) getOp(path, op string) (interface{}, error) {
+func (c *controller) getOp(path, op string) ([]byte, error) {
 	return c._get(path, op, nil)
 }
 

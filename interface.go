@@ -80,8 +80,8 @@ func (i *Interface) Update(args UpdateInterfaceArgs) error {
 		return NewUnexpectedError(err)
 	}
 
-	// TODO unmarshal response
-	response, err := readInterface(i.Controller.APIVersion, source)
+	var response Interface
+	err = json.Unmarshal(source, &response)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -191,7 +191,6 @@ func (i *Interface) LinkSubnet(args LinkSubnetArgs) error {
 		return NewUnexpectedError(err)
 	}
 
-	// TODO unmarshal response
 	var response Interface
 	err = json.Unmarshal(source, &response)
 	if err != nil {
@@ -234,13 +233,14 @@ func (i *Interface) UnlinkSubnet(s *subnet) error {
 		}
 		return NewUnexpectedError(err)
 	}
-	// TODO unmarshal response
 
-	response, err := readInterface(i.Controller.APIVersion, source)
+	var response Interface
+	err = json.Unmarshal(source, &response)
 	if err != nil {
 		return errors.Trace(err)
 	}
-	i.updateFrom(response)
+
+	i.updateFrom(&response)
 
 	return nil
 }

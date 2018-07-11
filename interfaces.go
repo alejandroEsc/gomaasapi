@@ -98,8 +98,6 @@ type MachineInterface interface {
 	// ID specified. If there is no match, nil is returned.
 	BlockDevice(id int) blockdevice
 
-	Zone() zone
-
 	// Start the MachineInterface and install the operating system specified in the args.
 	Start(StartArgs) error
 
