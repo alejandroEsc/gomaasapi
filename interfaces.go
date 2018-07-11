@@ -108,7 +108,6 @@ type Machine interface {
 	CreateDevice(CreateMachineDeviceArgs) (Device, error)
 }
 
-
 // MachineNetworkInterface represents a physical or virtual network interface on a Machine.
 type MachineNetworkInterface interface {
 	// Params is a JSON field, and defaults to an empty string, but is almost

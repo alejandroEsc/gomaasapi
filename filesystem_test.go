@@ -14,7 +14,7 @@ var _ = gc.Suite(&filesystemSuite{})
 
 func (*filesystemSuite) TestParse2_0(c *gc.C) {
 	source := map[string]interface{}{
-		"Type":      "ext4",
+		"Type":        "ext4",
 		"mount_point": "/",
 		"Label":       "root",
 		"UUID":        "fake-UUID",
@@ -29,7 +29,7 @@ func (*filesystemSuite) TestParse2_0(c *gc.C) {
 
 func (*filesystemSuite) TestParse2_Defaults(c *gc.C) {
 	source := map[string]interface{}{
-		"Type":      "ext4",
+		"Type":        "ext4",
 		"mount_point": nil,
 		"Label":       nil,
 		"UUID":        "fake-UUID",

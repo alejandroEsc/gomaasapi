@@ -207,14 +207,13 @@ func (suite *MAASObjectSuite) TestSerializesToJSON(c *C) {
 
 type MAASSuite struct{}
 
-
 var _ = Suite(&MAASSuite{})
 
 func (suite *MAASSuite) TestNewMAASUsesBaseURLFromClient(c *C) {
 	baseURLString := "https://server.com:888/"
 	baseURL, _ := url.Parse(baseURLString)
 	client := Client{APIURL: baseURL}
-	maas,_ := NewMAAS(client)
+	maas, _ := NewMAAS(client)
 	URL := maas.URL()
 	c.Check(URL, DeepEquals, baseURL)
 }

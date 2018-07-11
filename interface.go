@@ -16,22 +16,22 @@ import (
 type Interface struct {
 	Controller *controller
 
-	ResourceURI string
+	ResourceURI string `json:"resource_uri,omitempty"`
 
-	ID      int
-	Name    string
-	Type    string
-	Enabled bool
-	Tags    []string
+	ID      int      `json:"ID,omitempty"`
+	Name    string   `json:"Name,omitempty"`
+	Type    string   `json:"type,omitempty"`
+	Enabled bool     `json:"Enabled,omitempty"`
+	Tags    []string `json:"Tags,omitempty"`
 
-	VLAN  *vlan
-	Links []*link
+	VLAN  *vlan   `json:"VLAN,omitempty"`
+	Links []*link `json:"Links,omitempty"`
 
-	MACAddress   string
-	EffectiveMTU int
+	MACAddress   string `json:"mac_address,omitempty"`
+	EffectiveMTU int    `json:"effective_mtu,omitempty"`
 
-	Parents  []string
-	Children []string
+	Parents  []string `json:"Parents,omitempty"`
+	Children []string `json:"Children,omitempty"`
 }
 
 func (i *Interface) updateFrom(other *Interface) {
@@ -49,19 +49,18 @@ func (i *Interface) updateFrom(other *Interface) {
 	i.Children = other.Children
 }
 
-
 // UpdateInterfaceArgs is an argument struct for calling MachineNetworkInterface.Update.
 type UpdateInterfaceArgs struct {
 	Name       string
 	MACAddress string
-	VLAN       VLAN
+	VLAN       *vlan
 }
 
 func (a *UpdateInterfaceArgs) vlanID() int {
 	if a.VLAN == nil {
 		return 0
 	}
-	return a.VLAN.ID()
+	return a.VLAN.ID
 }
 
 // Update implements MachineNetworkInterface.
@@ -87,7 +86,8 @@ func (i *Interface) Update(args UpdateInterfaceArgs) error {
 		return NewUnexpectedError(err)
 	}
 
-	response, err := readInterface(i.Controller.apiVersion, source)
+	// TODO unmarshal response
+	response, err := readInterface(i.Controller.APIVersion, source)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -139,7 +139,7 @@ type LinkSubnetArgs struct {
 	// Required field.
 	Mode InterfaceLinkMode
 	// Subnet is the Subnet to link to. Required field.
-	Subnet Subnet
+	Subnet *subnet
 	// IPAddress is only valid when the Mode is set to LinkModeStatic. If
 	// not specified with a Mode of LinkModeStatic, an IP address from the
 	// Subnet will be auto selected.
@@ -179,7 +179,7 @@ func (i *Interface) LinkSubnet(args LinkSubnetArgs) error {
 	}
 	params := NewURLParams()
 	params.Values.Add("Mode", string(args.Mode))
-	params.Values.Add("Subnet", fmt.Sprint(args.Subnet.ID()))
+	params.Values.Add("Subnet", fmt.Sprint(args.Subnet.ID))
 	params.MaybeAdd("ip_address", args.IPAddress)
 	params.MaybeAddBool("default_gateway", args.DefaultGateway)
 	source, err := i.Controller.post(i.ResourceURI, "link_subnet", params.Values)
@@ -197,7 +197,8 @@ func (i *Interface) LinkSubnet(args LinkSubnetArgs) error {
 		return NewUnexpectedError(err)
 	}
 
-	response, err := readInterface(i.Controller.apiVersion, source)
+	// TODO unmarshal response
+	response, err := readInterface(i.Controller.APIVersion, source)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -205,9 +206,9 @@ func (i *Interface) LinkSubnet(args LinkSubnetArgs) error {
 	return nil
 }
 
-func (i *Interface) linkForSubnet(subnet Subnet) *link {
+func (i *Interface) linkForSubnet(st *subnet) *link {
 	for _, link := range i.Links {
-		if s := link.Subnet(); s != nil && s.ID() == subnet.ID() {
+		if s := link.Subnet; s != nil && s.ID == st.ID {
 			return link
 		}
 	}
@@ -215,16 +216,16 @@ func (i *Interface) linkForSubnet(subnet Subnet) *link {
 }
 
 // LinkSubnet implements MachineNetworkInterface.
-func (i *Interface) UnlinkSubnet(subnet Subnet) error {
-	if subnet == nil {
+func (i *Interface) UnlinkSubnet(s *subnet) error {
+	if s == nil {
 		return errors.NotValidf("missing Subnet")
 	}
-	link := i.linkForSubnet(subnet)
+	link := i.linkForSubnet(s)
 	if link == nil {
 		return errors.NotValidf("unlinked Subnet")
 	}
 	params := NewURLParams()
-	params.Values.Add("ID", fmt.Sprint(link.ID()))
+	params.Values.Add("ID", fmt.Sprint(link.ID))
 	source, err := i.Controller.post(i.ResourceURI, "unlink_subnet", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
@@ -237,143 +238,13 @@ func (i *Interface) UnlinkSubnet(subnet Subnet) error {
 		}
 		return NewUnexpectedError(err)
 	}
+	// TODO unmarshal response
 
-	response, err := readInterface(i.Controller.apiVersion, source)
+	response, err := readInterface(i.Controller.APIVersion, source)
 	if err != nil {
 		return errors.Trace(err)
 	}
 	i.updateFrom(response)
 
 	return nil
-}
-
-func readInterface(controllerVersion version.Number, source interface{}) (*Interface, error) {
-	readFunc, err := getInterfaceDeserializationFunc(controllerVersion)
-	if err != nil {
-		return nil, errors.Trace(err)
-	}
-
-	checker := schema.StringMap(schema.Any())
-	coerced, err := checker.Coerce(source, nil)
-	if err != nil {
-		return nil, WrapWithDeserializationError(err, "interface base schema check failed")
-	}
-	valid := coerced.(map[string]interface{})
-	return readFunc(valid)
-}
-
-func readInterfaces(controllerVersion version.Number, source interface{}) ([]*Interface, error) {
-	readFunc, err := getInterfaceDeserializationFunc(controllerVersion)
-	if err != nil {
-		return nil, errors.Trace(err)
-	}
-
-	checker := schema.List(schema.StringMap(schema.Any()))
-	coerced, err := checker.Coerce(source, nil)
-	if err != nil {
-		return nil, WrapWithDeserializationError(err, "interface base schema check failed")
-	}
-	valid := coerced.([]interface{})
-	return readInterfaceList(valid, readFunc)
-}
-
-func getInterfaceDeserializationFunc(controllerVersion version.Number) (interfaceDeserializationFunc, error) {
-	var deserialisationVersion version.Number
-	for v := range interfaceDeserializationFuncs {
-		if v.Compare(deserialisationVersion) > 0 && v.Compare(controllerVersion) <= 0 {
-			deserialisationVersion = v
-		}
-	}
-	if deserialisationVersion == version.Zero {
-		return nil, NewUnsupportedVersionError("no interface read func for version %s", controllerVersion)
-	}
-	return interfaceDeserializationFuncs[deserialisationVersion], nil
-}
-
-func readInterfaceList(sourceList []interface{}, readFunc interfaceDeserializationFunc) ([]*Interface, error) {
-	result := make([]*Interface, 0, len(sourceList))
-	for i, value := range sourceList {
-		source, ok := value.(map[string]interface{})
-		if !ok {
-			return nil, NewDeserializationError("unexpected value for interface %d, %T", i, value)
-		}
-		read, err := readFunc(source)
-		if err != nil {
-			return nil, errors.Annotatef(err, "interface %d", i)
-		}
-		result = append(result, read)
-	}
-	return result, nil
-}
-
-type interfaceDeserializationFunc func(map[string]interface{}) (*Interface, error)
-
-var interfaceDeserializationFuncs = map[version.Number]interfaceDeserializationFunc{
-	twoDotOh: interface_2_0,
-}
-
-func interface_2_0(source map[string]interface{}) (*Interface, error) {
-	fields := schema.Fields{
-		"resource_uri": schema.String(),
-
-		"ID":      schema.ForceInt(),
-		"Name":    schema.String(),
-		"type":    schema.String(),
-		"Enabled": schema.Bool(),
-		"Tags":    schema.OneOf(schema.Nil(""), schema.List(schema.String())),
-
-		"VLAN":  schema.OneOf(schema.Nil(""), schema.StringMap(schema.Any())),
-		"Links": schema.List(schema.StringMap(schema.Any())),
-
-		"mac_address":   schema.OneOf(schema.Nil(""), schema.String()),
-		"effective_mtu": schema.ForceInt(),
-
-		"Parents":  schema.List(schema.String()),
-		"Children": schema.List(schema.String()),
-	}
-	defaults := schema.Defaults{
-		"mac_address": "",
-	}
-	checker := schema.FieldMap(fields, defaults)
-	coerced, err := checker.Coerce(source, nil)
-	if err != nil {
-		return nil, WrapWithDeserializationError(err, "interface 2.0 schema check failed")
-	}
-	valid := coerced.(map[string]interface{})
-	// From here we know that the map returned from the schema coercion
-	// contains fields of the right type.
-
-	var vlan *vlan
-	// If it's not an attribute map then we know it's nil from the schema check.
-	if vlanMap, ok := valid["VLAN"].(map[string]interface{}); ok {
-		vlan, err = vlan_2_0(vlanMap)
-		if err != nil {
-			return nil, errors.Trace(err)
-		}
-	}
-
-	links, err := readLinkList(valid["Links"].([]interface{}), link_2_0)
-	if err != nil {
-		return nil, errors.Trace(err)
-	}
-	macAddress, _ := valid["mac_address"].(string)
-	result := &Interface{
-		ResourceURI: valid["resource_uri"].(string),
-
-		ID:      valid["ID"].(int),
-		Name:    valid["Name"].(string),
-		Type:    valid["type"].(string),
-		Enabled: valid["Enabled"].(bool),
-		Tags:    convertToStringSlice(valid["Tags"]),
-
-		VLAN:  vlan,
-		Links: links,
-
-		MACAddress:   macAddress,
-		EffectiveMTU: valid["effective_mtu"].(int),
-
-		Parents:  convertToStringSlice(valid["Parents"]),
-		Children: convertToStringSlice(valid["Children"]),
-	}
-	return result, nil
 }

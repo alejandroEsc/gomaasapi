@@ -8,6 +8,7 @@ import (
 	"github.com/juju/schema"
 	"github.com/juju/version"
 )
+
 // VLAN represents an instance of a Virtual LAN. VLANs are a common way to
 // create logically separate networks using the same physical infrastructure.
 //
@@ -30,7 +31,7 @@ type vlan struct {
 	// Add the Controller in when we need to do things with the VLAN.
 	// Controller Controller
 
-	ResourceURI string
+	ResourceURI string `json:"resource_uri,omitempty"`
 
 	ID     int
 	Name   string

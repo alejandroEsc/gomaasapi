@@ -10,7 +10,7 @@ import (
 	"net/url"
 )
 
-const(
+const (
 	// Our JSON processor distinguishes a MAASObject from a jsonMap by the fact
 	// that it contains a key "resource_uri".  (A regular map might contain the
 	// same key through sheer coincide, but never mind: you can still treat it
@@ -19,9 +19,9 @@ const(
 )
 
 var (
-	noResourceURI = errors.New("not a MAAS object: no 'resource_uri' key")
-	_ json.Marshaler = (*MAASObject)(nil)
-	NotImplemented = errors.New("Not implemented")
+	noResourceURI                 = errors.New("not a MAAS object: no 'resource_uri' key")
+	_              json.Marshaler = (*MAASObject)(nil)
+	NotImplemented                = errors.New("Not implemented")
 )
 
 // NewMAAS returns an interface to the MAAS API as a *MAASObject.
@@ -29,7 +29,6 @@ func NewMAAS(client Client) (*MAASObject, error) {
 	attrs := map[string]interface{}{resourceURI: client.APIURL.String()}
 	return newJSONMAASObject(attrs, client)
 }
-
 
 // MAASObject represents a MAAS object as returned by the MAAS API, such as a
 // Node or a Tag.
@@ -59,7 +58,6 @@ func newJSONMAASObject(jmap map[string]interface{}, client Client) (*MAASObject,
 func (obj *MAASObject) MarshalJSON() ([]byte, error) {
 	return json.MarshalIndent(obj.Values, "", "  ")
 }
-
 
 func marshalNode(node MAASObject) (string, error) {
 	res, err := json.MarshalIndent(node.Values, "", "  ")

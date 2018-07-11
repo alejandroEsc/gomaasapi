@@ -17,12 +17,11 @@ type zone struct {
 	// Add the Controller in when we need to do things with the Zone.
 	// Controller Controller
 
-	ResourceURI string
+	ResourceURI string `json:"resource_uri,omitempty"`
 
 	Name        string
 	Description string
 }
-
 
 func readZones(controllerVersion version.Number, source interface{}) ([]*zone, error) {
 	checker := schema.List(schema.StringMap(schema.Any()))

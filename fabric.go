@@ -20,7 +20,7 @@ type fabric struct {
 	// Add the Controller in when we need to do things with the Fabric.
 	// Controller Controller
 
-	ResourceURI string
+	ResourceURI string `json:"resource_uri,omitempty"`
 
 	ID        int
 	Name      string

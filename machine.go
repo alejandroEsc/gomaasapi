@@ -41,8 +41,8 @@ type machine struct {
 	// BootInterface returns the interface that was used to boot the Machine.
 	BootInterface *MachineNetworkInterface
 	// InterfaceSet returns all the interfaces for the Machine.
-	InterfaceSet  []*MachineNetworkInterface
-	Zone          *zone
+	InterfaceSet []*MachineNetworkInterface
+	Zone         *zone
 
 	// Don't really know the difference between these two lists:
 
@@ -50,7 +50,7 @@ type machine struct {
 	// that matches the ID specified. If there is no match, nil is returned.
 	PhysicalBlockDevices []*blockdevice
 	// BlockDevices returns all the physical and virtual block devices on the Machine.
-	BlockDevices         []*blockdevice
+	BlockDevices []*blockdevice
 }
 
 func (m *machine) updateFrom(other *machine) {
@@ -83,7 +83,6 @@ type CreateMachineDeviceArgs struct {
 	Subnet        subnet
 	VLAN          vlan
 }
-
 
 // MachineNetworkInterface implements machine.
 func (m *machine) Interface(id int) MachineNetworkInterface {
@@ -172,7 +171,6 @@ func (m *machine) Start(args StartArgs) error {
 	m.updateFrom(machine)
 	return nil
 }
-
 
 // Validate ensures that all required Values are non-emtpy.
 func (a *CreateMachineDeviceArgs) Validate() error {

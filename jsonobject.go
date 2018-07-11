@@ -44,7 +44,6 @@ type JSONObject struct {
 	isNull bool
 }
 
-
 // maasify turns a completely untyped json.Unmarshal result into a JSONObject
 // (with the appropriate implementation of course).  This function is
 // recursive.  Maps and arrays are deep-copied, with each individual value

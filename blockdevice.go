@@ -10,7 +10,7 @@ import (
 )
 
 type blockdevice struct {
-	ResourceURI string
+	ResourceURI string `json:"resource_uri,omitempty"`
 
 	ID      int
 	Name    string
@@ -26,7 +26,6 @@ type blockdevice struct {
 
 	Partitions []*partition
 }
-
 
 func readBlockDevices(controllerVersion version.Number, source interface{}) ([]*blockdevice, error) {
 	checker := schema.List(schema.StringMap(schema.Any()))

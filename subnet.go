@@ -27,7 +27,6 @@ type subnet struct {
 	DNSServers []string
 }
 
-
 func readSubnets(controllerVersion version.Number, source interface{}) ([]*subnet, error) {
 	checker := schema.List(schema.StringMap(schema.Any()))
 	coerced, err := checker.Coerce(source, nil)

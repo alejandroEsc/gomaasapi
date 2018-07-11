@@ -4,7 +4,7 @@
 package gomaasapi
 
 import (
-	jc "github.com/juju/testing/checkers"
+	"encoding/json"
 	"github.com/juju/utils/set"
 	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
@@ -15,7 +15,11 @@ type bootResourceSuite struct{}
 var _ = gc.Suite(&bootResourceSuite{})
 
 func (*bootResourceSuite) TestReadBootResourcesBadSchema(c *gc.C) {
-	_, err := readBootResources(twoDotOh, "wat?")
+	var b bootResource
+
+	twoDotOh := []byte("wat?")
+	err := json.Unmarshal(twoDotOh, &b)
+
 	c.Check(err, jc.Satisfies, IsDeserializationError)
 	c.Assert(err.Error(), gc.Equals, `boot resource base schema check failed: expected list, got string("wat?")`)
 }

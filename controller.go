@@ -131,7 +131,6 @@ type controller struct {
 	Capabilities set.Strings
 }
 
-
 // BootResources implements Controller.
 func (c *controller) BootResources() ([]*bootResource, error) {
 	source, err := c.get("boot-resources")

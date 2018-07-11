@@ -19,7 +19,7 @@ type device struct {
 
 	Controller *controller
 
-	ResourceURI string
+	ResourceURI string `json:"resource_uri,omitempty"`
 
 	SystemID string
 	Hostname string
@@ -29,14 +29,13 @@ type device struct {
 	// Machine.
 	Parent string
 	// Owner is the username of the user that created the device.
-	Owner  string
+	Owner string
 
-	IPAddresses  []string
+	IPAddresses []string
 	// InterfaceSet returns all the interfaces for the Device.
 	InterfaceSet []*MachineNetworkInterface
 	Zone         *zone
 }
-
 
 // CreateInterfaceArgs is an argument struct for passing parameters to
 // the Machine.CreateInterface method.

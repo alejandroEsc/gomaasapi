@@ -14,20 +14,20 @@ import (
 type staticRoute struct {
 	ResourceURI string
 
-	ID          int
+	ID int
 	// Source is the Subnet that should have the route configured. (Machines
 	// inside Source should use GatewayIP to reach Destination addresses.)
-	Source      *subnet
+	Source *subnet
 	// Destination is the Subnet that a Machine wants to send packets to. We
 	// want to configure a route to that Subnet via GatewayIP.
 	Destination *subnet
 	// GatewayIP is the IPAddress to direct traffic to.
-	GatewayIP   string
+	GatewayIP string
 	// Metric is the routing Metric that determines whether this route will
 	// take precedence over similar routes (there may be a route for 10/8, but
 	// also a more concrete route for 10.0/16 that should take precedence if it
 	// applies.) Metric should be a non-negative integer.
-	Metric      int
+	Metric int
 }
 
 func readStaticRoutes(controllerVersion version.Number, source interface{}) ([]*staticRoute, error) {

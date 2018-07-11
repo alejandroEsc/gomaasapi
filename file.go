@@ -16,16 +16,14 @@ import (
 type file struct {
 	Controller *controller
 
-	ResourceURI  string
+	ResourceURI string `json:"resource_uri,omitempty"`
 	// Filename is the Name of the file. No Path, just the Filename.
-	Filename     string
+	Filename string
 	// AnonymousURL is a URL that can be used to retrieve the conents of the
 	// file without credentials.
 	AnonymousURI *url.URL
 	Content      string
 }
-
-
 
 // Delete implements File.
 func (f *file) Delete() error {
