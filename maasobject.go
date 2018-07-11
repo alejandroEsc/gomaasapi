@@ -1,12 +1,12 @@
 // Copyright 2012-2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
 import (
 	"encoding/json"
-	"github.com/tidwall/gjson"
 	"fmt"
+	"github.com/tidwall/gjson"
 	"net/url"
 )
 
@@ -17,7 +17,6 @@ const (
 	// as a jsonMap and never notice the difference.)
 	resourceURI = "resource_uri"
 )
-
 
 // MAASObject represents a MAAS object as returned by the MAAS API, such as a
 // Node or a Tag.
@@ -35,12 +34,22 @@ type MAASObject struct {
 
 // NewMAAS returns an interface to the MAAS API as a *MAASObject.
 func NewMAAS(client Client) *MAASObject {
-	return &MAASObject{URI:client.APIURL, Client:client, Values:nil}
+	return &MAASObject{URI: client.APIURL, Client: client, Values: nil}
 }
 
 // MarshalJSON tells the standard json package how to serialize a MAASObject.
 func (obj *MAASObject) MarshalJSON() ([]byte, error) {
 	return json.MarshalIndent(obj.Values, "", "  ")
+}
+
+// GetSubObject returns a new MAASObject representing the API resource found
+// at a given sub-path of the current object's resource URI.
+func (obj MAASObject) GetSubObject(name string) *MAASObject {
+	uri := obj.URI
+	newURL := url.URL{Path: name}
+	resUrl := uri.ResolveReference(&newURL)
+	resUrl.Path = EnsureTrailingSlash(resUrl.Path)
+	return &MAASObject{URI: resUrl, Client: obj.Client, Values: nil}
 }
 
 func marshalNode(node MAASObject) (string, error) {
@@ -101,7 +110,8 @@ func (obj MAASObject) Post(params url.Values) (*MAASObject, error) {
 		return &MAASObject{}, err
 	}
 
-	return &MAASObject{Values: result, Client: obj.Client, URI: uri}, nil}
+	return &MAASObject{Values: result, Client: obj.Client, URI: uri}, nil
+}
 
 // Update modifies this object on the API, based on the Values given in
 // "params."  It returns the object's new value as received from the API.
@@ -130,6 +140,7 @@ func (obj MAASObject) CallGet(operation string, params url.Values) (*MAASObject,
 	if err != nil {
 		return nil, err
 	}
+
 	uri, err := extractURI(result)
 	if err != nil {
 		return &MAASObject{}, err

@@ -1,5 +1,5 @@
 // Copyright 2012-2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -363,7 +363,7 @@ func (server *TestServer) OwnedNodes() map[string]bool {
 	return server.ownedNodes
 }
 
-// NewFile creates a file in the test MAAS server.
+// NewFile creates a File in the test MAAS server.
 func (server *TestServer) NewFile(filename string, filecontent []byte) MAASObject {
 	attrs := make(map[string]interface{})
 	attrs[resourceURI] = getFileURL(server.version, filename)
@@ -697,7 +697,7 @@ func devicesHandler(server *TestServer, w http.ResponseWriter, r *http.Request) 
 func devicesTopLevelHandler(server *TestServer, w http.ResponseWriter, r *http.Request, op string) {
 	switch {
 	case r.Method == "GET" && op == "list":
-		// Device listing operation.
+		// DeviceInterface listing operation.
 		deviceListingHandler(server, w, r)
 	case r.Method == "POST" && op == "new":
 		newDeviceHandler(server, w, r)
@@ -790,7 +790,7 @@ const (
 )
 
 func renderDevice(device *TestDevice) string {
-	t := template.New("Device template")
+	t := template.New("DeviceInterface template")
 	t = t.Funcs(templateFuncs)
 	t, err := t.Parse(deviceTemplate)
 	checkError(err)
@@ -1236,14 +1236,14 @@ func filesHandler(server *TestServer, w http.ResponseWriter, r *http.Request) {
 	fileListingURL := getFilesEndpoint(server.version)
 	switch {
 	case r.Method == "GET" && op == "list" && r.URL.Path == fileListingURL:
-		// File listing operation.
+		// FileInterface listing operation.
 		fileListingHandler(server, w, r)
 	case op == "get" && r.Method == "GET" && r.URL.Path == fileListingURL:
 		getFileHandler(server, w, r)
 	case op == "add" && r.Method == "POST" && r.URL.Path == fileListingURL:
 		addFileHandler(server, w, r)
 	case fileURLMatch != nil:
-		// Request for a single file.
+		// Request for a single File.
 		fileHandler(server, w, r, fileURLMatch[1], op)
 	default:
 		// Default handler: not found.
@@ -1265,7 +1265,7 @@ func listFilenames(server *TestServer, prefix string) []string {
 	return filenames
 }
 
-// stripFileContent copies a map of attributes representing an uploaded file,
+// stripFileContent copies a map of attributes representing an uploaded File,
 // but with the "Content" attribute removed.
 func stripContent(original map[string]JSONObject) map[string]JSONObject {
 	newMap := make(map[string]JSONObject, len(original)-1)
@@ -1304,7 +1304,7 @@ func fileHandler(server *TestServer, w http.ResponseWriter, r *http.Request, fil
 		delete(server.files, filename)
 		w.WriteHeader(http.StatusOK)
 	case r.Method == "GET":
-		// Retrieve a file's information (including Content) as a JSON
+		// Retrieve a File's information (including Content) as a JSON
 		// object.
 		file, ok := server.files[filename]
 		if !ok {
@@ -1374,7 +1374,7 @@ func addFileHandler(server *TestServer, w http.ResponseWriter, r *http.Request) 
 
 	uploads := r.MultipartForm.File
 	if len(uploads) != 1 {
-		panic("the payload should contain one file and one file only")
+		panic("the payload should contain one File and one File only")
 	}
 	var upload *multipart.FileHeader
 	for _, uploadContent := range uploads {

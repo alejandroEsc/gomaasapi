@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -15,10 +15,10 @@ const (
 	NetworkDeploymentUbuntu = "network-deployment-ubuntu"
 )
 
-// Controller represents an API connection to a MAAS Controller. Since the API
+// ControllerInterface represents an API connection to a MAAS ControllerInterface. Since the API
 // is restful, there is no long held connection to the API server, but instead
 // HTTP calls are made and JSON response structures parsed.
-type Controller interface {
+type ControllerInterface interface {
 
 	// Capabilities returns a set of Capabilities as defined by the string
 	// constants.
@@ -26,89 +26,89 @@ type Controller interface {
 
 	BootResources() ([]bootResource, error)
 
-	// Fabrics returns the list of Fabrics defined in the MAAS Controller.
+	// Fabrics returns the list of Fabrics defined in the MAAS ControllerInterface.
 	Fabrics() ([]fabric, error)
 
-	// Spaces returns the list of Spaces defined in the MAAS Controller.
+	// Spaces returns the list of Spaces defined in the MAAS ControllerInterface.
 	Spaces() ([]space, error)
 
-	// StaticRoutes returns the list of StaticRoutes defined in the MAAS Controller.
+	// StaticRoutes returns the list of StaticRoutes defined in the MAAS ControllerInterface.
 	StaticRoutes() ([]staticRoute, error)
 
-	// Zones lists all the zones known to the MAAS Controller.
+	// Zones lists all the zones known to the MAAS ControllerInterface.
 	Zones() ([]zone, error)
 
 	// Machines returns a list of machines that match the params.
-	Machines(MachinesArgs) ([]Machine, error)
+	Machines(MachinesArgs) ([]MachineInterface, error)
 
-	// AllocateMachine will attempt to allocate a Machine to the user.
-	// If successful, the allocated Machine is returned.
-	AllocateMachine(AllocateMachineArgs) (Machine, ConstraintMatches, error)
+	// AllocateMachine will attempt to allocate a MachineInterface to the user.
+	// If successful, the allocated MachineInterface is returned.
+	AllocateMachine(AllocateMachineArgs) (MachineInterface, ConstraintMatches, error)
 
 	// ReleaseMachines will stop the specified machines, and release them
 	// from the user making them available to be allocated again.
 	ReleaseMachines(ReleaseMachinesArgs) error
 
 	// Devices returns a list of devices that match the params.
-	Devices(DevicesArgs) ([]Device, error)
+	Devices(DevicesArgs) ([]DeviceInterface, error)
 
-	// CreateDevice creates and returns a new Device.
-	CreateDevice(CreateDeviceArgs) (Device, error)
+	// CreateDevice creates and returns a new DeviceInterface.
+	CreateDevice(CreateDeviceArgs) (DeviceInterface, error)
 
 	// Files returns all the files that match the specified prefix.
-	Files(prefix string) ([]File, error)
+	Files(prefix string) ([]FileInterface, error)
 
-	// Return a single file by its Filename.
-	GetFile(filename string) (File, error)
+	// Return a single File by its Filename.
+	GetFile(filename string) (FileInterface, error)
 
 	// AddFile adds or replaces the Content of the specified Filename.
 	// If or when the MAAS api is able to return metadata about a single
-	// file without sending the Content of the file, we can return a File
+	// File without sending the Content of the File, we can return a FileInterface
 	// instance here too.
 	AddFile(AddFileArgs) error
 }
 
-// File represents a file stored in the MAAS Controller.
-type File interface {
-	// Delete removes the file from the MAAS Controller.
+// FileInterface represents a File stored in the MAAS ControllerInterface.
+type FileInterface interface {
+	// Delete removes the File from the MAAS ControllerInterface.
 	Delete() error
-	// ReadAll returns the Content of the file.
+	// ReadAll returns the Content of the File.
 	ReadAll() ([]byte, error)
 }
 
-type Device interface {
-	// CreateInterface will create a physical interface for this Machine.
+type DeviceInterface interface {
+	// CreateInterface will create a physical interface for this MachineInterface.
 	CreateInterface(CreateInterfaceArgs) (MachineNetworkInterface, error)
-	// Delete will remove this Device.
+	// Delete will remove this DeviceInterface.
 	Delete() error
 }
 
-type Machine interface {
-	OwnerDataHolder
+type MachineInterface interface {
+	OwnerDataHolderInterface
 
 	// Devices returns a list of devices that match the params and have
-	// this Machine as the Parent.
-	Devices(DevicesArgs) ([]Device, error)
+	// this MachineInterface as the Parent.
+	Devices(DevicesArgs) ([]DeviceInterface, error)
 
-	InterfaceSet() []MachineNetworkInterface
-	// MachineNetworkInterface returns the interface for the Machine that matches the ID
+	InterfaceSet() []*MachineNetworkInterface
+	// MachineNetworkInterface returns the interface for the MachineInterface that matches the ID
 	// specified. If there is no match, nil is returned.
-	Interface(id int) MachineNetworkInterface
-	// BlockDevice returns the block device for the Machine that matches the
+	Interface(id int) *MachineNetworkInterface
+	// BlockDevice returns the block device for the MachineInterface that matches the
 	// ID specified. If there is no match, nil is returned.
 	BlockDevice(id int) blockdevice
 
 	Zone() zone
 
-	// Start the Machine and install the operating system specified in the args.
+	// Start the MachineInterface and install the operating system specified in the args.
 	Start(StartArgs) error
 
-	// CreateDevice creates a new Device with this Machine as the Parent.
+	// CreateDevice creates a new DeviceInterface with this MachineInterface as the Parent.
 	// The device will have one interface that is linked to the specified Subnet.
-	CreateDevice(CreateMachineDeviceArgs) (Device, error)
+	CreateDevice(CreateMachineDeviceArgs) (DeviceInterface, error)
 }
 
-// MachineNetworkInterface represents a physical or virtual network interface on a Machine.
+// MachineNetworkInterface represents a physical or virtual network interface on a MachineInterface.
 type MachineNetworkInterface interface {
 	// Params is a JSON field, and defaults to an empty string, but is almost
 	// always a JSON object in practice. Gleefully ignoring it until we need it.
@@ -128,9 +128,9 @@ type MachineNetworkInterface interface {
 	UnlinkSubnet(subnet) error
 }
 
-// OwnerDataHolder represents any MAAS object that can store key/value
+// OwnerDataHolderInterface represents any MAAS object that can store key/value
 // data.
-type OwnerDataHolder interface {
+type OwnerDataHolderInterface interface {
 	// OwnerData returns a copy of the key/value data stored for this
 	// object.
 	OwnerData() map[string]string

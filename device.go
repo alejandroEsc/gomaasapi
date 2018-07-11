@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -13,7 +13,7 @@ import (
 	"github.com/juju/version"
 )
 
-// Device represents some form of device in MAAS.
+// DeviceInterface represents some form of device in MAAS.
 type device struct {
 	// TODO: add domain
 
@@ -26,19 +26,19 @@ type device struct {
 	FQDN     string
 
 	// Parent returns the SystemID of the Parent. Most often this will be a
-	// Machine.
+	// MachineInterface.
 	Parent string
 	// Owner is the username of the user that created the device.
 	Owner string
 
 	IPAddresses []string
-	// InterfaceSet returns all the interfaces for the Device.
+	// InterfaceSet returns all the interfaces for the DeviceInterface.
 	InterfaceSet []*MachineNetworkInterface
 	Zone         *zone
 }
 
 // CreateInterfaceArgs is an argument struct for passing parameters to
-// the Machine.CreateInterface method.
+// the MachineInterface.CreateInterface method.
 type CreateInterfaceArgs struct {
 	// Name of the interface (required).
 	Name string
@@ -76,7 +76,7 @@ func (d *device) interfacesURI() string {
 	return strings.Replace(d.ResourceURI, "devices", "nodes", 1) + "interfaces/"
 }
 
-// CreateInterface implements Device.
+// CreateInterface implements DeviceInterface.
 func (d *device) CreateInterface(args CreateInterfaceArgs) (MachineNetworkInterface, error) {
 	if err := args.Validate(); err != nil {
 		return nil, errors.Trace(err)
@@ -115,7 +115,7 @@ func (d *device) CreateInterface(args CreateInterfaceArgs) (MachineNetworkInterf
 	return iface, nil
 }
 
-// Delete implements Device.
+// Delete implements DeviceInterface.
 func (d *device) Delete() error {
 	err := d.Controller.delete(d.ResourceURI)
 	if err != nil {

@@ -1,5 +1,5 @@
 // Copyright 2012-2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -498,7 +498,7 @@ func uploadTo(url, fileName string, fileContent []byte) (*http.Response, error) 
 }
 
 func (suite *TestServerSuite) TestHandlesUploadFile(c *C) {
-	fileContent := []byte("test file Content")
+	fileContent := []byte("test File Content")
 	postURL := suite.server.Server.URL + fmt.Sprintf("/api/%s/files/?op=add&Filename=Filename", suite.server.version)
 
 	resp, err := uploadTo(postURL, "upload", fileContent)
@@ -525,8 +525,8 @@ func (suite *TestServerSuite) TestNewFileEscapesName(c *C) {
 }
 
 func (suite *TestServerSuite) TestHandlesFile(c *C) {
-	const filename = "my-file"
-	const fileContent = "test file Content"
+	const filename = "my-File"
+	const fileContent = "test File Content"
 	file := suite.server.NewFile(filename, []byte(fileContent))
 	getURI := fmt.Sprintf("/api/%s/files/%s/", suite.server.version, filename)
 	fileURI, err := file.GetField("anon_resource_uri")
@@ -552,7 +552,7 @@ func (suite *TestServerSuite) TestHandlesFile(c *C) {
 }
 
 func (suite *TestServerSuite) TestHandlesGetFile(c *C) {
-	fileContent := []byte("test file Content")
+	fileContent := []byte("test File Content")
 	fileName := "Filename"
 	suite.server.NewFile(fileName, fileContent)
 	getURI := fmt.Sprintf("/api/%s/files/?op=get&Filename=Filename", suite.server.version)
@@ -569,9 +569,9 @@ func (suite *TestServerSuite) TestHandlesGetFile(c *C) {
 
 func (suite *TestServerSuite) TestHandlesListReturnsSortedFilenames(c *C) {
 	fileName1 := "filename1"
-	suite.server.NewFile(fileName1, []byte("test file Content"))
+	suite.server.NewFile(fileName1, []byte("test File Content"))
 	fileName2 := "filename2"
-	suite.server.NewFile(fileName2, []byte("test file Content"))
+	suite.server.NewFile(fileName2, []byte("test File Content"))
 	getURI := fmt.Sprintf("/api/%s/files/?op=list", suite.server.version)
 
 	resp, err := http.Get(suite.server.Server.URL + getURI)
@@ -589,9 +589,9 @@ func (suite *TestServerSuite) TestHandlesListReturnsSortedFilenames(c *C) {
 
 func (suite *TestServerSuite) TestHandlesListFiltersFiles(c *C) {
 	fileName1 := "filename1"
-	suite.server.NewFile(fileName1, []byte("test file Content"))
+	suite.server.NewFile(fileName1, []byte("test File Content"))
 	fileName2 := "prefixFilename"
-	suite.server.NewFile(fileName2, []byte("test file Content"))
+	suite.server.NewFile(fileName2, []byte("test File Content"))
 	getURI := fmt.Sprintf("/api/%s/files/?op=list&prefix=prefix", suite.server.version)
 
 	resp, err := http.Get(suite.server.Server.URL + getURI)
@@ -609,7 +609,7 @@ func (suite *TestServerSuite) TestHandlesListFiltersFiles(c *C) {
 
 func (suite *TestServerSuite) TestHandlesListOmitsContent(c *C) {
 	const filename = "myfile"
-	fileContent := []byte("test file Content")
+	fileContent := []byte("test File Content")
 	suite.server.NewFile(filename, fileContent)
 	getURI := fmt.Sprintf("/api/%s/files/?op=list", suite.server.version)
 
@@ -636,7 +636,7 @@ func (suite *TestServerSuite) TestHandlesListOmitsContent(c *C) {
 
 func (suite *TestServerSuite) TestDeleteFile(c *C) {
 	fileName1 := "filename1"
-	suite.server.NewFile(fileName1, []byte("test file Content"))
+	suite.server.NewFile(fileName1, []byte("test File Content"))
 	deleteURI := fmt.Sprintf("/api/%s/files/filename1/", suite.server.version)
 
 	req, err := http.NewRequest("DELETE", suite.server.Server.URL+deleteURI, nil)
@@ -1359,13 +1359,13 @@ func (suite *TestMAASObjectSuite) TestUploadFile(c *C) {
 	const fileContent = "uploaded contents"
 	files := suite.TestMAASObject.GetSubObject("files")
 	params := url.Values{"Filename": {filename}}
-	filesMap := map[string][]byte{"file": []byte(fileContent)}
+	filesMap := map[string][]byte{"File": []byte(fileContent)}
 
-	// Upload a file.
+	// Upload a File.
 	_, err := files.CallPostFiles("add", params, filesMap)
 	c.Assert(err, IsNil)
 
-	// The file can now be downloaded.
+	// The File can now be downloaded.
 	downloadedFile, err := files.CallGet("get", params)
 	c.Assert(err, IsNil)
 	bytes, err := downloadedFile.GetBytes()
@@ -1375,10 +1375,10 @@ func (suite *TestMAASObjectSuite) TestUploadFile(c *C) {
 
 func (suite *TestMAASObjectSuite) TestFileNamesMayContainSlashes(c *C) {
 	const filename = "Filename/with/slashes/in/it"
-	const fileContent = "file contents"
+	const fileContent = "File contents"
 	files := suite.TestMAASObject.GetSubObject("files")
 	params := url.Values{"Filename": {filename}}
-	filesMap := map[string][]byte{"file": []byte(fileContent)}
+	filesMap := map[string][]byte{"File": []byte(fileContent)}
 
 	_, err := files.CallPostFiles("add", params, filesMap)
 	c.Assert(err, IsNil)

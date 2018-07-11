@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -21,7 +21,7 @@ type machineSuite struct {
 var _ = gc.Suite(&machineSuite{})
 
 func (*machineSuite) TestNilGetters(c *gc.C) {
-	var empty Machine
+	var empty MachineInterface
 	c.Check(empty.Zone() == nil, jc.IsTrue)
 	c.Check(empty.PhysicalBlockDevice(0) == nil, jc.IsTrue)
 	c.Check(empty.Interface(0) == nil, jc.IsTrue)
@@ -31,7 +31,7 @@ func (*machineSuite) TestNilGetters(c *gc.C) {
 func (*machineSuite) TestReadMachinesBadSchema(c *gc.C) {
 	_, err := readMachines(twoDotOh, "wat?")
 	c.Check(err, jc.Satisfies, IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, `Machine base schema check failed: expected list, got string("wat?")`)
+	c.Assert(err.Error(), gc.Equals, `MachineInterface base schema check failed: expected list, got string("wat?")`)
 
 	_, err = readMachines(twoDotOh, []map[string]interface{}{
 		{
@@ -39,7 +39,7 @@ func (*machineSuite) TestReadMachinesBadSchema(c *gc.C) {
 		},
 	})
 	c.Check(err, jc.Satisfies, IsDeserializationError)
-	c.Assert(err, gc.ErrorMatches, `Machine 0: Machine 2.0 schema check failed: .*`)
+	c.Assert(err, gc.ErrorMatches, `MachineInterface 0: MachineInterface 2.0 schema check failed: .*`)
 }
 
 func (*machineSuite) TestReadMachines(c *gc.C) {
@@ -113,7 +113,7 @@ func (*machineSuite) TestReadMachinesNilValues(c *gc.C) {
 func (*machineSuite) TestLowVersion(c *gc.C) {
 	_, err := readMachines(version.MustParse("1.9.0"), parseJSON(c, machinesResponse))
 	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-	c.Assert(err.Error(), gc.Equals, `no Machine read func for version 1.9.0`)
+	c.Assert(err.Error(), gc.Equals, `no MachineInterface read func for version 1.9.0`)
 }
 
 func (*machineSuite) TestHighVersion(c *gc.C) {
@@ -122,14 +122,14 @@ func (*machineSuite) TestHighVersion(c *gc.C) {
 	c.Assert(machines, gc.HasLen, 3)
 }
 
-func (s *machineSuite) getServerAndMachine(c *gc.C) (*SimpleTestServer, *Machine) {
+func (s *machineSuite) getServerAndMachine(c *gc.C) (*SimpleTestServer, *MachineInterface) {
 	server, controller := createTestServerController(c, s)
-	// Just have machines return one Machine
+	// Just have machines return one MachineInterface
 	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, "["+machineResponse+"]")
 	machines, err := controller.Machines(MachinesArgs{})
 	c.Assert(err, jc.ErrorIsNil)
 	c.Check(machines, gc.HasLen, 1)
-	machine := machines[0].(*Machine)
+	machine := machines[0].(*MachineInterface)
 	server.ResetRequests()
 	return server, machine
 }
@@ -164,26 +164,26 @@ func (s *machineSuite) TestStart(c *gc.C) {
 
 func (s *machineSuite) TestStartMachineNotFound(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusNotFound, "can't find Machine")
+	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusNotFound, "can't find MachineInterface")
 	err := machine.Start(StartArgs{})
 	c.Assert(err, jc.Satisfies, IsBadRequestError)
-	c.Assert(err.Error(), gc.Equals, "can't find Machine")
+	c.Assert(err.Error(), gc.Equals, "can't find MachineInterface")
 }
 
 func (s *machineSuite) TestStartMachineConflict(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusConflict, "Machine not allocated")
+	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusConflict, "MachineInterface not allocated")
 	err := machine.Start(StartArgs{})
 	c.Assert(err, jc.Satisfies, IsBadRequestError)
-	c.Assert(err.Error(), gc.Equals, "Machine not allocated")
+	c.Assert(err.Error(), gc.Equals, "MachineInterface not allocated")
 }
 
 func (s *machineSuite) TestStartMachineForbidden(c *gc.C) {
 	server, machine := s.getServerAndMachine(c)
-	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusForbidden, "Machine not yours")
+	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusForbidden, "MachineInterface not yours")
 	err := machine.Start(StartArgs{})
 	c.Assert(err, jc.Satisfies, IsPermissionError)
-	c.Assert(err.Error(), gc.Equals, "Machine not yours")
+	c.Assert(err.Error(), gc.Equals, "MachineInterface not yours")
 }
 
 func (s *machineSuite) TestStartMachineServiceUnavailable(c *gc.C) {
@@ -391,7 +391,7 @@ func (s *machineSuite) TestCreateDeviceTriesToDeleteDeviceOnError(c *gc.C) {
 }
 
 func (s *machineSuite) TestOwnerDataCopies(c *gc.C) {
-	machine := Machine{OwnerData: make(map[string]string)}
+	machine := MachineInterface{OwnerData: make(map[string]string)}
 	ownerData := machine.OwnerData()
 	ownerData["sad"] = "Children"
 	c.Assert(machine.OwnerData(), gc.DeepEquals, map[string]string{})
@@ -437,7 +437,7 @@ const (
         "hwe_kernel": "hwe-t",
         "status_action": "",
         "osystem": "ubuntu",
-        "node_type_name": "Machine",
+        "node_type_name": "MachineInterface",
         "macaddress_set": [
             {
                 "mac_address": "52:54:00:55:b6:80"
@@ -871,7 +871,7 @@ const (
 		"ttl": null,
 		"ID": 0
 	},
-	"node_type_name": "Device",
+	"node_type_name": "DeviceInterface",
 	"address_ttl": null,
 	"Hostname": "furnacelike-brittney",
 	"node_type": 1,
@@ -933,7 +933,7 @@ var (
         "hwe_kernel": "",
         "status_action": "",
         "osystem": "",
-        "node_type_name": "Machine",
+        "node_type_name": "MachineInterface",
         "macaddress_set": [
             {
                 "mac_address": "52:54:00:33:6b:2c"
@@ -1179,7 +1179,7 @@ var (
         "hwe_kernel": "",
         "status_action": "",
         "osystem": "",
-        "node_type_name": "Machine",
+        "node_type_name": "MachineInterface",
         "macaddress_set": [
             {
                 "mac_address": "52:54:00:c9:6a:45"

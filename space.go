@@ -1,11 +1,11 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
 type space struct {
-	// Add the Controller in when we need to do things with the space.
-	// Controller Controller
+	// Add the ControllerInterface in when we need to do things with the space.
+	// ControllerInterface ControllerInterface
 	ResourceURI string    `json:"resource_uri,omitempty"`
 	ID          int       `json:"ID,omitempty"`
 	Name        string    `json:"Name,omitempty"`

@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -58,7 +58,7 @@ func (s *controllerSuite) SetUpTest(c *gc.C) {
 	s.server = server
 }
 
-func (s *controllerSuite) getController(c *gc.C) Controller {
+func (s *controllerSuite) getController(c *gc.C) ControllerInterface {
 	controller, err := NewController(ControllerArgs{
 		BaseURL: s.server.URL,
 		APIKey:  "fake:as:key",
@@ -756,13 +756,13 @@ func (s *controllerSuite) TestReleaseMachinesForbidden(c *gc.C) {
 }
 
 func (s *controllerSuite) TestReleaseMachinesConflict(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusConflict, "Machine busy")
+	s.server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusConflict, "MachineInterface busy")
 	controller := s.getController(c)
 	err := controller.ReleaseMachines(ReleaseMachinesArgs{
 		SystemIDs: []string{"this", "that"},
 	})
 	c.Assert(err, jc.Satisfies, IsCannotCompleteError)
-	c.Assert(err.Error(), gc.Equals, "Machine busy")
+	c.Assert(err.Error(), gc.Equals, "MachineInterface busy")
 }
 
 func (s *controllerSuite) TestReleaseMachinesUnexpected(c *gc.C) {
@@ -877,7 +877,7 @@ func (s *controllerSuite) TestAddFileValidates(c *gc.C) {
 func (s *controllerSuite) assertFile(c *gc.C, request *http.Request, filename, content string) {
 	form := request.Form
 	c.Check(form.Get("Filename"), gc.Equals, filename)
-	fileHeader := request.MultipartForm.File["file"][0]
+	fileHeader := request.MultipartForm.File["File"][0]
 	f, err := fileHeader.Open()
 	c.Assert(err, jc.ErrorIsNil)
 	bytes, err := ioutil.ReadAll(f)
@@ -919,10 +919,10 @@ type cleanup interface {
 	AddCleanup(func(*gc.C))
 }
 
-// createTestServerController creates a Controller backed on to a test server
+// createTestServerController creates a ControllerInterface backed on to a test server
 // that has sufficient knowledge of versions and users to be able to create a
-// valid Controller.
-func createTestServerController(c *gc.C, suite cleanup) (*SimpleTestServer, Controller) {
+// valid ControllerInterface.
+func createTestServerController(c *gc.C, suite cleanup) (*SimpleTestServer, ControllerInterface) {
 	server := NewSimpleServer()
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)

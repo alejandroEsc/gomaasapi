@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -7,31 +7,25 @@ import (
 	"fmt"
 	"net/http"
 
+	"encoding/json"
 	"github.com/juju/errors"
-	"github.com/juju/schema"
-	"github.com/juju/version"
 )
 
 // Can't use interface as a type, so add an underscore. Yay.
 type Interface struct {
-	Controller *controller
-
-	ResourceURI string `json:"resource_uri,omitempty"`
-
-	ID      int      `json:"ID,omitempty"`
-	Name    string   `json:"Name,omitempty"`
-	Type    string   `json:"type,omitempty"`
-	Enabled bool     `json:"Enabled,omitempty"`
-	Tags    []string `json:"Tags,omitempty"`
-
-	VLAN  *vlan   `json:"VLAN,omitempty"`
-	Links []*link `json:"Links,omitempty"`
-
-	MACAddress   string `json:"mac_address,omitempty"`
-	EffectiveMTU int    `json:"effective_mtu,omitempty"`
-
-	Parents  []string `json:"Parents,omitempty"`
-	Children []string `json:"Children,omitempty"`
+	Controller   *controller
+	ResourceURI  string   `json:"resource_uri,omitempty"`
+	ID           int      `json:"ID,omitempty"`
+	Name         string   `json:"Name,omitempty"`
+	Type         string   `json:"type,omitempty"`
+	Enabled      bool     `json:"Enabled,omitempty"`
+	Tags         []string `json:"Tags,omitempty"`
+	VLAN         *vlan    `json:"VLAN,omitempty"`
+	Links        []*link  `json:"Links,omitempty"`
+	MACAddress   string   `json:"mac_address,omitempty"`
+	EffectiveMTU int      `json:"effective_mtu,omitempty"`
+	Parents      []string `json:"Parents,omitempty"`
+	Children     []string `json:"Children,omitempty"`
 }
 
 func (i *Interface) updateFrom(other *Interface) {
@@ -91,7 +85,7 @@ func (i *Interface) Update(args UpdateInterfaceArgs) error {
 	if err != nil {
 		return errors.Trace(err)
 	}
-	i.updateFrom(response)
+	i.updateFrom(&response)
 	return nil
 }
 
@@ -145,7 +139,7 @@ type LinkSubnetArgs struct {
 	// Subnet will be auto selected.
 	IPAddress string
 	// DefaultGateway will set the gateway IP address for the Subnet as the
-	// default gateway for the machine or device the interface belongs to.
+	// default gateway for the Machine or device the interface belongs to.
 	// Option can only be used with Mode LinkModeStatic.
 	DefaultGateway bool
 }
@@ -198,11 +192,13 @@ func (i *Interface) LinkSubnet(args LinkSubnetArgs) error {
 	}
 
 	// TODO unmarshal response
-	response, err := readInterface(i.Controller.APIVersion, source)
+	var response Interface
+	err = json.Unmarshal(source, &response)
 	if err != nil {
 		return errors.Trace(err)
 	}
-	i.updateFrom(response)
+
+	i.updateFrom(&response)
 	return nil
 }
 

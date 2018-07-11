@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -242,7 +242,7 @@ const (
             "ttl": null,
             "ID": 0
         },
-        "node_type_name": "Device",
+        "node_type_name": "DeviceInterface",
         "address_ttl": null,
         "Hostname": "furnacelike-brittney",
         "node_type": 1,

@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -17,8 +17,8 @@ import (
 // VLAN 100, while a separate Fabric in San Francisco may contain a VLAN 100,
 // whose attached Subnets are completely different and unrelated.
 type fabric struct {
-	// Add the Controller in when we need to do things with the Fabric.
-	// Controller Controller
+	// Add the ControllerInterface in when we need to do things with the Fabric.
+	// ControllerInterface ControllerInterface
 
 	ResourceURI string `json:"resource_uri,omitempty"`
 

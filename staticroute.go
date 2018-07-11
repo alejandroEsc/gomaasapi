@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -18,7 +18,7 @@ type staticRoute struct {
 	// Source is the Subnet that should have the route configured. (Machines
 	// inside Source should use GatewayIP to reach Destination addresses.)
 	Source *subnet
-	// Destination is the Subnet that a Machine wants to send packets to. We
+	// Destination is the Subnet that a MachineInterface wants to send packets to. We
 	// want to configure a route to that Subnet via GatewayIP.
 	Destination *subnet
 	// GatewayIP is the IPAddress to direct traffic to.

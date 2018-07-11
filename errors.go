@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -74,7 +74,7 @@ func WrapWithUnsupportedVersionError(err error) error {
 }
 
 // DeserializationError types are returned when the returned JSON data from
-// the Controller doesn't match the code's expectations.
+// the ControllerInterface doesn't match the code's expectations.
 type DeserializationError struct {
 	errors.Err
 }

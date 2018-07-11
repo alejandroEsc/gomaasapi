@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"encoding/json"
 	"github.com/juju/gomaasapi"
 )
 
@@ -66,63 +67,65 @@ func main() {
 // it uploads a files and then fetches it, making sure the received content
 // is the same as the one that was sent.
 func ManipulateFiles(maas *gomaasapi.MAASObject) {
+	var err error
+	filesResource := maas.GetSubObject("filesResource")
 
-	files, err := maas.GetSubObject("files")
-	checkError(err)
 	fileContent := []byte("test file content")
 	fileName := "filename"
 	filesToUpload := map[string][]byte{"file": fileContent}
 
 	// Upload a file.
 	fmt.Println("Uploading a file...")
-	_, err = files.CallPostFiles("add", url.Values{"filename": {fileName}}, filesToUpload)
+	_, err = filesResource.CallPostFiles("add", url.Values{"filename": {fileName}}, filesToUpload)
 	checkError(err)
-	fmt.Println("File sent.")
+	fmt.Println("FileInterface sent.")
 
 	// Fetch the file.
 	fmt.Println("Fetching the file...")
-	fileResult, err := files.CallGet("get", url.Values{"filename": {fileName}})
+	fileResult, err := filesResource.CallGet("get", url.Values{"filename": {fileName}})
 	checkError(err)
-	receivedFileContent, err := fileResult.GetBytes()
-	checkError(err)
+
+	receivedFileContent := fileResult.Values
+
 	if bytes.Compare(receivedFileContent, fileContent) != 0 {
 		panic("Received content differs from the content sent!")
 	}
 	fmt.Println("Got file.")
 
-	// Fetch list of files.
-	listFiles, err := files.CallGet("list", url.Values{})
+	// Fetch list of filesResource.
+	var listFiles []gomaasapi.File
+	listFilesObj, err := filesResource.CallGet("list", url.Values{})
 	checkError(err)
-	listFilesArray, err := listFiles.GetArray()
-	checkError(err)
-	fmt.Printf("We've got %v file(s)\n", len(listFilesArray))
+	json.Unmarshal(listFilesObj.Values, &listFiles)
+
+	fmt.Printf("We've got %v file(s)\n", len(listFiles))
 
 	// Delete the file.
 	fmt.Println("Deleting the file...")
-	fileObject, err := listFilesArray[0].GetMAASObject()
-	checkError(err)
-	errDelete := fileObject.Delete()
-	checkError(errDelete)
 
-	// Count the files.
-	listFiles, err = files.CallGet("list", url.Values{})
+	fileObject := listFiles[0]
+	err = fileObject.Delete()
 	checkError(err)
-	listFilesArray, err = listFiles.GetArray()
+
+	// Count the filesResource.
+	listFilesObj, err = filesResource.CallGet("list", url.Values{})
 	checkError(err)
-	fmt.Printf("We've got %v file(s)\n", len(listFilesArray))
+	json.Unmarshal(listFilesObj.Values, &listFiles)
+	fmt.Printf("We've got %v file(s)\n", len(listFiles))
 }
 
 // ManipulateFiles exercises the /api/1.0/nodes/ API endpoint.  Most precisely,
 // it lists the existing nodes, creates a new node, updates it and then
 // deletes it.
 func ManipulateNodes(maas *gomaasapi.MAASObject) {
-	nodeListing, err := maas.GetSubObject("nodes")
-	checkError(err)
+	nodeListing := maas.GetSubObject("nodes")
 
 	// List nodes.
 	fmt.Println("Fetching list of nodes...")
+	var nodes []gomaasapi.Node
 	listNodeObjects, err := nodeListing.CallGet("list", url.Values{})
 	checkError(err)
+
 	listNodes, err := listNodeObjects.GetArray()
 	checkError(err)
 	fmt.Printf("Got list of %v nodes\n", len(listNodes))

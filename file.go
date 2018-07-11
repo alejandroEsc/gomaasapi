@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -11,19 +11,19 @@ import (
 	"github.com/juju/errors"
 )
 
-type file struct {
+type File struct {
 	Controller  *controller
 	ResourceURI string `json:"resource_uri,omitempty"`
-	// Filename is the Name of the file. No Path, just the Filename.
+	// Filename is the Name of the File. No Path, just the Filename.
 	Filename string `json:"Filename,omitempty"`
 	// AnonymousURL is a URL that can be used to retrieve the conents of the
-	// file without credentials.
+	// File without credentials.
 	AnonymousURI *url.URL `json:"anon_resource_uri,omitempty"`
 	Content      string   `json:"Content,omitempty"`
 }
 
-// Delete implements File.
-func (f *file) Delete() error {
+// Delete implements FileInterface.
+func (f *File) Delete() error {
 	err := f.Controller.delete(f.ResourceURI)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
@@ -39,8 +39,8 @@ func (f *file) Delete() error {
 	return nil
 }
 
-// ReadAll implements File.
-func (f *file) ReadAll() ([]byte, error) {
+// ReadAll implements FileInterface.
+func (f *File) ReadAll() ([]byte, error) {
 	if f.Content == "" {
 		return f.readFromServer()
 	}
@@ -51,7 +51,7 @@ func (f *file) ReadAll() ([]byte, error) {
 	return bytes, nil
 }
 
-func (f *file) readFromServer() ([]byte, error) {
+func (f *File) readFromServer() ([]byte, error) {
 	// If the Content is available, it is base64 encoded, so
 	args := make(url.Values)
 	args.Add("Filename", f.Filename)

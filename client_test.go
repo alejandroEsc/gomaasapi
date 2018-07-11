@@ -1,5 +1,5 @@
 // Copyright 2012-2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -196,7 +196,7 @@ func (suite *ClientSuite) TestClientPostSendsRequestWithParams(c *gc.C) {
 }
 
 // extractFileContent extracts from the request built using 'requestContent',
-// 'requestHeader' and 'requestURL', the file named 'Filename'.
+// 'requestHeader' and 'requestURL', the File named 'Filename'.
 func extractFileContent(requestContent string, requestHeader *http.Header, requestURL string, filename string) ([]byte, error) {
 	// Recreate the request from server.requestContent to use the parsing
 	// utility from the http package (http.Request.FormFile).

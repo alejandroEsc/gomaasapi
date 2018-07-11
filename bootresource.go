@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -10,8 +10,8 @@ import (
 )
 
 type bootResource struct {
-	// Add the Controller in when we need to do things with the bootResource.
-	// Controller Controller
+	// Add the ControllerInterface in when we need to do things with the bootResource.
+	// ControllerInterface ControllerInterface
 	ResourceURI  string `json:"resource_uri,omitempty"`
 	ID           int    `json:"ID,omitempty"`
 	Name         string `json:"Name,omitempty"`

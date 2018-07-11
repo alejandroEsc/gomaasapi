@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -47,12 +47,12 @@ type ControllerArgs struct {
 // NewController creates an authenticated Client to the MAAS API, and
 // checks the Capabilities of the server. If the BaseURL specified
 // includes the API version, that version of the API will be used,
-// otherwise the Controller will use the highest supported version
+// otherwise the ControllerInterface will use the highest supported version
 // available.
 //
 // If the APIKey is not valid, a NotValid error is returned.
 // If the credentials are incorrect, a PermissionError is returned.
-func NewController(args ControllerArgs) (Controller, error) {
+func NewController(args ControllerArgs) (ControllerInterface, error) {
 	base, apiVersion, includesVersion := SplitVersionedURL(args.BaseURL)
 	if includesVersion {
 		if !supportedVersion(apiVersion) {
@@ -72,7 +72,7 @@ func supportedVersion(value string) bool {
 	return false
 }
 
-func newControllerWithVersion(baseURL, apiVersion, apiKey string) (Controller, error) {
+func newControllerWithVersion(baseURL, apiVersion, apiKey string) (ControllerInterface, error) {
 	major, minor, err := version.ParseMajorMinor(apiVersion)
 	// We should not get an error here. See the test.
 	if err != nil {
@@ -105,7 +105,7 @@ func newControllerWithVersion(baseURL, apiVersion, apiKey string) (Controller, e
 	return controller, nil
 }
 
-func newControllerUnknownVersion(args ControllerArgs) (Controller, error) {
+func newControllerUnknownVersion(args ControllerArgs) (ControllerInterface, error) {
 	// For now we don't need to test multiple versions. It is expected that at
 	// some time in the future, we will try the most up to date version and then
 	// work our way backwards.
@@ -122,7 +122,7 @@ func newControllerUnknownVersion(args ControllerArgs) (Controller, error) {
 		}
 	}
 
-	return nil, NewUnsupportedVersionError("Controller at %s does not support any of %s", args.BaseURL, supportedAPIVersions)
+	return nil, NewUnsupportedVersionError("ControllerInterface at %s does not support any of %s", args.BaseURL, supportedAPIVersions)
 }
 
 type controller struct {
@@ -131,7 +131,7 @@ type controller struct {
 	Capabilities set.Strings
 }
 
-// BootResources implements Controller.
+// BootResources implements ControllerInterface.
 func (c *controller) BootResources() ([]*bootResource, error) {
 	source, err := c.get("boot-resources")
 	if err != nil {
@@ -148,7 +148,7 @@ func (c *controller) BootResources() ([]*bootResource, error) {
 	return result, nil
 }
 
-// Fabrics implements Controller.
+// Fabrics implements ControllerInterface.
 func (c *controller) Fabrics() ([]*fabric, error) {
 	source, err := c.get("fabrics")
 	if err != nil {
@@ -165,7 +165,7 @@ func (c *controller) Fabrics() ([]*fabric, error) {
 	return result, nil
 }
 
-// Spaces implements Controller.
+// Spaces implements ControllerInterface.
 func (c *controller) Spaces() ([]Space, error) {
 	source, err := c.get("spaces")
 	if err != nil {
@@ -182,7 +182,7 @@ func (c *controller) Spaces() ([]Space, error) {
 	return result, nil
 }
 
-// StaticRoutes implements Controller.
+// StaticRoutes implements ControllerInterface.
 func (c *controller) StaticRoutes() ([]staticRoute, error) {
 	source, err := c.get("static-routes")
 	if err != nil {
@@ -199,7 +199,7 @@ func (c *controller) StaticRoutes() ([]staticRoute, error) {
 	return result, nil
 }
 
-// Zones implements Controller.
+// Zones implements ControllerInterface.
 func (c *controller) Zones() ([]zone, error) {
 	source, err := c.get("zones")
 	if err != nil {
@@ -227,8 +227,8 @@ type DevicesArgs struct {
 	AgentName    string
 }
 
-// Devices implements Controller.
-func (c *controller) Devices(args DevicesArgs) ([]Device, error) {
+// Devices implements ControllerInterface.
+func (c *controller) Devices(args DevicesArgs) ([]DeviceInterface, error) {
 	params := NewURLParams()
 	params.MaybeAddMany("Hostname", args.Hostname)
 	params.MaybeAddMany("mac_address", args.MACAddresses)
@@ -244,7 +244,7 @@ func (c *controller) Devices(args DevicesArgs) ([]Device, error) {
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []Device
+	var result []DeviceInterface
 	for _, d := range devices {
 		d.Controller = c
 		result = append(result, d)
@@ -260,8 +260,8 @@ type CreateDeviceArgs struct {
 	Parent       string
 }
 
-// Devices implements Controller.
-func (c *controller) CreateDevice(args CreateDeviceArgs) (Device, error) {
+// Devices implements ControllerInterface.
+func (c *controller) CreateDevice(args CreateDeviceArgs) (DeviceInterface, error) {
 	// There must be at least one mac address.
 	if len(args.MACAddresses) == 0 {
 		return nil, NewBadRequestError("at least one MAC address must be specified")
@@ -302,8 +302,8 @@ type MachinesArgs struct {
 	OwnerData    map[string]string
 }
 
-// Machines implements Controller.
-func (c *controller) Machines(args MachinesArgs) ([]Machine, error) {
+// Machines implements ControllerInterface.
+func (c *controller) Machines(args MachinesArgs) ([]MachineInterface, error) {
 	params := NewURLParams()
 	params.MaybeAddMany("Hostname", args.Hostnames)
 	params.MaybeAddMany("mac_address", args.MACAddresses)
@@ -321,7 +321,7 @@ func (c *controller) Machines(args MachinesArgs) ([]Machine, error) {
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []Machine
+	var result []MachineInterface
 	for _, m := range machines {
 		m.Controller = c
 		if ownerDataMatches(m.OwnerData, args.OwnerData) {
@@ -341,7 +341,7 @@ func ownerDataMatches(ownerData, filter map[string]string) bool {
 }
 
 // StorageSpec represents one element of storage constraints necessary
-// to be satisfied to allocate a Machine.
+// to be satisfied to allocate a MachineInterface.
 type StorageSpec struct {
 	// Label is optional and an arbitrary string. Labels need to be unique
 	// across the StorageSpec elements specified in the AllocateMachineArgs.
@@ -417,7 +417,7 @@ func (a *InterfaceSpec) String() string {
 	return fmt.Sprintf("%s:space=%s", a.Label, a.Space)
 }
 
-// AllocateMachineArgs is an argument struct for passing args into Machine.Allocate.
+// AllocateMachineArgs is an argument struct for passing args into MachineInterface.Allocate.
 type AllocateMachineArgs struct {
 	Hostname     string
 	SystemId     string
@@ -429,13 +429,13 @@ type AllocateMachineArgs struct {
 	NotTags   []string
 	Zone      string
 	NotInZone []string
-	// Storage represents the required disks on the Machine. If any are specified
+	// Storage represents the required disks on the MachineInterface. If any are specified
 	// the first value is used for the root disk.
 	Storage []StorageSpec
-	// Interfaces represents a number of required interfaces on the Machine.
+	// Interfaces represents a number of required interfaces on the MachineInterface.
 	// Each InterfaceSpec relates to an individual network interface.
 	Interfaces []InterfaceSpec
-	// NotSpace is a Machine level constraint, and applies to the entire Machine
+	// NotSpace is a MachineInterface level constraint, and applies to the entire MachineInterface
 	// rather than specific interfaces.
 	NotSpace  []string
 	AgentName string
@@ -501,7 +501,7 @@ func (a *AllocateMachineArgs) notSubnets() []string {
 }
 
 // ConstraintMatches provides a way for the caller of AllocateMachine to determine
-//.how the allocated Machine matched the storage and interfaces constraints specified.
+//.how the allocated MachineInterface matched the storage and interfaces constraints specified.
 // The labels that were used in the constraints are the keys in the maps.
 type ConstraintMatches struct {
 	// MachineNetworkInterface is a mapping of the constraint Label specified to the Interfaces
@@ -513,11 +513,11 @@ type ConstraintMatches struct {
 	Storage map[string][]BlockDevice
 }
 
-// AllocateMachine implements Controller.
+// AllocateMachine implements ControllerInterface.
 //
 // Returns an error that satisfies IsNoMatchError if the requested
 // constraints cannot be met.
-func (c *controller) AllocateMachine(args AllocateMachineArgs) (Machine, ConstraintMatches, error) {
+func (c *controller) AllocateMachine(args AllocateMachineArgs) (MachineInterface, ConstraintMatches, error) {
 	var matches ConstraintMatches
 	params := NewURLParams()
 	params.MaybeAdd("Name", args.Hostname)
@@ -562,14 +562,14 @@ func (c *controller) AllocateMachine(args AllocateMachineArgs) (Machine, Constra
 	return machine, matches, nil
 }
 
-// ReleaseMachinesArgs is an argument struct for passing the Machine system IDs
+// ReleaseMachinesArgs is an argument struct for passing the MachineInterface system IDs
 // and an optional comment into the ReleaseMachines method.
 type ReleaseMachinesArgs struct {
 	SystemIDs []string
 	Comment   string
 }
 
-// ReleaseMachines implements Controller.
+// ReleaseMachines implements ControllerInterface.
 //
 // Release multiple machines at once. Returns
 //  - BadRequestError if any of the machines cannot be found
@@ -597,8 +597,8 @@ func (c *controller) ReleaseMachines(args ReleaseMachinesArgs) error {
 	return nil
 }
 
-// Files implements Controller.
-func (c *controller) Files(prefix string) ([]File, error) {
+// Files implements ControllerInterface.
+func (c *controller) Files(prefix string) ([]FileInterface, error) {
 	params := NewURLParams()
 	params.MaybeAdd("prefix", prefix)
 	source, err := c.getQuery("files", params.Values)
@@ -609,7 +609,7 @@ func (c *controller) Files(prefix string) ([]File, error) {
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []File
+	var result []FileInterface
 	for _, f := range files {
 		f.Controller = c
 		result = append(result, f)
@@ -617,8 +617,8 @@ func (c *controller) Files(prefix string) ([]File, error) {
 	return result, nil
 }
 
-// GetFile implements Controller.
-func (c *controller) GetFile(filename string) (File, error) {
+// GetFile implements ControllerInterface.
+func (c *controller) GetFile(filename string) (FileInterface, error) {
 	if filename == "" {
 		return nil, errors.NotValidf("missing Filename")
 	}
@@ -676,7 +676,7 @@ func (a *AddFileArgs) Validate() error {
 	return nil
 }
 
-// AddFile implements Controller.
+// AddFile implements ControllerInterface.
 func (c *controller) AddFile(args AddFileArgs) error {
 	if err := args.Validate(); err != nil {
 		return errors.Trace(err)
@@ -685,7 +685,7 @@ func (c *controller) AddFile(args AddFileArgs) error {
 	if fileContent == nil {
 		content, err := ioutil.ReadAll(io.LimitReader(args.Reader, args.Length))
 		if err != nil {
-			return errors.Annotatef(err, "cannot read file Content")
+			return errors.Annotatef(err, "cannot read File Content")
 		}
 		fileContent = content
 	}
@@ -734,23 +734,17 @@ func (c *controller) put(path string, params url.Values) (interface{}, error) {
 	return parsed, nil
 }
 
-func (c *controller) post(path, op string, params url.Values) (interface{}, error) {
+func (c *controller) post(path, op string, params url.Values) ([]byte, error) {
 	bytes, err := c._postRaw(path, op, params, nil)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-
-	var parsed interface{}
-	err = json.Unmarshal(bytes, &parsed)
-	if err != nil {
-		return nil, errors.Trace(err)
-	}
-	return parsed, nil
+	return bytes, nil
 }
 
-func (c *controller) postFile(path, op string, params url.Values, fileContent []byte) (interface{}, error) {
-	// Only one file is ever sent at a time.
-	files := map[string][]byte{"file": fileContent}
+func (c *controller) postFile(path, op string, params url.Values, fileContent []byte) ([]byte, error) {
+	// Only one File is ever sent at a time.
+	files := map[string][]byte{"File": fileContent}
 	return c._postRaw(path, op, params, files)
 }
 
@@ -800,17 +794,13 @@ func (c *controller) getOp(path, op string) (interface{}, error) {
 	return c._get(path, op, nil)
 }
 
-func (c *controller) _get(path, op string, params url.Values) (interface{}, error) {
+func (c *controller) _get(path, op string, params url.Values) ([]byte, error) {
 	bytes, err := c._getRaw(path, op, params)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var parsed interface{}
-	err = json.Unmarshal(bytes, &parsed)
-	if err != nil {
-		return nil, errors.Trace(err)
-	}
-	return parsed, nil
+
+	return bytes, nil
 }
 
 func (c *controller) _getRaw(path, op string, params url.Values) ([]byte, error) {
@@ -887,7 +877,7 @@ func (c *controller) readAPIVersionInfo() (set.Strings, error) {
 	return capabilities, nil
 }
 
-func parseAllocateConstraintsResponse(source interface{}, machine *Machine) (ConstraintMatches, error) {
+func parseAllocateConstraintsResponse(source interface{}, machine *MachineInterface) (ConstraintMatches, error) {
 	var empty ConstraintMatches
 	matchFields := schema.Fields{
 		"storage":    schema.StringMap(schema.List(schema.ForceInt())),
@@ -919,7 +909,7 @@ func parseAllocateConstraintsResponse(source interface{}, machine *Machine) (Con
 			for index, id := range ids {
 				iface := machine.Interface(id)
 				if iface == nil {
-					return empty, NewDeserializationError("constraint match interface %q: %d does not match an interface for the Machine", label, id)
+					return empty, NewDeserializationError("constraint match interface %q: %d does not match an interface for the MachineInterface", label, id)
 				}
 				interfaces[index] = iface
 			}
@@ -934,7 +924,7 @@ func parseAllocateConstraintsResponse(source interface{}, machine *Machine) (Con
 			for index, id := range ids {
 				blockDevice := machine.BlockDevice(id)
 				if blockDevice == nil {
-					return empty, NewDeserializationError("constraint match storage %q: %d does not match a block device for the Machine", label, id)
+					return empty, NewDeserializationError("constraint match storage %q: %d does not match a block device for the MachineInterface", label, id)
 				}
 				blockDevices[index] = blockDevice
 			}

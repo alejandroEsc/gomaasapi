@@ -1,5 +1,5 @@
 // Copyright 2016 Canonical Ltd.
-// Licensed under the LGPLv3, see LICENCE file for details.
+// Licensed under the LGPLv3, see LICENCE File for details.
 
 package gomaasapi
 
@@ -21,7 +21,7 @@ var _ = gc.Suite(&fileSuite{})
 func (*fileSuite) TestReadFilesBadSchema(c *gc.C) {
 	_, err := readFiles(twoDotOh, "wat?")
 	c.Check(err, jc.Satisfies, IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, `file base schema check failed: expected list, got string("wat?")`)
+	c.Assert(err.Error(), gc.Equals, `File base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*fileSuite) TestReadFiles(c *gc.C) {
@@ -44,7 +44,7 @@ func (*fileSuite) TestHighVersion(c *gc.C) {
 }
 
 func (s *fileSuite) TestReadAllFromGetFile(c *gc.C) {
-	// When get file is used, the response includes the body of the file
+	// When get File is used, the response includes the body of the File
 	// base64 encoded, so ReadAll just decodes it.
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
@@ -56,7 +56,7 @@ func (s *fileSuite) TestReadAllFromGetFile(c *gc.C) {
 }
 
 func (s *fileSuite) TestReadAllFromFiles(c *gc.C) {
-	// When get file is used, the response includes the body of the file
+	// When get File is used, the response includes the body of the File
 	// base64 encoded, so ReadAll just decodes it.
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/files/", http.StatusOK, filesResponse)
@@ -70,7 +70,7 @@ func (s *fileSuite) TestReadAllFromFiles(c *gc.C) {
 }
 
 func (s *fileSuite) TestDeleteMissing(c *gc.C) {
-	// If we get a file, but someone else deletes it first, we get a ...
+	// If we get a File, but someone else deletes it first, we get a ...
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
 	file, err := controller.GetFile("testing")
@@ -80,7 +80,7 @@ func (s *fileSuite) TestDeleteMissing(c *gc.C) {
 }
 
 func (s *fileSuite) TestDelete(c *gc.C) {
-	// If we get a file, but someone else deletes it first, we get a ...
+	// If we get a File, but someone else deletes it first, we get a ...
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
 	server.AddDeleteResponse("/api/2.0/files/testing/", http.StatusOK, "")
@@ -107,9 +107,9 @@ var (
         "Filename": "test"
     },
     {
-        "resource_uri": "/MAAS/api/2.0/files/test-file.txt/",
+        "resource_uri": "/MAAS/api/2.0/files/test-File.txt/",
         "anon_resource_uri": "/MAAS/api/2.0/files/?op=get_by_key&key=69913e62-fad2-11e5-932f-52540051bf22",
-        "Filename": "test-file.txt"
+        "Filename": "test-File.txt"
     }
 ]
 `
