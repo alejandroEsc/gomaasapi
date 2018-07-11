@@ -98,7 +98,7 @@ func (d *device) CreateInterface(args CreateInterfaceArgs) (MachineNetworkInterf
 		return nil, NewUnexpectedError(err)
 	}
 
-	var iface Interface
+	var iface MachineNetworkInterface
 	err = json.Unmarshal(result, &iface)
 	if err != nil {
 		return nil, errors.Trace(err)

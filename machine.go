@@ -16,36 +16,36 @@ import (
 type Machine struct {
 	Controller *controller
 
-	ResourceURI     string `json:"resource_uri,omitempty"`
-	SystemID        string
-	Hostname        string
-	FQDN            string
-	Tags            []string
+	ResourceURI string `json:"resource_uri,omitempty"`
+	SystemID    string `json:"resource_uri,omitempty"`
+	Hostname    string `json:"resource_uri,omitempty"`
+	FQDN        string `json:"resource_uri,omitempty"`
+	Tags        []string
 	// OwnerData returns a copy of the key/value data stored for this
 	// object.
-	OwnerData       map[string]string
-	OperatingSystem string
-	DistroSeries    string
-	Architecture    string
-	Memory          int
-	CPUCount        int
-	IPAddresses     []string
-	PowerState      string
+	OwnerData       map[string]string `json:"resource_uri,omitempty"`
+	OperatingSystem string            `json:"resource_uri,omitempty"`
+	DistroSeries    string            `json:"resource_uri,omitempty"`
+	Architecture    string            `json:"resource_uri,omitempty"`
+	Memory          int               `json:"resource_uri,omitempty"`
+	CPUCount        int               `json:"resource_uri,omitempty"`
+	IPAddresses     []string          `json:"resource_uri,omitempty"`
+	PowerState      string            `json:"resource_uri,omitempty"`
 	// NOTE: consider some form of status struct
-	StatusName    string
-	StatusMessage string
+	StatusName    string `json:"resource_uri,omitempty"`
+	StatusMessage string `json:"resource_uri,omitempty"`
 	// BootInterface returns the interface that was used to boot the MachineInterface.
-	BootInterface *Interface
+	BootInterface *MachineNetworkInterface `json:"resource_uri,omitempty"`
 	// InterfaceSet returns all the interfaces for the MachineInterface.
-	InterfaceSet []*Interface
-	Zone         *zone
+	InterfaceSet []*MachineNetworkInterface `json:"resource_uri,omitempty"`
+	Zone         *zone                      `json:"resource_uri,omitempty"`
 	// Don't really know the difference between these two lists:
 
 	// PhysicalBlockDevice returns the physical block device for the MachineInterface
 	// that matches the ID specified. If there is no match, nil is returned.
-	PhysicalBlockDevices []*BlockDevice
+	PhysicalBlockDevices []*BlockDevice `json:"resource_uri,omitempty"`
 	// BlockDevices returns all the physical and virtual block devices on the MachineInterface.
-	BlockDevices []*BlockDevice
+	BlockDevices []*BlockDevice `json:"resource_uri,omitempty"`
 }
 
 func (m *Machine) updateFrom(other *Machine) {
@@ -229,7 +229,7 @@ func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*device, error) {
 	iface := interfaces[0]
 	nameToUse := args.InterfaceName
 
-	if err := m.updateDeviceInterface(iface, nameToUse, vlanToUse); err != nil {
+	if err := m.updateDeviceInterface(*iface, nameToUse, vlanToUse); err != nil {
 		return nil, errors.Trace(err)
 	}
 
@@ -238,7 +238,7 @@ func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*device, error) {
 		return d, nil
 	}
 
-	if err := m.linkDeviceInterfaceToSubnet(iface, args.Subnet); err != nil {
+	if err := m.linkDeviceInterfaceToSubnet(*iface, args.Subnet); err != nil {
 		return nil, errors.Trace(err)
 	}
 
@@ -299,38 +299,6 @@ func (m *Machine) SetOwnerData(ownerData map[string]string) error {
 	return nil
 }
 
-func convertToStringSlice(field interface{}) []string {
-	if field == nil {
-		return nil
-	}
-	fieldSlice := field.([]interface{})
-	result := make([]string, len(fieldSlice))
-	for i, value := range fieldSlice {
-		result[i] = value.(string)
-	}
-	return result
-}
-
-// MachineNetworkInterface represents a physical or virtual network interface on a MachineInterface.
-type MachineNetworkInterface interface {
-	// Params is a JSON field, and defaults to an empty string, but is almost
-	// always a JSON object in practice. Gleefully ignoring it until we need it.
-
-	// Update the Name, mac address or VLAN.
-	Update(UpdateInterfaceArgs) error
-
-	// Delete this interface.
-	Delete() error
-
-	// LinkSubnet will attempt to make this interface available on the specified
-	// Subnet.
-	LinkSubnet(LinkSubnetArgs) error
-
-	// UnlinkSubnet will remove the Link to the Subnet, and release the IP
-	// address associated if there is one.
-	UnlinkSubnet(subnet) error
-}
-
 type MachineInterface interface {
 	OwnerDataHolderInterface
 
@@ -352,4 +320,15 @@ type MachineInterface interface {
 	// CreateDevice creates a new DeviceInterface with this MachineInterface as the Parent.
 	// The device will have one interface that is linked to the specified Subnet.
 	CreateDevice(CreateMachineDeviceArgs) (DeviceInterface, error)
+}
+
+// OwnerDataHolderInterface represents any MAAS object that can store key/value
+// data.
+type OwnerDataHolderInterface interface {
+	// SetOwnerData updates the key/value data stored for this object
+	// with the Values passed in. Existing keys that aren't specified
+	// in the map passed in will be left in place; to clear a key set
+	// its value to "". All Owner data is cleared when the object is
+	// released.
+	SetOwnerData(map[string]string) error
 }

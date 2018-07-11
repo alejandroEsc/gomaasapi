@@ -11,8 +11,8 @@ import (
 	"github.com/juju/errors"
 )
 
-// Can't use interface as a type, so add an underscore. Yay.
-type Interface struct {
+// MachineNetworkInterface represents a physical or virtual network interface on a MachineInterface.
+type MachineNetworkInterface struct {
 	Controller   *controller
 	ResourceURI  string   `json:"resource_uri,omitempty"`
 	ID           int      `json:"ID,omitempty"`
@@ -28,7 +28,7 @@ type Interface struct {
 	Children     []string `json:"Children,omitempty"`
 }
 
-func (i *Interface) updateFrom(other *Interface) {
+func (i *MachineNetworkInterface) updateFrom(other *MachineNetworkInterface) {
 	i.ResourceURI = other.ResourceURI
 	i.ID = other.ID
 	i.Name = other.Name
@@ -57,8 +57,8 @@ func (a *UpdateInterfaceArgs) vlanID() int {
 	return a.VLAN.ID
 }
 
-// Update implements MachineNetworkInterface.
-func (i *Interface) Update(args UpdateInterfaceArgs) error {
+// Update the Name, mac address or VLAN.
+func (i *MachineNetworkInterface) Update(args UpdateInterfaceArgs) error {
 	var empty UpdateInterfaceArgs
 	if args == empty {
 		return nil
@@ -80,7 +80,7 @@ func (i *Interface) Update(args UpdateInterfaceArgs) error {
 		return NewUnexpectedError(err)
 	}
 
-	var response Interface
+	var response MachineNetworkInterface
 	err = json.Unmarshal(source, &response)
 	if err != nil {
 		return errors.Trace(err)
@@ -89,8 +89,8 @@ func (i *Interface) Update(args UpdateInterfaceArgs) error {
 	return nil
 }
 
-// Delete implements MachineNetworkInterface.
-func (i *Interface) Delete() error {
+// Delete this interface.
+func (i *MachineNetworkInterface) Delete() error {
 	err := i.Controller.delete(i.ResourceURI)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(ServerError); ok {
@@ -166,8 +166,9 @@ func (a *LinkSubnetArgs) Validate() error {
 	return nil
 }
 
-// LinkSubnet implements MachineNetworkInterface.
-func (i *Interface) LinkSubnet(args LinkSubnetArgs) error {
+// LinkSubnet will attempt to make this interface available on the specified
+// Subnet.
+func (i *MachineNetworkInterface) LinkSubnet(args LinkSubnetArgs) error {
 	if err := args.Validate(); err != nil {
 		return errors.Trace(err)
 	}
@@ -191,7 +192,7 @@ func (i *Interface) LinkSubnet(args LinkSubnetArgs) error {
 		return NewUnexpectedError(err)
 	}
 
-	var response Interface
+	var response MachineNetworkInterface
 	err = json.Unmarshal(source, &response)
 	if err != nil {
 		return errors.Trace(err)
@@ -201,7 +202,7 @@ func (i *Interface) LinkSubnet(args LinkSubnetArgs) error {
 	return nil
 }
 
-func (i *Interface) linkForSubnet(st *subnet) *link {
+func (i *MachineNetworkInterface) linkForSubnet(st *subnet) *link {
 	for _, link := range i.Links {
 		if s := link.Subnet; s != nil && s.ID == st.ID {
 			return link
@@ -210,8 +211,9 @@ func (i *Interface) linkForSubnet(st *subnet) *link {
 	return nil
 }
 
-// LinkSubnet implements MachineNetworkInterface.
-func (i *Interface) UnlinkSubnet(s *subnet) error {
+// UnlinkSubnet will remove the Link to the Subnet, and release the IP
+// address associated if there is one.
+func (i *MachineNetworkInterface) UnlinkSubnet(s *subnet) error {
 	if s == nil {
 		return errors.NotValidf("missing Subnet")
 	}
@@ -234,7 +236,7 @@ func (i *Interface) UnlinkSubnet(s *subnet) error {
 		return NewUnexpectedError(err)
 	}
 
-	var response Interface
+	var response MachineNetworkInterface
 	err = json.Unmarshal(source, &response)
 	if err != nil {
 		return errors.Trace(err)

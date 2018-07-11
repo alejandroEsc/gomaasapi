@@ -7,7 +7,7 @@ package gomaasapi
 // for a given Subnet.
 type staticRoute struct {
 	ResourceURI string `json:"resource_uri,omitempty"`
-	ID int `json:"id,omitempty"`
+	ID          int    `json:"id,omitempty"`
 	// Source is the Subnet that should have the route configured. (Machines
 	// inside Source should use GatewayIP to reach Destination addresses.)
 	Source *subnet `json:"source,omitempty"`

@@ -148,67 +148,66 @@ func (c *controller) BootResources() ([]*bootResource, error) {
 	return result, nil
 }
 
-// Fabrics implements ControllerInterface.
-func (c *controller) Fabrics() ([]*fabric, error) {
+// Fabrics returns the list of Fabrics defined in the MAAS ControllerInterface.
+func (c *controller) Fabrics() ([]fabric, error) {
 	source, err := c.get("fabrics")
 	if err != nil {
 		return nil, NewUnexpectedError(err)
 	}
-	fabrics, err := readFabrics(c.APIVersion, source)
+
+	var fabrics []fabric
+	err = json.Unmarshal(source, &fabrics)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []*fabric
-	for _, f := range fabrics {
-		result = append(result, f)
-	}
-	return result, nil
+
+	return fabrics, nil
 }
 
-// Spaces implements ControllerInterface.
-func (c *controller) Spaces() ([]Space, error) {
+// Spaces returns the list of Spaces defined in the MAAS ControllerInterface.
+func (c *controller) Spaces() ([]space, error) {
 	source, err := c.get("spaces")
 	if err != nil {
 		return nil, NewUnexpectedError(err)
 	}
-	spaces, err := readSpaces(c.APIVersion, source)
+
+	var spaces []space
+	err = json.Unmarshal(source, &spaces)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []Space
-	for _, space := range spaces {
-		result = append(result, space)
-	}
-	return result, nil
+
+	return spaces, nil
 }
 
-// StaticRoutes implements ControllerInterface.
+// StaticRoutes returns the list of StaticRoutes defined in the MAAS ControllerInterface.
 func (c *controller) StaticRoutes() ([]staticRoute, error) {
 	source, err := c.get("static-routes")
 	if err != nil {
 		return nil, NewUnexpectedError(err)
 	}
-	staticRoutes, err := readStaticRoutes(c.APIVersion, source)
+	var staticRoutes []staticRoute
+	err = json.Unmarshal(source, &staticRoutes)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []staticRoute
-	for _, sr := range staticRoutes {
-		result = append(result, sr)
-	}
-	return result, nil
+
+	return staticRoutes, nil
 }
 
-// Zones implements ControllerInterface.
+// Zones lists all the zones known to the MAAS ControllerInterface.
 func (c *controller) Zones() ([]zone, error) {
 	source, err := c.get("zones")
 	if err != nil {
 		return nil, NewUnexpectedError(err)
 	}
-	zones, err := readZones(c.APIVersion, source)
+	var zones []zone
+
+	err = json.Unmarshal(source, &zones)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
+
 	var result []zone
 	for _, z := range zones {
 		result = append(result, z)
@@ -306,7 +305,7 @@ type MachinesArgs struct {
 }
 
 // Machines implements ControllerInterface.
-func (c *controller) Machines(args MachinesArgs) ([]MachineInterface, error) {
+func (c *controller) Machines(args MachinesArgs) ([]Machine, error) {
 	params := NewURLParams()
 	params.MaybeAddMany("Hostname", args.Hostnames)
 	params.MaybeAddMany("mac_address", args.MACAddresses)
@@ -320,11 +319,12 @@ func (c *controller) Machines(args MachinesArgs) ([]MachineInterface, error) {
 	if err != nil {
 		return nil, NewUnexpectedError(err)
 	}
-	machines, err := readMachines(c.APIVersion, source)
+	var machines []Machine
+	err = json.Unmarshal(source, &machines)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []MachineInterface
+	var result []Machine
 	for _, m := range machines {
 		m.Controller = c
 		if ownerDataMatches(m.OwnerData, args.OwnerData) {
@@ -601,8 +601,8 @@ func (c *controller) ReleaseMachines(args ReleaseMachinesArgs) error {
 	return nil
 }
 
-// Files implements ControllerInterface.
-func (c *controller) Files(prefix string) ([]FileInterface, error) {
+// Files returns all the files that match the specified prefix.
+func (c *controller) Files(prefix string) ([]File, error) {
 	params := NewURLParams()
 	params.MaybeAdd("prefix", prefix)
 	source, err := c.getQuery("files", params.Values)
@@ -610,20 +610,21 @@ func (c *controller) Files(prefix string) ([]FileInterface, error) {
 		return nil, NewUnexpectedError(err)
 	}
 
-	files, err := readFiles(c.APIVersion, source)
+	var files []File
+	err = json.Unmarshal(source, &files)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []FileInterface
+
 	for _, f := range files {
 		f.Controller = c
-		result = append(result, f)
 	}
-	return result, nil
+
+	return files, nil
 }
 
-// GetFile implements ControllerInterface.
-func (c *controller) GetFile(filename string) (FileInterface, error) {
+// GetFile returns a single File by its Filename.
+func (c *controller) GetFile(filename string) (*File, error) {
 	if filename == "" {
 		return nil, errors.NotValidf("missing Filename")
 	}
@@ -636,12 +637,13 @@ func (c *controller) GetFile(filename string) (FileInterface, error) {
 		}
 		return nil, NewUnexpectedError(err)
 	}
-	file, err := readFile(c.APIVersion, source)
+	var file File
+	err = json.Unmarshal(source, &file)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 	file.Controller = c
-	return file, nil
+	return &file, nil
 }
 
 // AddFileArgs is a argument struct for passing information into AddFile.
@@ -681,7 +683,10 @@ func (a *AddFileArgs) Validate() error {
 	return nil
 }
 
-// AddFile implements ControllerInterface.
+// AddFile adds or replaces the Content of the specified Filename.
+// If or when the MAAS api is able to return metadata about a single
+// File without sending the Content of the File, we can return a FileInterface
+// instance here too.
 func (c *controller) AddFile(args AddFileArgs) error {
 	if err := args.Validate(); err != nil {
 		return errors.Trace(err)

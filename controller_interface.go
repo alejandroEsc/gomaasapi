@@ -24,19 +24,7 @@ type ControllerInterface interface {
 	// constants.
 	Capabilities() set.Strings
 
-	BootResources() ([]bootResource, error)
-
-	// Fabrics returns the list of Fabrics defined in the MAAS ControllerInterface.
-	Fabrics() ([]fabric, error)
-
-	// Spaces returns the list of Spaces defined in the MAAS ControllerInterface.
-	Spaces() ([]space, error)
-
-	// StaticRoutes returns the list of StaticRoutes defined in the MAAS ControllerInterface.
 	StaticRoutes() ([]staticRoute, error)
-
-	// Zones lists all the zones known to the MAAS ControllerInterface.
-	Zones() ([]zone, error)
 
 	// Machines returns a list of machines that match the params.
 	Machines(MachinesArgs) ([]MachineInterface, error)
@@ -54,27 +42,4 @@ type ControllerInterface interface {
 
 	// CreateDevice creates and returns a new DeviceInterface.
 	CreateDevice(CreateDeviceArgs) (DeviceInterface, error)
-
-	// Files returns all the files that match the specified prefix.
-	Files(prefix string) ([]FileInterface, error)
-
-	// Return a single File by its Filename.
-	GetFile(filename string) (FileInterface, error)
-
-	// AddFile adds or replaces the Content of the specified Filename.
-	// If or when the MAAS api is able to return metadata about a single
-	// File without sending the Content of the File, we can return a FileInterface
-	// instance here too.
-	AddFile(AddFileArgs) error
-}
-
-// OwnerDataHolderInterface represents any MAAS object that can store key/value
-// data.
-type OwnerDataHolderInterface interface {
-	// SetOwnerData updates the key/value data stored for this object
-	// with the Values passed in. Existing keys that aren't specified
-	// in the map passed in will be left in place; to clear a key set
-	// its value to "". All Owner data is cleared when the object is
-	// released.
-	SetOwnerData(map[string]string) error
 }
