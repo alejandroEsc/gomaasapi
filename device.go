@@ -12,7 +12,7 @@ import (
 	"github.com/juju/errors"
 )
 
-// DeviceInterface represents some form of device in MAAS.
+// Device represents some form of device in MAAS.
 type device struct {
 	// TODO: add domain
 	Controller  *controller
@@ -125,4 +125,11 @@ func (d *device) Delete() error {
 		return NewUnexpectedError(err)
 	}
 	return nil
+}
+
+type DeviceInterface interface {
+	// CreateInterface will create a physical interface for this MachineInterface.
+	CreateInterface(CreateInterfaceArgs) (MachineNetworkInterface, error)
+	// Delete will remove this DeviceInterface.
+	Delete() error
 }

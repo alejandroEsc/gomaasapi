@@ -21,6 +21,8 @@ type Machine struct {
 	Hostname        string
 	FQDN            string
 	Tags            []string
+	// OwnerData returns a copy of the key/value data stored for this
+	// object.
 	OwnerData       map[string]string
 	OperatingSystem string
 	DistroSeries    string
@@ -41,9 +43,9 @@ type Machine struct {
 
 	// PhysicalBlockDevice returns the physical block device for the MachineInterface
 	// that matches the ID specified. If there is no match, nil is returned.
-	PhysicalBlockDevices []*blockdevice
+	PhysicalBlockDevices []*BlockDevice
 	// BlockDevices returns all the physical and virtual block devices on the MachineInterface.
-	BlockDevices []*blockdevice
+	BlockDevices []*BlockDevice
 }
 
 func (m *Machine) updateFrom(other *Machine) {
@@ -89,7 +91,7 @@ func (m *Machine) Interface(id int) *MachineNetworkInterface {
 }
 
 // PhysicalBlockDevice implements Machine.
-func (m *Machine) PhysicalBlockDevice(id int) *blockdevice {
+func (m *Machine) PhysicalBlockDevice(id int) *BlockDevice {
 	for _, blockDevice := range m.PhysicalBlockDevices {
 		if blockDevice.ID == id {
 			return blockDevice
@@ -99,7 +101,7 @@ func (m *Machine) PhysicalBlockDevice(id int) *blockdevice {
 }
 
 // BlockDevice implements Machine.
-func (m *Machine) BlockDevice(id int) *blockdevice {
+func (m *Machine) BlockDevice(id int) *BlockDevice {
 	for _, blockDevice := range m.BlockDevices {
 		if blockDevice.ID == id {
 			return blockDevice
@@ -219,7 +221,7 @@ func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*device, error) {
 
 	// There should be one interface created for each MAC Address, and since we
 	// only specified one, there should just be one response.
-	interfaces := device.InterfaceSet
+	interfaces := d.InterfaceSet
 	if count := len(interfaces); count != 1 {
 		err := errors.Errorf("unexpected interface count for device: %d", count)
 		return nil, NewUnexpectedError(err)
@@ -233,17 +235,17 @@ func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*device, error) {
 
 	if args.Subnet == nil {
 		// Nothing further to update.
-		return device, nil
+		return d, nil
 	}
 
 	if err := m.linkDeviceInterfaceToSubnet(iface, args.Subnet); err != nil {
 		return nil, errors.Trace(err)
 	}
 
-	return device, nil
+	return d, nil
 }
 
-func (m *Machine) updateDeviceInterface(iface MachineNetworkInterface, nameToUse string, vlanToUse vlan) error {
+func (m *Machine) updateDeviceInterface(iface MachineNetworkInterface, nameToUse string, vlanToUse *vlan) error {
 	updateArgs := UpdateInterfaceArgs{}
 	updateArgs.Name = nameToUse
 
@@ -258,7 +260,7 @@ func (m *Machine) updateDeviceInterface(iface MachineNetworkInterface, nameToUse
 	return nil
 }
 
-func (m *Machine) linkDeviceInterfaceToSubnet(iface MachineNetworkInterface, subnetToUse subnet) error {
+func (m *Machine) linkDeviceInterfaceToSubnet(iface MachineNetworkInterface, subnetToUse *subnet) error {
 	err := iface.LinkSubnet(LinkSubnetArgs{
 		Mode:   LinkModeStatic,
 		Subnet: subnetToUse,
@@ -272,7 +274,11 @@ func (m *Machine) linkDeviceInterfaceToSubnet(iface MachineNetworkInterface, sub
 	return nil
 }
 
-// SetOwnerData implements OwnerDataHolderInterface.
+// SetOwnerData updates the key/value data stored for this object
+// with the Values passed in. Existing keys that aren't specified
+// in the map passed in will be left in place; to clear a key set
+// its value to "". All Owner data is cleared when the object is
+// released.
 func (m *Machine) SetOwnerData(ownerData map[string]string) error {
 	params := make(url.Values)
 	for key, value := range ownerData {
@@ -303,4 +309,47 @@ func convertToStringSlice(field interface{}) []string {
 		result[i] = value.(string)
 	}
 	return result
+}
+
+// MachineNetworkInterface represents a physical or virtual network interface on a MachineInterface.
+type MachineNetworkInterface interface {
+	// Params is a JSON field, and defaults to an empty string, but is almost
+	// always a JSON object in practice. Gleefully ignoring it until we need it.
+
+	// Update the Name, mac address or VLAN.
+	Update(UpdateInterfaceArgs) error
+
+	// Delete this interface.
+	Delete() error
+
+	// LinkSubnet will attempt to make this interface available on the specified
+	// Subnet.
+	LinkSubnet(LinkSubnetArgs) error
+
+	// UnlinkSubnet will remove the Link to the Subnet, and release the IP
+	// address associated if there is one.
+	UnlinkSubnet(subnet) error
+}
+
+type MachineInterface interface {
+	OwnerDataHolderInterface
+
+	// Devices returns a list of devices that match the params and have
+	// this MachineInterface as the Parent.
+	Devices(DevicesArgs) ([]DeviceInterface, error)
+
+	InterfaceSet() []*MachineNetworkInterface
+	// MachineNetworkInterface returns the interface for the MachineInterface that matches the ID
+	// specified. If there is no match, nil is returned.
+	Interface(id int) *MachineNetworkInterface
+	// BlockDevice returns the block device for the MachineInterface that matches the
+	// ID specified. If there is no match, nil is returned.
+	BlockDevice(id int) BlockDevice
+
+	// Start the MachineInterface and install the operating system specified in the args.
+	Start(StartArgs) error
+
+	// CreateDevice creates a new DeviceInterface with this MachineInterface as the Parent.
+	// The device will have one interface that is linked to the specified Subnet.
+	CreateDevice(CreateMachineDeviceArgs) (DeviceInterface, error)
 }

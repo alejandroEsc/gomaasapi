@@ -16,7 +16,7 @@ var _ = gc.Suite(&blockdeviceSuite{})
 func (*blockdeviceSuite) TestReadBlockDevicesBadSchema(c *gc.C) {
 	_, err := readBlockDevices(twoDotOh, "wat?")
 	c.Check(err, jc.Satisfies, IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, `blockdevice base schema check failed: expected list, got string("wat?")`)
+	c.Assert(err.Error(), gc.Equals, `BlockDevice base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*blockdeviceSuite) TestReadBlockDevices(c *gc.C) {

@@ -68,71 +68,9 @@ type ControllerInterface interface {
 	AddFile(AddFileArgs) error
 }
 
-// FileInterface represents a File stored in the MAAS ControllerInterface.
-type FileInterface interface {
-	// Delete removes the File from the MAAS ControllerInterface.
-	Delete() error
-	// ReadAll returns the Content of the File.
-	ReadAll() ([]byte, error)
-}
-
-type DeviceInterface interface {
-	// CreateInterface will create a physical interface for this MachineInterface.
-	CreateInterface(CreateInterfaceArgs) (MachineNetworkInterface, error)
-	// Delete will remove this DeviceInterface.
-	Delete() error
-}
-
-type MachineInterface interface {
-	OwnerDataHolderInterface
-
-	// Devices returns a list of devices that match the params and have
-	// this MachineInterface as the Parent.
-	Devices(DevicesArgs) ([]DeviceInterface, error)
-
-	InterfaceSet() []*MachineNetworkInterface
-	// MachineNetworkInterface returns the interface for the MachineInterface that matches the ID
-	// specified. If there is no match, nil is returned.
-	Interface(id int) *MachineNetworkInterface
-	// BlockDevice returns the block device for the MachineInterface that matches the
-	// ID specified. If there is no match, nil is returned.
-	BlockDevice(id int) blockdevice
-
-	// Start the MachineInterface and install the operating system specified in the args.
-	Start(StartArgs) error
-
-	// CreateDevice creates a new DeviceInterface with this MachineInterface as the Parent.
-	// The device will have one interface that is linked to the specified Subnet.
-	CreateDevice(CreateMachineDeviceArgs) (DeviceInterface, error)
-}
-
-// MachineNetworkInterface represents a physical or virtual network interface on a MachineInterface.
-type MachineNetworkInterface interface {
-	// Params is a JSON field, and defaults to an empty string, but is almost
-	// always a JSON object in practice. Gleefully ignoring it until we need it.
-
-	// Update the Name, mac address or VLAN.
-	Update(UpdateInterfaceArgs) error
-
-	// Delete this interface.
-	Delete() error
-
-	// LinkSubnet will attempt to make this interface available on the specified
-	// Subnet.
-	LinkSubnet(LinkSubnetArgs) error
-
-	// UnlinkSubnet will remove the Link to the Subnet, and release the IP
-	// address associated if there is one.
-	UnlinkSubnet(subnet) error
-}
-
 // OwnerDataHolderInterface represents any MAAS object that can store key/value
 // data.
 type OwnerDataHolderInterface interface {
-	// OwnerData returns a copy of the key/value data stored for this
-	// object.
-	OwnerData() map[string]string
-
 	// SetOwnerData updates the key/value data stored for this object
 	// with the Values passed in. Existing keys that aren't specified
 	// in the map passed in will be left in place; to clear a key set
