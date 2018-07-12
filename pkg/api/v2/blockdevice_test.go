@@ -5,62 +5,58 @@ package maasapiv2
 
 import (
 	"encoding/json"
-
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
-	"github.com/juju/gomaasapi/pkg/api/util"
+	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
-type blockdeviceSuite struct{}
 
-var (
-	_   = gc.Suite(&blockdeviceSuite{})
-	err error
-)
+var err error
 
-func (*blockdeviceSuite) TestReadBlockDevicesBadSchema(c *gc.C) {
+func TestReadBlockDevicesBadSchema(t *testing.T) {
 	var b BlockDevice
 	err = json.Unmarshal([]byte("wat?"), &b)
-	c.Check(err, jc.Satisfies, util.IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, `BlockDevice base schema check failed: expected list, got string("wat?")`)
+	assert.Error(t, err)
 }
 
-func (*blockdeviceSuite) TestReadBlockDevices(c *gc.C) {
+func TestReadBlockDevices(t *testing.T) {
 	var blockdevices []BlockDevice
 	err = json.Unmarshal([]byte(blockdevicesResponse), &blockdevices)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(blockdevices, gc.HasLen, 1)
+	assert.Equal(t, err, nil, "unmarshal error should be nil")
+	assert.Len(t, blockdevices, 1)
+
 	blockdevice := blockdevices[0]
 
-	c.Check(blockdevice.ID, gc.Equals, 34)
-	c.Check(blockdevice.Name, gc.Equals, "sda")
-	c.Check(blockdevice.Model, gc.Equals, "QEMU HARDDISK")
-	c.Check(blockdevice.Path, gc.Equals, "/dev/disk/by-dname/sda")
-	c.Check(blockdevice.IDPath, gc.Equals, "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001")
-	c.Check(blockdevice.UsedFor, gc.Equals, "MBR partitioned with 1 partition")
-	c.Check(blockdevice.Tags, jc.DeepEquals, []string{"rotary"})
-	c.Check(blockdevice.BlockSize, gc.Equals, uint64(4096))
-	c.Check(blockdevice.UsedSize, gc.Equals, uint64(8586788864))
-	c.Check(blockdevice.Size, gc.Equals, uint64(8589934592))
+	assert.Equal(t, blockdevice.ID, 34)
+	assert.Equal(t, blockdevice.Name, "sda")
+	assert.Equal(t, blockdevice.Path, "/dev/disk/by-dname/sda")
+	assert.Equal(t, blockdevice.IDPath, "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001")
+	assert.Equal(t, blockdevice.UsedFor, "MBR partitioned with 1 partition")
+
+	assert.Equal(t, blockdevice.Tags, []string{"rotary"})
+	assert.Equal(t, blockdevice.BlockSize, uint64(4096))
+	assert.Equal(t, blockdevice.UsedSize,uint64(8586788864))
+	assert.Equal(t, blockdevice.Size, uint64(8589934592))
+
 
 	partitions := blockdevice.Partitions
-	c.Assert(partitions, gc.HasLen, 1)
+	assert.Len(t, partitions, 1)
 	partition := partitions[0]
-	c.Check(partition.ID, gc.Equals, 1)
-	c.Check(partition.UsedFor, gc.Equals, "ext4 formatted filesystem mounted at /")
+
+	assert.Equal(t,partition.ID, 1)
+	assert.Equal(t,partition.UsedFor, "ext4 formatted filesystem mounted at /")
 }
 
-func (*blockdeviceSuite) TestReadBlockDevicesWithNulls(c *gc.C) {
+func TestReadBlockDevicesWithNulls(t *testing.T) {
 	var blockdevices []BlockDevice
 	err = json.Unmarshal([]byte(blockdevicesWithNullsResponse), &blockdevices)
+	assert.Equal(t, err, nil, "unmarshal error should be nil")
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(blockdevices, gc.HasLen, 1)
+	assert.Len(t, blockdevices, 1)
 	blockdevice := blockdevices[0]
 
-	c.Check(blockdevice.Model, gc.Equals, "")
-	c.Check(blockdevice.IDPath, gc.Equals, "")
+	assert.Equal(t, blockdevice.Model,"")
+	assert.Equal(t, blockdevice.IDPath,"")
 }
 
 const (

@@ -8,19 +8,16 @@ import (
 
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
+	"testing"
 )
 
-type staticRouteSuite struct{}
-
-var _ = gc.Suite(&staticRouteSuite{})
-
-func (*staticRouteSuite) TestReadStaticRoutesBadSchema(c *gc.C) {
+func TestReadStaticRoutesBadSchema(t *testing.T) {
 	var s staticRoute
 	err = json.Unmarshal([]byte("wat?"), &s)
 	c.Assert(err.Error(), gc.Equals, `static-route base schema check failed: expected list, got string("wat?")`)
 }
 
-func (*staticRouteSuite) TestReadStaticRoutes(c *gc.C) {
+func TestReadStaticRoutes(t *testing.T) {
 	var staticRoutes []staticRoute
 	err = json.Unmarshal([]byte(staticRoutesResponse), &staticRoutes)
 
@@ -41,7 +38,7 @@ func (*staticRouteSuite) TestReadStaticRoutes(c *gc.C) {
 	c.Assert(destination.CIDR, gc.Equals, "192.168.0.0/16")
 }
 
-var staticRoutesResponse = `
+const staticRoutesResponse = `
 [
     {
         "Destination": {

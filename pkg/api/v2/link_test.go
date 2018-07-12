@@ -9,25 +9,23 @@ import (
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	"testing"
 )
 
-type linkSuite struct{}
 
-var _ = gc.Suite(&linkSuite{})
-
-func (*linkSuite) TestNilSubnet(c *gc.C) {
+func TestNilSubnet(t *testing.T) {
 	var empty link
 	c.Check(empty.Subnet == nil, jc.IsTrue)
 }
 
-func (*linkSuite) TestReadLinksBadSchema(c *gc.C) {
+func TestReadLinksBadSchema(t *testing.T) {
 	var l link
 	err = json.Unmarshal([]byte("wat?"), &l)
 	c.Check(err, jc.Satisfies, util.IsDeserializationError)
 	c.Assert(err.Error(), gc.Equals, `link base schema check failed: expected list, got string("wat?")`)
 }
 
-func (*linkSuite) TestReadLinks(c *gc.C) {
+func TestReadLinks(t *testing.T) {
 	var links []link
 	err = json.Unmarshal([]byte(linksResponse), &links)
 

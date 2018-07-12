@@ -5,31 +5,27 @@ package maasapiv2
 
 import (
 	"encoding/json"
-
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
+	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
-type zoneSuite struct{}
-
-var _ = gc.Suite(&zoneSuite{})
-
-func (*zoneSuite) TestReadZonesBadSchema(c *gc.C) {
+func TestReadZonesBadSchema(t *testing.T) {
 	var z zone
 	err = json.Unmarshal([]byte("wat?"), &z)
-	c.Assert(err.Error(), gc.Equals, `Zone base schema check failed: expected list, got string("wat?")`)
+	assert.Error(t, err)
 }
 
-func (*zoneSuite) TestReadZones(c *gc.C) {
+func TestReadZones(t *testing.T) {
 	var zones []zone
 	err = json.Unmarshal([]byte(zoneResponse), &zones)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(zones, gc.HasLen, 2)
-	c.Assert(zones[0].Name, gc.Equals, "default")
-	c.Assert(zones[0].Description, gc.Equals, "default Description")
-	c.Assert(zones[1].Name, gc.Equals, "special")
-	c.Assert(zones[1].Description, gc.Equals, "special Description")
+	assert.Nil(t, err)
+
+	assert.Len(t, zones, 2)
+	assert.Equal(t, zones[0].Name,  "default")
+	assert.Equal(t, zones[0].Description,  "default Description")
+	assert.Equal(t, zones[1].Name,  "special")
+	assert.Equal(t, zones[1].Description, "special Description")
 }
 
 const zoneResponse = `

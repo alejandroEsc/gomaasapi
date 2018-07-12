@@ -6,33 +6,30 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
+	"testing"
+	"github.com/stretchr/testify/assert"
+
 )
 
-type fabricSuite struct{}
-
-var _ = gc.Suite(&fabricSuite{})
-
-func (*fabricSuite) TestReadFabricsBadSchema(c *gc.C) {
+func TestReadFabricsBadSchema(t *testing.T) {
 	var f fabric
 	err = json.Unmarshal([]byte("wat?"), &f)
-	c.Assert(err.Error(), gc.Equals, `Fabric base schema check failed: expected list, got string("wat?")`)
+	assert.Error(t, err)
 }
 
-func (*fabricSuite) TestReadFabrics(c *gc.C) {
+func TestReadFabrics(t *testing.T) {
 	var fabrics []fabric
 	err = json.Unmarshal([]byte(fabricResponse), &fabrics)
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(fabrics, gc.HasLen, 2)
+	assert.Nil(t, err)
+	assert.Len(t, fabrics, 2)
 
 	fabric := fabrics[0]
-	c.Assert(fabric.ID, gc.Equals, 0)
-	c.Assert(fabric.Name, gc.Equals, "Fabric-0")
-	c.Assert(fabric.ClassType, gc.Equals, "")
+	assert.Equal(t, fabric.ID,0)
+	assert.Equal(t, fabric.Name, "Fabric-0")
+	assert.Equal(t, fabric.ClassType,  "")
 	vlans := fabric.VLANs
-	c.Assert(vlans, gc.HasLen, 1)
-	c.Assert(vlans[0].Name, gc.Equals, "untagged")
+	assert.Len(t, vlans,1)
+	assert.Equal(t, vlans[0].Name, "untagged")
 }
 
 const fabricResponse = `

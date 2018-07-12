@@ -22,12 +22,12 @@ type interfaceSuite struct {
 
 var _ = gc.Suite(&interfaceSuite{})
 
-func (*interfaceSuite) TestNilVLAN(c *gc.C) {
+func  TestNilVLAN(t *testing.T) {
 	var empty MachineNetworkInterface
 	c.Check(empty.VLAN == nil, jc.IsTrue)
 }
 
-func (*interfaceSuite) TestReadInterfacesBadSchema(c *gc.C) {
+func  TestReadInterfacesBadSchema(t *testing.T) {
 	var b MachineNetworkInterface
 	err = json.Unmarshal([]byte("wat?"), &b)
 
@@ -35,7 +35,7 @@ func (*interfaceSuite) TestReadInterfacesBadSchema(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, `interface base schema check failed: expected list, got string("wat?")`)
 }
 
-func (*interfaceSuite) TestReadInterfacesNulls(c *gc.C) {
+func  TestReadInterfacesNulls(t *testing.T) {
 	var iface MachineNetworkInterface
 	err = json.Unmarshal([]byte(interfaceNullsResponse), &iface)
 
@@ -46,7 +46,7 @@ func (*interfaceSuite) TestReadInterfacesNulls(c *gc.C) {
 	c.Check(iface.VLAN, gc.IsNil)
 }
 
-func (s *interfaceSuite) checkInterface(c *gc.C, iface *MachineNetworkInterface) {
+func  checkInterface(t *testing.T, iface *MachineNetworkInterface) {
 	c.Check(iface.ID, gc.Equals, 40)
 	c.Check(iface.Name, gc.Equals, "eth0")
 	c.Check(iface.Type, gc.Equals, "physical")
@@ -68,7 +68,7 @@ func (s *interfaceSuite) checkInterface(c *gc.C, iface *MachineNetworkInterface)
 	c.Check(links[0].ID, gc.Equals, 69)
 }
 
-func (s *interfaceSuite) TestReadInterfaces(c *gc.C) {
+func  TestReadInterfaces(t *testing.T) {
 	var interfaces []MachineNetworkInterface
 	err = json.Unmarshal([]byte(interfacesResponse), &interfaces)
 
@@ -77,7 +77,7 @@ func (s *interfaceSuite) TestReadInterfaces(c *gc.C) {
 	s.checkInterface(c, &interfaces[0])
 }
 
-func (s *interfaceSuite) TestReadInterface(c *gc.C) {
+func  TestReadInterface(t *testing.T) {
 	var iface MachineNetworkInterface
 	err = json.Unmarshal([]byte(interfacesResponse), &iface)
 
@@ -85,7 +85,7 @@ func (s *interfaceSuite) TestReadInterface(c *gc.C) {
 	s.checkInterface(c, &iface)
 }
 
-func (s *interfaceSuite) getServerAndNewInterface(c *gc.C) (*client.SimpleTestServer, *MachineNetworkInterface) {
+func  getServerAndNewInterface(t *testing.T) (*client.SimpleTestServer, *MachineNetworkInterface) {
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
 	devices, err := controller.Devices(DevicesArgs{})
@@ -97,7 +97,7 @@ func (s *interfaceSuite) getServerAndNewInterface(c *gc.C) (*client.SimpleTestSe
 	return server, iface
 }
 
-func (s *interfaceSuite) TestDelete(c *gc.C) {
+func  TestDelete(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	// Successful delete is 204 - StatusNoContent - We hope, would be consistent
 	// with device deletions.
@@ -106,28 +106,28 @@ func (s *interfaceSuite) TestDelete(c *gc.C) {
 	c.Assert(err, jc.ErrorIsNil)
 }
 
-func (s *interfaceSuite) TestDelete404(c *gc.C) {
+func  TestDelete404(t *testing.T) {
 	_, iface := s.getServerAndNewInterface(c)
 	// No Path, so 404
 	err := iface.Delete()
 	c.Assert(err, jc.Satisfies, util.IsNoMatchError)
 }
 
-func (s *interfaceSuite) TestDeleteForbidden(c *gc.C) {
+func  TestDeleteForbidden(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	server.AddDeleteResponse(iface.ResourceURI, http.StatusForbidden, "")
 	err := iface.Delete()
 	c.Assert(err, jc.Satisfies, util.IsPermissionError)
 }
 
-func (s *interfaceSuite) TestDeleteUnknown(c *gc.C) {
+func  TestDeleteUnknown(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	server.AddDeleteResponse(iface.ResourceURI, http.StatusConflict, "")
 	err := iface.Delete()
 	c.Assert(err, jc.Satisfies, util.IsUnexpectedError)
 }
 
-func (s *interfaceSuite) TestLinkSubnetArgs(c *gc.C) {
+func  TestLinkSubnetArgs(t *testing.T) {
 	for i, test := range []struct {
 		args    LinkSubnetArgs
 		errText string
@@ -173,14 +173,14 @@ func (s *interfaceSuite) TestLinkSubnetArgs(c *gc.C) {
 	}
 }
 
-func (s *interfaceSuite) TestLinkSubnetValidates(c *gc.C) {
+func  TestLinkSubnetValidates(t *testing.T) {
 	_, iface := s.getServerAndNewInterface(c)
 	err := iface.LinkSubnet(LinkSubnetArgs{})
 	c.Check(err, jc.Satisfies, errors.IsNotValid)
 	c.Check(err.Error(), gc.Equals, "missing Mode not valid")
 }
 
-func (s *interfaceSuite) TestLinkSubnetGood(c *gc.C) {
+func  TestLinkSubnetGood(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	// The changed information is there just for the test to show that the response
 	// is parsed and the interface updated
@@ -206,7 +206,7 @@ func (s *interfaceSuite) TestLinkSubnetGood(c *gc.C) {
 	c.Assert(form.Get("default_gateway"), gc.Equals, "true")
 }
 
-func (s *interfaceSuite) TestLinkSubnetMissing(c *gc.C) {
+func  TestLinkSubnetMissing(t *testing.T) {
 	_, iface := s.getServerAndNewInterface(c)
 	args := LinkSubnetArgs{
 		Mode:   LinkModeStatic,
@@ -216,7 +216,7 @@ func (s *interfaceSuite) TestLinkSubnetMissing(c *gc.C) {
 	c.Check(err, jc.Satisfies, util.IsBadRequestError)
 }
 
-func (s *interfaceSuite) TestLinkSubnetForbidden(c *gc.C) {
+func  TestLinkSubnetForbidden(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	server.AddPostResponse(iface.ResourceURI+"?op=link_subnet", http.StatusForbidden, "bad user")
 	args := LinkSubnetArgs{
@@ -228,7 +228,7 @@ func (s *interfaceSuite) TestLinkSubnetForbidden(c *gc.C) {
 	c.Check(err.Error(), gc.Equals, "bad user")
 }
 
-func (s *interfaceSuite) TestLinkSubnetNoAddressesAvailable(c *gc.C) {
+func  TestLinkSubnetNoAddressesAvailable(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	server.AddPostResponse(iface.ResourceURI+"?op=link_subnet", http.StatusServiceUnavailable, "no addresses")
 	args := LinkSubnetArgs{
@@ -240,7 +240,7 @@ func (s *interfaceSuite) TestLinkSubnetNoAddressesAvailable(c *gc.C) {
 	c.Check(err.Error(), gc.Equals, "no addresses")
 }
 
-func (s *interfaceSuite) TestLinkSubnetUnknown(c *gc.C) {
+func  TestLinkSubnetUnknown(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	server.AddPostResponse(iface.ResourceURI+"?op=link_subnet", http.StatusMethodNotAllowed, "wat?")
 	args := LinkSubnetArgs{
@@ -252,21 +252,21 @@ func (s *interfaceSuite) TestLinkSubnetUnknown(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
 
-func (s *interfaceSuite) TestUnlinkSubnetValidates(c *gc.C) {
+func  TestUnlinkSubnetValidates(t *testing.T) {
 	_, iface := s.getServerAndNewInterface(c)
 	err := iface.UnlinkSubnet(nil)
 	c.Check(err, jc.Satisfies, errors.IsNotValid)
 	c.Check(err.Error(), gc.Equals, "missing Subnet not valid")
 }
 
-func (s *interfaceSuite) TestUnlinkSubnetNotLinked(c *gc.C) {
+func  TestUnlinkSubnetNotLinked(t *testing.T) {
 	_, iface := s.getServerAndNewInterface(c)
 	err := iface.UnlinkSubnet(&subnet{ID: 42})
 	c.Check(err, jc.Satisfies, errors.IsNotValid)
 	c.Check(err.Error(), gc.Equals, "unlinked Subnet not valid")
 }
 
-func (s *interfaceSuite) TestUnlinkSubnetGood(c *gc.C) {
+func  TestUnlinkSubnetGood(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	// The changed information is there just for the test to show that the response
 	// is parsed and the interface updated
@@ -284,13 +284,13 @@ func (s *interfaceSuite) TestUnlinkSubnetGood(c *gc.C) {
 	c.Assert(form.Get("ID"), gc.Equals, "69")
 }
 
-func (s *interfaceSuite) TestUnlinkSubnetMissing(c *gc.C) {
+func  TestUnlinkSubnetMissing(t *testing.T) {
 	_, iface := s.getServerAndNewInterface(c)
 	err := iface.UnlinkSubnet(&subnet{ID: 1})
 	c.Check(err, jc.Satisfies, util.IsBadRequestError)
 }
 
-func (s *interfaceSuite) TestUnlinkSubnetForbidden(c *gc.C) {
+func  TestUnlinkSubnetForbidden(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	server.AddPostResponse(iface.ResourceURI+"?op=unlink_subnet", http.StatusForbidden, "bad user")
 	err := iface.UnlinkSubnet(&subnet{ID: 1})
@@ -298,7 +298,7 @@ func (s *interfaceSuite) TestUnlinkSubnetForbidden(c *gc.C) {
 	c.Check(err.Error(), gc.Equals, "bad user")
 }
 
-func (s *interfaceSuite) TestUnlinkSubnetUnknown(c *gc.C) {
+func  TestUnlinkSubnetUnknown(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	server.AddPostResponse(iface.ResourceURI+"?op=unlink_subnet", http.StatusMethodNotAllowed, "wat?")
 	err := iface.UnlinkSubnet(&subnet{ID: 1})
@@ -306,7 +306,7 @@ func (s *interfaceSuite) TestUnlinkSubnetUnknown(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
 
-func (s *interfaceSuite) TestUpdateNoChangeNoRequest(c *gc.C) {
+func  TestUpdateNoChangeNoRequest(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	count := server.RequestCount()
 	err := iface.Update(UpdateInterfaceArgs{})
@@ -314,13 +314,13 @@ func (s *interfaceSuite) TestUpdateNoChangeNoRequest(c *gc.C) {
 	c.Assert(server.RequestCount(), gc.Equals, count)
 }
 
-func (s *interfaceSuite) TestUpdateMissing(c *gc.C) {
+func  TestUpdateMissing(t *testing.T) {
 	_, iface := s.getServerAndNewInterface(c)
 	err := iface.Update(UpdateInterfaceArgs{Name: "eth2"})
 	c.Check(err, jc.Satisfies, util.IsNoMatchError)
 }
 
-func (s *interfaceSuite) TestUpdateForbidden(c *gc.C) {
+func  TestUpdateForbidden(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	server.AddPutResponse(iface.ResourceURI, http.StatusForbidden, "bad user")
 	err := iface.Update(UpdateInterfaceArgs{Name: "eth2"})
@@ -328,7 +328,7 @@ func (s *interfaceSuite) TestUpdateForbidden(c *gc.C) {
 	c.Check(err.Error(), gc.Equals, "bad user")
 }
 
-func (s *interfaceSuite) TestUpdateUnknown(c *gc.C) {
+func  TestUpdateUnknown(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	server.AddPutResponse(iface.ResourceURI, http.StatusMethodNotAllowed, "wat?")
 	err := iface.Update(UpdateInterfaceArgs{Name: "eth2"})
@@ -336,7 +336,7 @@ func (s *interfaceSuite) TestUpdateUnknown(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
 
-func (s *interfaceSuite) TestUpdateGood(c *gc.C) {
+func  TestUpdateGood(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	// The changed information is there just for the test to show that the response
 	// is parsed and the interface updated

@@ -8,27 +8,28 @@ import (
 
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
+	"testing"
 )
 
 type subnetSuite struct{}
 
 var _ = gc.Suite(&subnetSuite{})
 
-func (*subnetSuite) TestNilVLAN(c *gc.C) {
+func TestNilVLAN(t *testing.T) {
 	var empty subnet
 	c.Check(empty.VLAN == nil, jc.IsTrue)
 }
 
-func (*subnetSuite) TestReadSubnetsBadSchema(c *gc.C) {
+func TestReadSubnetsBadSchema(t *testing.T) {
 	var s subnet
 	err = json.Unmarshal([]byte("wat?"), &s)
 
 	c.Assert(err.Error(), gc.Equals, `Subnet base schema check failed: expected list, got string("wat?")`)
 }
 
-func (*subnetSuite) TestReadSubnets(c *gc.C) {
+func TestReadSubnets(t *testing.T) {
 	var subnets []subnet
-	err = json.Unmarshal([]byte(blockdevicesWithNullsResponse), &subnets)
+	err = json.Unmarshal([]byte(subnetResponse), &subnets)
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(subnets, gc.HasLen, 2)
 

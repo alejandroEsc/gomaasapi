@@ -10,31 +10,23 @@ import (
 
 	"github.com/juju/errors"
 	"github.com/juju/testing"
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/juju/gomaasapi/pkg/api/client"
 )
 
-type deviceSuite struct {
-	testing.CleanupSuite
-}
-
-var _ = gc.Suite(&deviceSuite{})
-
-func (*deviceSuite) TestNilZone(c *gc.C) {
+func  TestNilZone(t *testing.T) {
 	var empty device
 	c.Check(empty.Zone == nil, jc.IsTrue)
 }
 
-func (*deviceSuite) TestReadDevicesBadSchema(c *gc.C) {
+func  TestReadDevicesBadSchema(t *testing.T) {
 	var d device
 	err = json.Unmarshal([]byte("wat?"), &d)
 	c.Check(err, jc.Satisfies, util.IsDeserializationError)
 	c.Assert(err.Error(), gc.Equals, `device base schema check failed: expected list, got string("wat?")`)
 }
 
-func (*deviceSuite) TestReadDevices(c *gc.C) {
+func  TestReadDevices(t *testing.T) {
 	var devices []device
 	err = json.Unmarshal([]byte(devicesResponse), &devices)
 
@@ -51,14 +43,14 @@ func (*deviceSuite) TestReadDevices(c *gc.C) {
 	c.Check(zone.Name, gc.Equals, "default")
 }
 
-func (s *deviceSuite) TestInterfaceSet(c *gc.C) {
+func TestInterfaceSet(t *testing.T) {
 	server, device := s.getServerAndDevice(c)
 	server.AddGetResponse(device.interfacesURI(), http.StatusOK, interfacesResponse)
 	ifaces := device.InterfaceSet
 	c.Assert(ifaces, gc.HasLen, 2)
 }
 
-func (s *controllerSuite) TestCreateInterfaceArgsValidate(c *gc.C) {
+func (s *controllerSuite) TestCreateInterfaceArgsValidate(t *testing.T) {
 	for i, test := range []struct {
 		args    CreateInterfaceArgs
 		errText string
@@ -84,13 +76,13 @@ func (s *controllerSuite) TestCreateInterfaceArgsValidate(c *gc.C) {
 	}
 }
 
-func (s *deviceSuite) TestCreateInterfaceValidates(c *gc.C) {
+func TestCreateInterfaceValidates(t *testing.T) {
 	_, device := s.getServerAndDevice(c)
 	_, err := device.CreateInterface(CreateInterfaceArgs{})
 	c.Assert(err, jc.Satisfies, errors.IsNotValid)
 }
 
-func (s *deviceSuite) TestCreateInterface(c *gc.C) {
+func TestCreateInterface(t *testing.T) {
 	server, device := s.getServerAndDevice(c)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusOK, interfaceResponse)
 
@@ -119,7 +111,7 @@ func minimalCreateInterfaceArgs() CreateInterfaceArgs {
 	}
 }
 
-func (s *deviceSuite) TestCreateInterfaceNotFound(c *gc.C) {
+func TestCreateInterfaceNotFound(t *testing.T) {
 	server, device := s.getServerAndDevice(c)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusNotFound, "can't find device")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
@@ -127,7 +119,7 @@ func (s *deviceSuite) TestCreateInterfaceNotFound(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "can't find device")
 }
 
-func (s *deviceSuite) TestCreateInterfaceConflict(c *gc.C) {
+func TestCreateInterfaceConflict(t *testing.T) {
 	server, device := s.getServerAndDevice(c)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusConflict, "device not allocated")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
@@ -135,7 +127,7 @@ func (s *deviceSuite) TestCreateInterfaceConflict(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "device not allocated")
 }
 
-func (s *deviceSuite) TestCreateInterfaceForbidden(c *gc.C) {
+func TestCreateInterfaceForbidden(t *testing.T) {
 	server, device := s.getServerAndDevice(c)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusForbidden, "device not yours")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
@@ -143,7 +135,7 @@ func (s *deviceSuite) TestCreateInterfaceForbidden(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "device not yours")
 }
 
-func (s *deviceSuite) TestCreateInterfaceServiceUnavailable(c *gc.C) {
+func TestCreateInterfaceServiceUnavailable(t *testing.T) {
 	server, device := s.getServerAndDevice(c)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusServiceUnavailable, "no ip addresses available")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
@@ -151,7 +143,7 @@ func (s *deviceSuite) TestCreateInterfaceServiceUnavailable(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "no ip addresses available")
 }
 
-func (s *deviceSuite) TestCreateInterfaceUnknown(c *gc.C) {
+func TestCreateInterfaceUnknown(t *testing.T) {
 	server, device := s.getServerAndDevice(c)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusMethodNotAllowed, "wat?")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
@@ -159,7 +151,7 @@ func (s *deviceSuite) TestCreateInterfaceUnknown(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
 
-func (s *deviceSuite) getServerAndDevice(c *gc.C) (*client.SimpleTestServer, *device) {
+func getServerAndDevice(t *testing.T) (*client.SimpleTestServer, *device) {
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
 
@@ -169,7 +161,7 @@ func (s *deviceSuite) getServerAndDevice(c *gc.C) (*client.SimpleTestServer, *de
 	return server, &devices[0]
 }
 
-func (s *deviceSuite) TestDelete(c *gc.C) {
+func TestDelete(t *testing.T) {
 	server, device := s.getServerAndDevice(c)
 	// Successful delete is 204 - StatusNoContent
 	server.AddDeleteResponse(device.ResourceURI, http.StatusNoContent, "")
@@ -177,21 +169,21 @@ func (s *deviceSuite) TestDelete(c *gc.C) {
 	c.Assert(err, jc.ErrorIsNil)
 }
 
-func (s *deviceSuite) TestDelete404(c *gc.C) {
+func TestDelete404(t *testing.T) {
 	_, device := s.getServerAndDevice(c)
 	// No Path, so 404
 	err := device.Delete()
 	c.Assert(err, jc.Satisfies, util.IsNoMatchError)
 }
 
-func (s *deviceSuite) TestDeleteForbidden(c *gc.C) {
+func TestDeleteForbidden(t *testing.T) {
 	server, device := s.getServerAndDevice(c)
 	server.AddDeleteResponse(device.ResourceURI, http.StatusForbidden, "")
 	err := device.Delete()
 	c.Assert(err, jc.Satisfies, util.IsPermissionError)
 }
 
-func (s *deviceSuite) TestDeleteUnknown(c *gc.C) {
+func TestDeleteUnknown(t *testing.T) {
 	server, device := s.getServerAndDevice(c)
 	server.AddDeleteResponse(device.ResourceURI, http.StatusConflict, "")
 	err := device.Delete()

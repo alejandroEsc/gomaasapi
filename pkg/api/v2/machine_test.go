@@ -23,7 +23,7 @@ type machineSuite struct {
 
 var _ = gc.Suite(&machineSuite{})
 
-func (*machineSuite) TestNilGetters(c *gc.C) {
+func TestNilGetters(t *testing.T) {
 	var empty Machine
 	c.Check(empty.Zone == nil, jc.IsTrue)
 	c.Check(empty.PhysicalBlockDevice(0) == nil, jc.IsTrue)
@@ -31,14 +31,14 @@ func (*machineSuite) TestNilGetters(c *gc.C) {
 	c.Check(empty.BootInterface == nil, jc.IsTrue)
 }
 
-func (*machineSuite) TestReadMachinesBadSchema(c *gc.C) {
+func TestReadMachinesBadSchema(t *testing.T) {
 	var m Machine
 	err = json.Unmarshal([]byte("wat?"), &m)
 	c.Check(err, jc.Satisfies, util.IsDeserializationError)
 	c.Assert(err.Error(), gc.Equals, `MachineInterface base schema check failed: expected list, got string("wat?")`)
 }
 
-func (*machineSuite) TestReadMachines(c *gc.C) {
+func TestReadMachines(t *testing.T) {
 	var machines []Machine
 	err = json.Unmarshal([]byte(machineResponse), &machines)
 	c.Assert(err, jc.ErrorIsNil)
@@ -92,7 +92,7 @@ func (*machineSuite) TestReadMachines(c *gc.C) {
 	c.Assert(machine.PhysicalBlockDevice(id+5), gc.IsNil)
 }
 
-func (*machineSuite) TestReadMachinesNilValues(c *gc.C) {
+func TestReadMachinesNilValues(t *testing.T) {
 	j := util.ParseJSON(c, machinesResponse)
 	data := j.([]interface{})[0].(map[string]interface{})
 	data["Architecture"] = nil
@@ -112,7 +112,7 @@ func (*machineSuite) TestReadMachinesNilValues(c *gc.C) {
 	c.Check(machine.BootInterface, gc.IsNil)
 }
 
-func (s *machineSuite) getServerAndMachine(c *gc.C) (*client.SimpleTestServer, *Machine) {
+func  getServerAndMachine(t *testing.T) (*client.SimpleTestServer, *Machine) {
 	server, controller := createTestServerController(c, s)
 	// Just have machines return one MachineInterface
 	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, "["+machineResponse+"]")
@@ -124,7 +124,7 @@ func (s *machineSuite) getServerAndMachine(c *gc.C) (*client.SimpleTestServer, *
 	return server, &machine
 }
 
-func (s *machineSuite) TestStart(c *gc.C) {
+func  TestStart(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	response := util.UpdateJSONMap(c, machineResponse, map[string]interface{}{
 		"status_name":    "Deploying",
@@ -152,7 +152,7 @@ func (s *machineSuite) TestStart(c *gc.C) {
 	c.Check(form.Get("comment"), gc.Equals, "a comment")
 }
 
-func (s *machineSuite) TestStartMachineNotFound(c *gc.C) {
+func  TestStartMachineNotFound(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusNotFound, "can't find MachineInterface")
 	err := machine.Start(StartArgs{})
@@ -160,7 +160,7 @@ func (s *machineSuite) TestStartMachineNotFound(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "can't find MachineInterface")
 }
 
-func (s *machineSuite) TestStartMachineConflict(c *gc.C) {
+func  TestStartMachineConflict(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusConflict, "MachineInterface not allocated")
 	err := machine.Start(StartArgs{})
@@ -168,7 +168,7 @@ func (s *machineSuite) TestStartMachineConflict(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "MachineInterface not allocated")
 }
 
-func (s *machineSuite) TestStartMachineForbidden(c *gc.C) {
+func  TestStartMachineForbidden(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusForbidden, "MachineInterface not yours")
 	err := machine.Start(StartArgs{})
@@ -176,7 +176,7 @@ func (s *machineSuite) TestStartMachineForbidden(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "MachineInterface not yours")
 }
 
-func (s *machineSuite) TestStartMachineServiceUnavailable(c *gc.C) {
+func  TestStartMachineServiceUnavailable(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusServiceUnavailable, "no ip addresses available")
 	err := machine.Start(StartArgs{})
@@ -184,7 +184,7 @@ func (s *machineSuite) TestStartMachineServiceUnavailable(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "no ip addresses available")
 }
 
-func (s *machineSuite) TestStartMachineUnknown(c *gc.C) {
+func  TestStartMachineUnknown(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusMethodNotAllowed, "wat?")
 	err := machine.Start(StartArgs{})
@@ -192,7 +192,7 @@ func (s *machineSuite) TestStartMachineUnknown(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
 
-func (s *machineSuite) TestDevices(c *gc.C) {
+func  TestDevices(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
 	devices, err := machine.Devices(DevicesArgs{})
@@ -201,7 +201,7 @@ func (s *machineSuite) TestDevices(c *gc.C) {
 	c.Assert(devices[0].Parent, gc.Equals, machine.SystemID)
 }
 
-func (s *machineSuite) TestDevicesNone(c *gc.C) {
+func  TestDevicesNone(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	response := util.UpdateJSONMap(c, deviceResponse, map[string]interface{}{
 		"Parent": "other",
@@ -212,7 +212,7 @@ func (s *machineSuite) TestDevicesNone(c *gc.C) {
 	c.Assert(devices, gc.HasLen, 0)
 }
 
-func (s *machineSuite) TestCreateMachineDeviceArgsValidate(c *gc.C) {
+func  TestCreateMachineDeviceArgsValidate(t *testing.T) {
 	for i, test := range []struct {
 		args    CreateMachineDeviceArgs
 		errText string
@@ -268,14 +268,14 @@ func (s *machineSuite) TestCreateMachineDeviceArgsValidate(c *gc.C) {
 	}
 }
 
-func (s *machineSuite) TestCreateDeviceValidates(c *gc.C) {
+func  TestCreateDeviceValidates(t *testing.T) {
 	_, machine := s.getServerAndMachine(c)
 	_, err := machine.CreateDevice(CreateMachineDeviceArgs{})
 	c.Assert(err, jc.Satisfies, errors.IsNotValid)
 	c.Assert(err.Error(), gc.Equals, "missing InterfaceName not valid")
 }
 
-func (s *machineSuite) TestCreateDevice(c *gc.C) {
+func  TestCreateDevice(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
@@ -302,7 +302,7 @@ func (s *machineSuite) TestCreateDevice(c *gc.C) {
 	c.Assert(device.InterfaceSet[0].VLAN.ID, gc.Equals, subnet.VLAN.ID)
 }
 
-func (s *machineSuite) TestCreateDeviceWithoutSubnetOrVLAN(c *gc.C) {
+func  TestCreateDeviceWithoutSubnetOrVLAN(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
@@ -325,7 +325,7 @@ func (s *machineSuite) TestCreateDeviceWithoutSubnetOrVLAN(c *gc.C) {
 	c.Assert(device.InterfaceSet[0].Links, gc.HasLen, 0)   // set above
 }
 
-func (s *machineSuite) TestCreateDeviceWithVLANOnly(c *gc.C) {
+func  TestCreateDeviceWithVLANOnly(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
@@ -355,7 +355,7 @@ func (s *machineSuite) TestCreateDeviceWithVLANOnly(c *gc.C) {
 	c.Assert(device.InterfaceSet[0].VLAN.ID, gc.Equals, 42)
 }
 
-func (s *machineSuite) TestCreateDeviceTriesToDeleteDeviceOnError(c *gc.C) {
+func  TestCreateDeviceTriesToDeleteDeviceOnError(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
@@ -380,14 +380,14 @@ func (s *machineSuite) TestCreateDeviceTriesToDeleteDeviceOnError(c *gc.C) {
 	c.Assert(request.RequestURI, gc.Equals, "/MAAS/api/2.0/devices/4y3haf/")
 }
 
-func (s *machineSuite) TestOwnerDataCopies(c *gc.C) {
+func  TestOwnerDataCopies(t *testing.T) {
 	machine := Machine{OwnerData: make(map[string]string)}
 	ownerData := machine.OwnerData
 	ownerData["sad"] = "Children"
 	c.Assert(machine.OwnerData, gc.DeepEquals, map[string]string{})
 }
 
-func (s *machineSuite) TestSetOwnerData(c *gc.C) {
+func  TestSetOwnerData(t *testing.T) {
 	server, machine := s.getServerAndMachine(c)
 	server.AddPostResponse(machine.ResourceURI+"?op=set_owner_data", 200, machineWithOwnerData(`{"returned": "data"}`))
 	err := machine.SetOwnerData(map[string]string{

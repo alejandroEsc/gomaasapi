@@ -14,13 +14,13 @@ type spaceSuite struct{}
 
 var _ = gc.Suite(&spaceSuite{})
 
-func (*spaceSuite) TestReadSpacesBadSchema(c *gc.C) {
+func (*spaceSuite) TestReadSpacesBadSchema(t *testing.T) {
 	var r space
 	err = json.Unmarshal([]byte("wat?"), &r)
 	c.Assert(err.Error(), gc.Equals, `space base schema check failed: expected list, got string("wat?")`)
 }
 
-func (*spaceSuite) TestReadSpaces(c *gc.C) {
+func (*spaceSuite) TestReadSpaces(t *testing.T) {
 	var spaces []space
 	err = json.Unmarshal([]byte(spacesResponse), &spaces)
 	c.Assert(err, jc.ErrorIsNil)

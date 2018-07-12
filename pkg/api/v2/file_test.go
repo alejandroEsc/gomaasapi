@@ -5,80 +5,74 @@ package maasapiv2
 
 import (
 	"net/http"
+	"testing"
 
 	"encoding/json"
 
-	"github.com/juju/testing"
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	"github.com/stretchr/testify/assert"
+
 )
 
-type fileSuite struct {
-	testing.CleanupSuite
-}
 
-var _ = gc.Suite(&fileSuite{})
-
-func (*fileSuite) TestReadFilesBadSchema(c *gc.C) {
+func TestReadFilesBadSchema(t *testing.T) {
 	var f File
 	err = json.Unmarshal([]byte("wat?"), &f)
-	c.Check(err, jc.Satisfies, util.IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, `File base schema check failed: expected list, got string("wat?")`)
+	assert.Error(t, err)
 }
 
-func (*fileSuite) TestReadFiles(c *gc.C) {
+func TestReadFiles(t *testing.T) {
 	var files []File
 	err = json.Unmarshal([]byte(filesResponse), &files)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(files, gc.HasLen, 2)
 	file := files[0]
 	c.Assert(file.Filename, gc.Equals, "test")
 }
 
-func (s *fileSuite) TestReadAllFromGetFile(c *gc.C) {
+func TestReadAllFromGetFile(t *testing.T) {
 	// When get File is used, the response includes the body of the File
 	// base64 encoded, so ReadAll just decodes it.
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
 	file, err := controller.GetFile("testing")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	content, err := file.ReadAll()
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(string(content), gc.Equals, "this is a test\n")
 }
 
-func (s *fileSuite) TestReadAllFromFiles(c *gc.C) {
+func TestReadAllFromFiles(t *testing.T) {
 	// When get File is used, the response includes the body of the File
 	// base64 encoded, so ReadAll just decodes it.
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/files/", http.StatusOK, filesResponse)
 	server.AddGetResponse("/api/2.0/files/?Filename=test&op=get", http.StatusOK, "some Content\n")
 	files, err := controller.Files("")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	file := files[0]
 	content, err := file.ReadAll()
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(string(content), gc.Equals, "some Content\n")
 }
 
-func (s *fileSuite) TestDeleteMissing(c *gc.C) {
+func TestDeleteMissing(t *testing.T) {
 	// If we get a File, but someone else deletes it first, we get a ...
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
 	file, err := controller.GetFile("testing")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	err = file.Delete()
 	c.Assert(err, jc.Satisfies, util.IsNoMatchError)
 }
 
-func (s *fileSuite) TestDelete(c *gc.C) {
+func TestDelete(t *testing.T) {
 	// If we get a File, but someone else deletes it first, we get a ...
 	server, controller := createTestServerController(c, s)
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
 	server.AddDeleteResponse("/api/2.0/files/testing/", http.StatusOK, "")
 	file, err := controller.GetFile("testing")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	err = file.Delete()
 	c.Assert(err, jc.Satisfies, util.IsNoMatchError)
 }

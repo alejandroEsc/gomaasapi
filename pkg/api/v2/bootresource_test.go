@@ -6,41 +6,36 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	jc "github.com/juju/testing/checkers"
 	"github.com/juju/utils/set"
-	gc "gopkg.in/check.v1"
-	"github.com/juju/gomaasapi/pkg/api/util"
+	"testing"
+	"github.com/stretchr/testify/assert"
+
 )
 
-type bootResourceSuite struct{}
 
-var _ = gc.Suite(&bootResourceSuite{})
-
-func (*bootResourceSuite) TestReadBootResourcesBadSchema(c *gc.C) {
+func TestReadBootResourcesBadSchema(t *testing.T) {
 	var b bootResource
-
-	twoDotOh := []byte("wat?")
-	err := json.Unmarshal(twoDotOh, &b)
-
-	c.Check(err, jc.Satisfies, util.IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, `boot resource base schema check failed: expected list, got string("wat?")`)
+	err := json.Unmarshal([]byte("wat?"), &b)
+	assert.Error(t, err)
 }
 
-func (*bootResourceSuite) TestReadBootResources(c *gc.C) {
+func TestReadBootResources(t *testing.T) {
 	var bootResources []bootResource
-	err = json.Unmarshal([]byte(blockdevicesWithNullsResponse), &bootResources)
+	err = json.Unmarshal([]byte(bootResourcesResponse), &bootResources)
+	assert.Nil(t, err)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(bootResources, gc.HasLen, 5)
+	assert.Len(t, bootResources, 5)
 	trusty := bootResources[0]
 
 	subarches := set.NewStrings("generic", "hwe-p", "hwe-q", "hwe-r", "hwe-s", "hwe-t")
-	c.Assert(trusty.ID, gc.Equals, 5)
-	c.Assert(trusty.Name, gc.Equals, "ubuntu/trusty")
-	c.Assert(trusty.Type, gc.Equals, "Synced")
-	c.Assert(trusty.Architecture, gc.Equals, "amd64/hwe-t")
-	c.Assert(trusty.SubArchitectures, jc.DeepEquals, subarches)
-	c.Assert(trusty.KernelFlavor, gc.Equals, "generic")
+
+
+	assert.Equal(t,trusty.ID,  5)
+	assert.Equal(t,trusty.Name, "ubuntu/trusty")
+	assert.Equal(t,trusty.Type,  "Synced")
+	assert.Equal(t,trusty.Architecture, "amd64/hwe-t")
+	assert.ObjectsAreEqual(trusty.SubArchitectures, subarches)
+	assert.Equal(t,trusty.KernelFlavor, "generic")
 }
 
 const bootResourcesResponse = `

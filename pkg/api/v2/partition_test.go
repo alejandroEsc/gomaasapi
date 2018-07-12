@@ -9,18 +9,15 @@ import (
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	"testing"
 )
 
-type partitionSuite struct{}
-
-var _ = gc.Suite(&partitionSuite{})
-
-func (*partitionSuite) TestNilFileSystem(c *gc.C) {
+func TestNilFileSystem(t *testing.T) {
 	var empty partition
 	c.Assert(empty.FileSystem == nil, jc.IsTrue)
 }
 
-func (*partitionSuite) TestReadPartitionsBadSchema(c *gc.C) {
+func TestReadPartitionsBadSchema(t *testing.T) {
 	var p partition
 	err = json.Unmarshal([]byte("wat?"), &p)
 
@@ -28,7 +25,7 @@ func (*partitionSuite) TestReadPartitionsBadSchema(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, `partition base schema check failed: expected list, got string("wat?")`)
 }
 
-func (*partitionSuite) TestReadPartitions(c *gc.C) {
+func TestReadPartitions(t *testing.T) {
 	var partitions []partition
 	err = json.Unmarshal([]byte(partitionsResponse), &partitions)
 
@@ -48,7 +45,7 @@ func (*partitionSuite) TestReadPartitions(c *gc.C) {
 	c.Assert(fs.MountPoint, gc.Equals, "/")
 }
 
-func (*partitionSuite) TestReadPartitionsNilUUID(c *gc.C) {
+func TestReadPartitionsNilUUID(t *testing.T) {
 	j := util.ParseJSON(c, partitionsResponse)
 	j.([]interface{})[0].(map[string]interface{})["UUID"] = nil
 

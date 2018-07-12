@@ -7,16 +7,16 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"testing"
 
 	"github.com/juju/errors"
-	"github.com/juju/loggo"
-	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
 	"github.com/juju/utils/set"
 	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -29,57 +29,21 @@ const (
 	NetworkDeploymentUbuntu = "network-deployment-ubuntu"
 )
 
-type versionSuite struct {
-}
+var (
+	server *client.SimpleTestServer
+	versionResponse = `{"version": "unknown", "subversion": "", "Capabilities": ["networks-management", "static-ipaddresses", "ipv6-deployment-ubuntu", "devices-management", "storage-deployment-ubuntu", "network-deployment-ubuntu"]}`
 
-var _ = gc.Suite(&versionSuite{})
+)
 
-func (*versionSuite) TestSupportedVersions(c *gc.C) {
+func TestSupportedVersions(t *testing.T) {
 	for _, apiVersion := range supportedAPIVersions {
 		_, _, err := version.ParseMajorMinor(apiVersion)
-		c.Check(err, jc.ErrorIsNil)
+		assert.Nil(t, err)
 	}
 }
 
-type controllerSuite struct {
-	testing.LoggingCleanupSuite
-	server *client.SimpleTestServer
-}
-
-var _ = gc.Suite(&controllerSuite{})
-
-func (s *controllerSuite) SetUpTest(c *gc.C) {
-	s.LoggingCleanupSuite.SetUpTest(c)
-	loggo.GetLogger("").SetLogLevel(loggo.TRACE)
-
-	server := client.NewSimpleServer()
-	server.AddGetResponse("/api/2.0/boot-resources/", http.StatusOK, bootResourcesResponse)
-	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
-	server.AddGetResponse("/api/2.0/fabrics/", http.StatusOK, fabricResponse)
-	server.AddGetResponse("/api/2.0/files/", http.StatusOK, filesResponse)
-	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, machinesResponse)
-	server.AddGetResponse("/api/2.0/machines/?Hostname=untasted-markita", http.StatusOK, "["+machineResponse+"]")
-	server.AddGetResponse("/api/2.0/spaces/", http.StatusOK, spacesResponse)
-	server.AddGetResponse("/api/2.0/static-routes/", http.StatusOK, staticRoutesResponse)
-	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
-	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
-	server.AddGetResponse("/api/2.0/zones/", http.StatusOK, zoneResponse)
-	server.Start()
-	s.AddCleanup(func(*gc.C) { server.Close() })
-	s.server = server
-}
-
-func (s *controllerSuite) getController(c *gc.C) *controller {
-	controller, err := NewController(ControllerArgs{
-		BaseURL: s.server.URL,
-		APIKey:  "fake:as:key",
-	})
-	c.Assert(err, jc.ErrorIsNil)
-	return controller
-}
-
-func (s *controllerSuite) TestNewController(c *gc.C) {
-	controller := s.getController(c)
+func TestNewController(t *testing.T) {
+	controller := getController()
 
 	expectedCapabilities := set.NewStrings(
 		NetworksManagement,
@@ -91,11 +55,11 @@ func (s *controllerSuite) TestNewController(c *gc.C) {
 	)
 
 	capabilities := controller.Capabilities
-	c.Assert(capabilities.Difference(expectedCapabilities), gc.HasLen, 0)
-	c.Assert(expectedCapabilities.Difference(capabilities), gc.HasLen, 0)
+	assert.Len(t, capabilities.Difference(expectedCapabilities), 0)
+	assert.Len(t, expectedCapabilities.Difference(capabilities), 0)
 }
 
-func (s *controllerSuite) TestNewControllerBadAPIKeyFormat(c *gc.C) {
+func TestNewControllerBadAPIKeyFormat(t *testing.T) {
 	server := client.NewSimpleServer()
 	server.Start()
 	defer server.Close()
@@ -103,10 +67,11 @@ func (s *controllerSuite) TestNewControllerBadAPIKeyFormat(c *gc.C) {
 		BaseURL: server.URL,
 		APIKey:  "invalid",
 	})
-	c.Assert(err, jc.Satisfies, errors.IsNotValid)
+
+	assert.True(t, errors.IsNotValid(err))
 }
 
-func (s *controllerSuite) TestNewControllerNoSupport(c *gc.C) {
+func TestNewControllerNoSupport(t *testing.T) {
 	server := client.NewSimpleServer()
 	server.Start()
 	defer server.Close()
@@ -117,7 +82,7 @@ func (s *controllerSuite) TestNewControllerNoSupport(c *gc.C) {
 	c.Assert(err, jc.Satisfies, util.IsUnsupportedVersionError)
 }
 
-func (s *controllerSuite) TestNewControllerBadCreds(c *gc.C) {
+func TestNewControllerBadCreds(t *testing.T) {
 	server := client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusUnauthorized, "naughty")
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -127,10 +92,10 @@ func (s *controllerSuite) TestNewControllerBadCreds(c *gc.C) {
 		BaseURL: server.URL,
 		APIKey:  "fake:as:key",
 	})
-	c.Assert(err, jc.Satisfies, util.IsPermissionError)
+	assert.True(t, util.IsPermissionError(err))
 }
 
-func (s *controllerSuite) TestNewControllerUnexpected(c *gc.C) {
+func TestNewControllerUnexpected(t *testing.T) {
 	server := client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusConflict, "naughty")
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -140,16 +105,16 @@ func (s *controllerSuite) TestNewControllerUnexpected(c *gc.C) {
 		BaseURL: server.URL,
 		APIKey:  "fake:as:key",
 	})
-	c.Assert(err, jc.Satisfies, util.IsUnexpectedError)
+	assert.True(t, util.IsUnexpectedError(err))
 }
 
-func (s *controllerSuite) TestNewControllerKnownVersion(c *gc.C) {
+func TestNewControllerKnownVersion(t *testing.T) {
 	// Using a server URL including the version should work.
 	officialController, err := NewController(ControllerArgs{
-		BaseURL: s.server.URL + "/api/2.0/",
+		BaseURL: server.URL + "/api/2.0/",
 		APIKey:  "fake:as:key",
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	c.Assert(officialController.APIVersion, gc.Equals, version.Number{
 		Major: 2,
@@ -157,22 +122,22 @@ func (s *controllerSuite) TestNewControllerKnownVersion(c *gc.C) {
 	})
 }
 
-func (s *controllerSuite) TestNewControllerUnsupportedVersionSpecified(c *gc.C) {
+func TestNewControllerUnsupportedVersionSpecified(t *testing.T) {
 	// Ensure the server would actually respond to the version if it
 	// was asked.
-	s.server.AddGetResponse("/api/3.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
-	s.server.AddGetResponse("/api/3.0/version/", http.StatusOK, versionResponse)
+	server.AddGetResponse("/api/3.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
+	server.AddGetResponse("/api/3.0/version/", http.StatusOK, versionResponse)
 	// Using a server URL including a version that isn't in the known
 	// set should be denied.
 	controller, err := NewController(ControllerArgs{
-		BaseURL: s.server.URL + "/api/3.0/",
+		BaseURL: server.URL + "/api/3.0/",
 		APIKey:  "fake:as:key",
 	})
-	c.Assert(controller, gc.IsNil)
-	c.Assert(err, jc.Satisfies, util.IsUnsupportedVersionError)
+	assert.Nil(t, controller)
+	assert.True(t, util.IsUnsupportedVersionError(err))
 }
 
-func (s *controllerSuite) TestNewControllerNotHidingErrors(c *gc.C) {
+func TestNewControllerNotHidingErrors(t *testing.T) {
 	// We should only treat 404 and 410 as "this version isn't
 	// supported". Other errors should be returned up the stack
 	// unchanged, so we don't confuse transient network errors with
@@ -187,11 +152,11 @@ func (s *controllerSuite) TestNewControllerNotHidingErrors(c *gc.C) {
 		BaseURL: server.URL,
 		APIKey:  "fake:as:key",
 	})
-	c.Assert(controller, gc.IsNil)
-	c.Assert(err, gc.ErrorMatches, `ServerError: 500 Internal Server Error \(kablooey\)`)
+	assert.Nil(t, controller)
+	assert.EqualError(t, err, `ServerError: 500 Internal Server Error \(kablooey\)`)
 }
 
-func (s *controllerSuite) TestNewController410(c *gc.C) {
+func TestNewController410(t *testing.T) {
 	// We should only treat 404 and 410 as "this version isn't
 	// supported". Other errors should be returned up the stack
 	// unchanged, so we don't confuse transient network errors with
@@ -206,11 +171,11 @@ func (s *controllerSuite) TestNewController410(c *gc.C) {
 		BaseURL: server.URL,
 		APIKey:  "fake:as:key",
 	})
-	c.Assert(controller, gc.IsNil)
-	c.Assert(err, jc.Satisfies, util.IsUnsupportedVersionError)
+	assert.Nil(t, controller)
+	assert.True(t, util.IsUnsupportedVersionError(err))
 }
 
-func (s *controllerSuite) TestNewController404(c *gc.C) {
+func TestNewController404(t *testing.T) {
 	// We should only treat 404 and 410 as "this version isn't
 	// supported". Other errors should be returned up the stack
 	// unchanged, so we don't confuse transient network errors with
@@ -225,11 +190,11 @@ func (s *controllerSuite) TestNewController404(c *gc.C) {
 		BaseURL: server.URL,
 		APIKey:  "fake:as:key",
 	})
-	c.Assert(controller, gc.IsNil)
-	c.Assert(err, jc.Satisfies, util.IsUnsupportedVersionError)
+	assert.Nil(t, controller)
+	assert.True(t, util.IsUnsupportedVersionError(err))
 }
 
-func (s *controllerSuite) TestNewControllerWith194Bug(c *gc.C) {
+func TestNewControllerWith194Bug(t *testing.T) {
 	// 1.9.4 has a bug where if you ask for /api/2.0/version/ without
 	// being logged in (rather than OAuth connection) it redirects you
 	// to the login page. This is fixed in 1.9.5, but we should work
@@ -244,26 +209,26 @@ func (s *controllerSuite) TestNewControllerWith194Bug(c *gc.C) {
 		BaseURL: server.URL,
 		APIKey:  "fake:as:key",
 	})
-	c.Assert(controller, gc.IsNil)
-	c.Assert(err, jc.Satisfies, util.IsUnsupportedVersionError)
+	assert.Nil(t, controller)
+	assert.True(t, util.IsUnsupportedVersionError(err))
 }
 
-func (s *controllerSuite) TestBootResources(c *gc.C) {
-	controller := s.getController(c)
+func TestBootResources(t *testing.T) {
+	controller := getController()
 	resources, err := controller.BootResources()
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(resources, gc.HasLen, 5)
+	assert.Nil(t, err)
+	assert.Len(t, resources, 5)
 }
 
-func (s *controllerSuite) TestDevices(c *gc.C) {
-	controller := s.getController(c)
+func TestDevices(t *testing.T) {
+	controller := getController()
 	devices, err := controller.Devices(DevicesArgs{})
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(devices, gc.HasLen, 1)
+	assert.Nil(t, err)
+	assert.Len(t, devices, 5)
 }
 
-func (s *controllerSuite) TestDevicesArgs(c *gc.C) {
-	controller := s.getController(c)
+func TestDevicesArgs(t *testing.T) {
+	controller := getController()
 	// This will fail with a 404 due to the test server not having something  at
 	// that address, but we don't care, all we want to do is capture the request
 	// and make sure that all the Values were set.
@@ -275,31 +240,31 @@ func (s *controllerSuite) TestDevicesArgs(c *gc.C) {
 		Zone:         "foo",
 		AgentName:    "agent 42",
 	})
-	request := s.server.LastRequest()
+	request := server.LastRequest()
 	// There should be one entry in the form Values for each of the args.
-	c.Assert(request.URL.Query(), gc.HasLen, 6)
+	assert.Len(t, request.URL.Query(), 6)
 }
 
-func (s *controllerSuite) TestCreateDevice(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, deviceResponse)
-	controller := s.getController(c)
+func TestCreateDevice(t *testing.T) {
+	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, deviceResponse)
+	controller := getController()
 	device, err := controller.CreateDevice(CreateDeviceArgs{
 		MACAddresses: []string{"a-mac-address"},
 	})
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(device.SystemID, gc.Equals, "4y3haf")
+	assert.Nil(t, err)
+	assert.Equal(t, device.SystemID,"4y3haf")
 }
 
-func (s *controllerSuite) TestCreateDeviceMissingAddress(c *gc.C) {
-	controller := s.getController(c)
+func TestCreateDeviceMissingAddress(t *testing.T) {
+	controller := getController()
 	_, err := controller.CreateDevice(CreateDeviceArgs{})
 	c.Assert(err, jc.Satisfies, util.IsBadRequestError)
 	c.Assert(err.Error(), gc.Equals, "at least one MAC address must be specified")
 }
 
-func (s *controllerSuite) TestCreateDeviceBadRequest(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/devices/?op=", http.StatusBadRequest, "some error")
-	controller := s.getController(c)
+func TestCreateDeviceBadRequest(t *testing.T) {
+	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusBadRequest, "some error")
+	controller := getController()
 	_, err := controller.CreateDevice(CreateDeviceArgs{
 		MACAddresses: []string{"a-mac-address"},
 	})
@@ -307,9 +272,9 @@ func (s *controllerSuite) TestCreateDeviceBadRequest(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "some error")
 }
 
-func (s *controllerSuite) TestCreateDeviceArgs(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, deviceResponse)
-	controller := s.getController(c)
+func TestCreateDeviceArgs(t *testing.T) {
+	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, deviceResponse)
+	controller := getController()
 	// Create an arg structure that sets all the Values.
 	args := CreateDeviceArgs{
 		Hostname:     "foobar",
@@ -318,98 +283,98 @@ func (s *controllerSuite) TestCreateDeviceArgs(c *gc.C) {
 		Parent:       "Parent",
 	}
 	_, err := controller.CreateDevice(args)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
-	request := s.server.LastRequest()
+	request := server.LastRequest()
 	// There should be one entry in the form Values for each of the args.
 	c.Assert(request.PostForm, gc.HasLen, 4)
 }
 
-func (s *controllerSuite) TestFabrics(c *gc.C) {
-	controller := s.getController(c)
+func TestFabrics(t *testing.T) {
+	controller := getController()
 	fabrics, err := controller.Fabrics()
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(fabrics, gc.HasLen, 2)
 }
 
-func (s *controllerSuite) TestSpaces(c *gc.C) {
-	controller := s.getController(c)
+func TestSpaces(t *testing.T) {
+	controller := getController()
 	spaces, err := controller.Spaces()
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(spaces, gc.HasLen, 1)
 }
 
-func (s *controllerSuite) TestStaticRoutes(c *gc.C) {
-	controller := s.getController(c)
+func TestStaticRoutes(t *testing.T) {
+	controller := getController()
 	staticRoutes, err := controller.StaticRoutes()
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(staticRoutes, gc.HasLen, 1)
 }
 
-func (s *controllerSuite) TestZones(c *gc.C) {
-	controller := s.getController(c)
+func TestZones(t *testing.T) {
+	controller := getController()
 	zones, err := controller.Zones()
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(zones, gc.HasLen, 2)
 }
 
-func (s *controllerSuite) TestMachines(c *gc.C) {
-	controller := s.getController(c)
+func TestMachines(t *testing.T) {
+	controller := getController()
 	machines, err := controller.Machines(MachinesArgs{})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(machines, gc.HasLen, 3)
 }
 
-func (s *controllerSuite) TestMachinesFilter(c *gc.C) {
-	controller := s.getController(c)
+func TestMachinesFilter(t *testing.T) {
+	controller := getController()
 	machines, err := controller.Machines(MachinesArgs{
 		Hostnames: []string{"untasted-markita"},
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(machines, gc.HasLen, 1)
 	c.Assert(machines[0].Hostname, gc.Equals, "untasted-markita")
 }
 
-func (s *controllerSuite) TestMachinesFilterWithOwnerData(c *gc.C) {
-	controller := s.getController(c)
+func TestMachinesFilterWithOwnerData(t *testing.T) {
+	controller := getController()
 	machines, err := controller.Machines(MachinesArgs{
 		Hostnames: []string{"untasted-markita"},
 		OwnerData: map[string]string{
 			"fez": "jim crawford",
 		},
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(machines, gc.HasLen, 0)
 }
 
-func (s *controllerSuite) TestMachinesFilterWithOwnerData_MultipleMatches(c *gc.C) {
-	controller := s.getController(c)
+func TestMachinesFilterWithOwnerData_MultipleMatches(t *testing.T) {
+	controller := getController()
 	machines, err := controller.Machines(MachinesArgs{
 		OwnerData: map[string]string{
 			"braid": "jonathan blow",
 		},
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(machines, gc.HasLen, 2)
 	c.Assert(machines[0].Hostname, gc.Equals, "lowlier-glady")
 	c.Assert(machines[1].Hostname, gc.Equals, "icier-nina")
 }
 
-func (s *controllerSuite) TestMachinesFilterWithOwnerData_RequiresAllMatch(c *gc.C) {
-	controller := s.getController(c)
+func TestMachinesFilterWithOwnerData_RequiresAllMatch(t *testing.T) {
+	controller := getController()
 	machines, err := controller.Machines(MachinesArgs{
 		OwnerData: map[string]string{
 			"braid":          "jonathan blow",
 			"frog-fractions": "jim crawford",
 		},
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(machines, gc.HasLen, 1)
 	c.Assert(machines[0].Hostname, gc.Equals, "lowlier-glady")
 }
 
-func (s *controllerSuite) TestMachinesArgs(c *gc.C) {
-	controller := s.getController(c)
+func TestMachinesArgs(t *testing.T) {
+	controller := getController()
 	// This will fail with a 404 due to the test server not having something  at
 	// that address, but we don't care, all we want to do is capture the request
 	// and make sure that all the Values were set.
@@ -421,12 +386,12 @@ func (s *controllerSuite) TestMachinesArgs(c *gc.C) {
 		Zone:         "foo",
 		AgentName:    "agent 42",
 	})
-	request := s.server.LastRequest()
+	request := server.LastRequest()
 	// There should be one entry in the form Values for each of the args.
 	c.Assert(request.URL.Query(), gc.HasLen, 6)
 }
 
-func (s *controllerSuite) TestStorageSpec(c *gc.C) {
+func TestStorageSpec(t *testing.T) {
 	for i, test := range []struct {
 		spec StorageSpec
 		err  string
@@ -456,7 +421,7 @@ func (s *controllerSuite) TestStorageSpec(c *gc.C) {
 		c.Logf("test %d", i)
 		err := test.spec.Validate()
 		if test.err == "" {
-			c.Assert(err, jc.ErrorIsNil)
+			assert.Nil(t, err)
 			c.Assert(test.spec.String(), gc.Equals, test.repr)
 		} else {
 			c.Assert(err, jc.Satisfies, errors.IsNotValid)
@@ -465,7 +430,7 @@ func (s *controllerSuite) TestStorageSpec(c *gc.C) {
 	}
 }
 
-func (s *controllerSuite) TestInterfaceSpec(c *gc.C) {
+func TestInterfaceSpec(t *testing.T) {
 	for i, test := range []struct {
 		spec InterfaceSpec
 		err  string
@@ -492,7 +457,7 @@ func (s *controllerSuite) TestInterfaceSpec(c *gc.C) {
 	}
 }
 
-func (s *controllerSuite) TestAllocateMachineArgs(c *gc.C) {
+func TestAllocateMachineArgs(t *testing.T) {
 	for i, test := range []struct {
 		args       AllocateMachineArgs
 		err        string
@@ -572,7 +537,7 @@ func (s *controllerSuite) TestAllocateMachineArgs(c *gc.C) {
 
 type constraintMatchInfo map[string][]int
 
-func (s *controllerSuite) addAllocateResponse(c *gc.C, status int, interfaceMatches, storageMatches constraintMatchInfo) {
+func addAllocateResponse(t *testing.T, status int, interfaceMatches, storageMatches constraintMatchInfo) {
 	constraints := make(map[string]interface{})
 	if interfaceMatches != nil {
 		constraints["interfaces"] = interfaceMatches
@@ -583,22 +548,22 @@ func (s *controllerSuite) addAllocateResponse(c *gc.C, status int, interfaceMatc
 	allocateJSON := util.UpdateJSONMap(c, machineResponse, map[string]interface{}{
 		"constraints_by_type": constraints,
 	})
-	s.server.AddPostResponse("/api/2.0/machines/?op=allocate", status, allocateJSON)
+	server.AddPostResponse("/api/2.0/machines/?op=allocate", status, allocateJSON)
 }
 
-func (s *controllerSuite) TestAllocateMachine(c *gc.C) {
+func TestAllocateMachine(t *testing.T) {
 	s.addAllocateResponse(c, http.StatusOK, nil, nil)
-	controller := s.getController(c)
+	controller := getController()
 	machine, _, err := controller.AllocateMachine(AllocateMachineArgs{})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(machine.SystemID, gc.Equals, "4y3ha3")
 }
 
-func (s *controllerSuite) TestAllocateMachineInterfacesMatch(c *gc.C) {
+func TestAllocateMachineInterfacesMatch(t *testing.T) {
 	s.addAllocateResponse(c, http.StatusOK, constraintMatchInfo{
 		"database": []int{35, 99},
 	}, nil)
-	controller := s.getController(c)
+	controller := getController()
 	_, match, err := controller.AllocateMachine(AllocateMachineArgs{
 		// This isn't actually used, but here to show how it should be used.
 		Interfaces: []InterfaceSpec{{
@@ -606,7 +571,7 @@ func (s *controllerSuite) TestAllocateMachineInterfacesMatch(c *gc.C) {
 			Space: "space-0",
 		}},
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(match.Interfaces, gc.HasLen, 1)
 	ifaces := match.Interfaces["database"]
 	c.Assert(ifaces, gc.HasLen, 2)
@@ -614,13 +579,13 @@ func (s *controllerSuite) TestAllocateMachineInterfacesMatch(c *gc.C) {
 	c.Assert(ifaces[1].ID, gc.Equals, 99)
 }
 
-func (s *controllerSuite) TestAllocateMachineInterfacesMatchMissing(c *gc.C) {
+func TestAllocateMachineInterfacesMatchMissing(t *testing.T) {
 	// This should never happen, but if it does it is a clear indication of a
 	// bug somewhere.
 	s.addAllocateResponse(c, http.StatusOK, constraintMatchInfo{
 		"database": []int{40},
 	}, nil)
-	controller := s.getController(c)
+	controller := getController()
 	_, _, err := controller.AllocateMachine(AllocateMachineArgs{
 		Interfaces: []InterfaceSpec{{
 			Label: "database",
@@ -630,11 +595,11 @@ func (s *controllerSuite) TestAllocateMachineInterfacesMatchMissing(c *gc.C) {
 	c.Assert(err, jc.Satisfies, util.IsDeserializationError)
 }
 
-func (s *controllerSuite) TestAllocateMachineStorageMatches(c *gc.C) {
+func TestAllocateMachineStorageMatches(t *testing.T) {
 	s.addAllocateResponse(c, http.StatusOK, nil, constraintMatchInfo{
 		"root": []int{34, 98},
 	})
-	controller := s.getController(c)
+	controller := getController()
 	_, match, err := controller.AllocateMachine(AllocateMachineArgs{
 		Storage: []StorageSpec{{
 			Label: "root",
@@ -642,7 +607,7 @@ func (s *controllerSuite) TestAllocateMachineStorageMatches(c *gc.C) {
 			Tags:  []string{"hefty", "tangy"},
 		}},
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(match.Storage, gc.HasLen, 1)
 	storages := match.Storage["root"]
 	c.Assert(storages, gc.HasLen, 2)
@@ -650,28 +615,28 @@ func (s *controllerSuite) TestAllocateMachineStorageMatches(c *gc.C) {
 	c.Assert(storages[1].ID, gc.Equals, 98)
 }
 
-func (s *controllerSuite) TestAllocateMachineStorageLogicalMatches(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/machines/?op=allocate", http.StatusOK, machineResponse)
-	controller := s.getController(c)
+func TestAllocateMachineStorageLogicalMatches(t *testing.T) {
+	server.AddPostResponse("/api/2.0/machines/?op=allocate", http.StatusOK, machineResponse)
+	controller := getController()
 	machine, matches, err := controller.AllocateMachine(AllocateMachineArgs{
 		Storage: []StorageSpec{{
 			Tags: []string{"raid0"},
 		}},
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	var virtualDeviceID = 23
 
 	//matches storage must contain the "raid0" virtual block device
 	c.Assert(matches.Storage["0"][0], gc.Equals, machine.BlockDevice(virtualDeviceID))
 }
 
-func (s *controllerSuite) TestAllocateMachineStorageMatchMissing(c *gc.C) {
+func TestAllocateMachineStorageMatchMissing(t *testing.T) {
 	// This should never happen, but if it does it is a clear indication of a
 	// bug somewhere.
 	s.addAllocateResponse(c, http.StatusOK, nil, constraintMatchInfo{
 		"root": []int{50},
 	})
-	controller := s.getController(c)
+	controller := getController()
 	_, _, err := controller.AllocateMachine(AllocateMachineArgs{
 		Storage: []StorageSpec{{
 			Label: "root",
@@ -682,9 +647,9 @@ func (s *controllerSuite) TestAllocateMachineStorageMatchMissing(c *gc.C) {
 	c.Assert(err, jc.Satisfies, util.IsDeserializationError)
 }
 
-func (s *controllerSuite) TestAllocateMachineArgsForm(c *gc.C) {
+func TestAllocateMachineArgsForm(t *testing.T) {
 	s.addAllocateResponse(c, http.StatusOK, nil, nil)
-	controller := s.getController(c)
+	controller := getController()
 	// Create an arg structure that sets all the Values.
 	args := AllocateMachineArgs{
 		Hostname:     "foobar",
@@ -704,9 +669,9 @@ func (s *controllerSuite) TestAllocateMachineArgsForm(c *gc.C) {
 		DryRun:       true,
 	}
 	_, _, err := controller.AllocateMachine(args)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
-	request := s.server.LastRequest()
+	request := server.LastRequest()
 	// There should be one entry in the form Values for each of the args.
 	form := request.PostForm
 	c.Assert(form, gc.HasLen, 15)
@@ -716,38 +681,38 @@ func (s *controllerSuite) TestAllocateMachineArgsForm(c *gc.C) {
 	c.Assert(form.Get("not_subnets"), gc.Equals, "space:special")
 }
 
-func (s *controllerSuite) TestAllocateMachineNoMatch(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/machines/?op=allocate", http.StatusConflict, "boo")
-	controller := s.getController(c)
+func TestAllocateMachineNoMatch(t *testing.T) {
+	server.AddPostResponse("/api/2.0/machines/?op=allocate", http.StatusConflict, "boo")
+	controller := getController()
 	_, _, err := controller.AllocateMachine(AllocateMachineArgs{})
 	c.Assert(err, jc.Satisfies, util.IsNoMatchError)
 }
 
-func (s *controllerSuite) TestAllocateMachineUnexpected(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/machines/?op=allocate", http.StatusBadRequest, "boo")
-	controller := s.getController(c)
+func TestAllocateMachineUnexpected(t *testing.T) {
+	server.AddPostResponse("/api/2.0/machines/?op=allocate", http.StatusBadRequest, "boo")
+	controller := getController()
 	_, _, err := controller.AllocateMachine(AllocateMachineArgs{})
 	c.Assert(err, jc.Satisfies, util.IsUnexpectedError)
 }
 
-func (s *controllerSuite) TestReleaseMachines(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusOK, "[]")
-	controller := s.getController(c)
+func TestReleaseMachines(t *testing.T) {
+	server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusOK, "[]")
+	controller := getController()
 	err := controller.ReleaseMachines(ReleaseMachinesArgs{
 		SystemIDs: []string{"this", "that"},
 		Comment:   "all good",
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
-	request := s.server.LastRequest()
+	request := server.LastRequest()
 	// There should be one entry in the form Values for each of the args.
 	c.Assert(request.PostForm["machines"], jc.SameContents, []string{"this", "that"})
 	c.Assert(request.PostForm.Get("comment"), gc.Equals, "all good")
 }
 
-func (s *controllerSuite) TestReleaseMachinesBadRequest(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusBadRequest, "unknown machines")
-	controller := s.getController(c)
+func TestReleaseMachinesBadRequest(t *testing.T) {
+	server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusBadRequest, "unknown machines")
+	controller := getController()
 	err := controller.ReleaseMachines(ReleaseMachinesArgs{
 		SystemIDs: []string{"this", "that"},
 	})
@@ -755,9 +720,9 @@ func (s *controllerSuite) TestReleaseMachinesBadRequest(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "unknown machines")
 }
 
-func (s *controllerSuite) TestReleaseMachinesForbidden(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusForbidden, "bzzt denied")
-	controller := s.getController(c)
+func TestReleaseMachinesForbidden(t *testing.T) {
+	server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusForbidden, "bzzt denied")
+	controller := getController()
 	err := controller.ReleaseMachines(ReleaseMachinesArgs{
 		SystemIDs: []string{"this", "that"},
 	})
@@ -765,9 +730,9 @@ func (s *controllerSuite) TestReleaseMachinesForbidden(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "bzzt denied")
 }
 
-func (s *controllerSuite) TestReleaseMachinesConflict(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusConflict, "MachineInterface busy")
-	controller := s.getController(c)
+func TestReleaseMachinesConflict(t *testing.T) {
+	server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusConflict, "MachineInterface busy")
+	controller := getController()
 	err := controller.ReleaseMachines(ReleaseMachinesArgs{
 		SystemIDs: []string{"this", "that"},
 	})
@@ -775,9 +740,9 @@ func (s *controllerSuite) TestReleaseMachinesConflict(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "MachineInterface busy")
 }
 
-func (s *controllerSuite) TestReleaseMachinesUnexpected(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusBadGateway, "wat")
-	controller := s.getController(c)
+func TestReleaseMachinesUnexpected(t *testing.T) {
+	server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusBadGateway, "wat")
+	controller := getController()
 	err := controller.ReleaseMachines(ReleaseMachinesArgs{
 		SystemIDs: []string{"this", "that"},
 	})
@@ -785,10 +750,10 @@ func (s *controllerSuite) TestReleaseMachinesUnexpected(c *gc.C) {
 	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 502 Bad Gateway (wat)")
 }
 
-func (s *controllerSuite) TestFiles(c *gc.C) {
-	controller := s.getController(c)
+func TestFiles(t *testing.T) {
+	controller := getController()
 	files, err := controller.Files("")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(files, gc.HasLen, 2)
 
 	file := files[0]
@@ -798,26 +763,26 @@ func (s *controllerSuite) TestFiles(c *gc.C) {
 	c.Assert(file.AnonymousURI.RequestURI(), gc.Equals, "/MAAS/api/2.0/files/?op=get_by_key&key=3afba564-fb7d-11e5-932f-52540051bf22")
 }
 
-func (s *controllerSuite) TestGetFile(c *gc.C) {
-	s.server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
-	controller := s.getController(c)
+func TestGetFile(t *testing.T) {
+	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
+	controller := getController()
 	file, err := controller.GetFile("testing")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	c.Assert(file.Filename, gc.Equals, "testing")
 
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	c.Assert(file.AnonymousURI.Scheme, gc.Equals, "http")
 	c.Assert(file.AnonymousURI.RequestURI(), gc.Equals, "/MAAS/api/2.0/files/?op=get_by_key&key=88e64b76-fb82-11e5-932f-52540051bf22")
 }
 
-func (s *controllerSuite) TestGetFileMissing(c *gc.C) {
-	controller := s.getController(c)
+func TestGetFileMissing(t *testing.T) {
+	controller := getController()
 	_, err := controller.GetFile("missing")
-	c.Assert(err, jc.Satisfies, util.IsNoMatchError)
+	assert.True(t, util.IsNoMatchError(err))
 }
 
-func (s *controllerSuite) TestAddFileArgsValidate(c *gc.C) {
+func TestAddFileArgsValidate(t *testing.T) {
 	reader := bytes.NewBufferString("test")
 	for i, test := range []struct {
 		args    AddFileArgs
@@ -865,72 +830,72 @@ func (s *controllerSuite) TestAddFileArgsValidate(c *gc.C) {
 			Content:  []byte("foo"),
 		},
 	}} {
-		c.Logf("test %d", i)
 		err := test.args.Validate()
 		if test.errText == "" {
-			c.Check(err, jc.ErrorIsNil)
+			assert.Nil(t, err)
 		} else {
-			c.Check(err, jc.Satisfies, errors.IsNotValid)
-			c.Check(err.Error(), gc.Equals, test.errText)
+			assert.True(t,  errors.IsNotValid(err))
+			assert.EqualError(t, err, test.errText)
 		}
 	}
 }
 
-func (s *controllerSuite) TestAddFileValidates(c *gc.C) {
-	controller := s.getController(c)
+func TestAddFileValidates(t *testing.T) {
+	controller := getController()
 	err := controller.AddFile(AddFileArgs{})
-	c.Assert(err, jc.Satisfies, errors.IsNotValid)
+	assert.True(t, errors.IsNotValid(err))
 }
 
-func (s *controllerSuite) assertFile(c *gc.C, request *http.Request, filename, content string) {
-	form := request.Form
-	c.Check(form.Get("Filename"), gc.Equals, filename)
-	fileHeader := request.MultipartForm.File["File"][0]
-	f, err := fileHeader.Open()
-	c.Assert(err, jc.ErrorIsNil)
-	bytes, err := ioutil.ReadAll(f)
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(string(bytes), gc.Equals, content)
-}
-
-func (s *controllerSuite) TestAddFileContent(c *gc.C) {
-	s.server.AddPostResponse("/api/2.0/files/?op=", http.StatusOK, "")
-	controller := s.getController(c)
+func TestAddFileContent(t *testing.T) {
+	server.AddPostResponse("/api/2.0/files/?op=", http.StatusOK, "")
+	controller := getController()
 	err := controller.AddFile(AddFileArgs{
 		Filename: "foo.txt",
 		Content:  []byte("foo"),
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
-	request := s.server.LastRequest()
-	s.assertFile(c, request, "foo.txt", "foo")
+	request := server.LastRequest()
+	assertFile(t, request, "foo.txt", "foo")
 }
 
-func (s *controllerSuite) TestAddFileReader(c *gc.C) {
+func TestAddFileReader(t *testing.T) {
 	reader := bytes.NewBufferString("test\n extra over length ignored")
-	s.server.AddPostResponse("/api/2.0/files/?op=", http.StatusOK, "")
-	controller := s.getController(c)
+	server.AddPostResponse("/api/2.0/files/?op=", http.StatusOK, "")
+	controller := getController()
 	err := controller.AddFile(AddFileArgs{
 		Filename: "foo.txt",
 		Reader:   reader,
 		Length:   5,
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
-	request := s.server.LastRequest()
-	s.assertFile(c, request, "foo.txt", "test\n")
+	request := server.LastRequest()
+	assertFile(t, request, "foo.txt", "test\n")
 }
 
-var versionResponse = `{"version": "unknown", "subversion": "", "Capabilities": ["networks-management", "static-ipaddresses", "ipv6-deployment-ubuntu", "devices-management", "storage-deployment-ubuntu", "network-deployment-ubuntu"]}`
 
 type cleanup interface {
 	AddCleanup(func(*gc.C))
 }
 
+func assertFile(t *testing.T, request *http.Request, filename, content string) {
+	form := request.Form
+	assert.Equal(t, form.Get("Filename"), filename)
+
+	fileHeader := request.MultipartForm.File["File"][0]
+	f, err := fileHeader.Open()
+	assert.Nil(t, err)
+	bytes, err := ioutil.ReadAll(f)
+	assert.Nil(t, err)
+	assert.Equal(t,string(bytes), content)
+}
+
+
 // createTestServerController creates a ControllerInterface backed on to a test server
 // that has sufficient knowledge of versions and users to be able to create a
 // valid ControllerInterface.
-func createTestServerController(c *gc.C, suite cleanup) (*client.SimpleTestServer, *controller) {
+func createTestServerController(t *testing.T, suite cleanup) (*client.SimpleTestServer, *controller) {
 	server := client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -941,6 +906,30 @@ func createTestServerController(c *gc.C, suite cleanup) (*client.SimpleTestServe
 		BaseURL: server.URL,
 		APIKey:  "fake:as:key",
 	})
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	return server, controller
+}
+
+func setUpTest() {
+	server := client.NewSimpleServer()
+	server.AddGetResponse("/api/2.0/boot-resources/", http.StatusOK, bootResourcesResponse)
+	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
+	server.AddGetResponse("/api/2.0/fabrics/", http.StatusOK, fabricResponse)
+	server.AddGetResponse("/api/2.0/files/", http.StatusOK, filesResponse)
+	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, machinesResponse)
+	server.AddGetResponse("/api/2.0/machines/?Hostname=untasted-markita", http.StatusOK, "["+machineResponse+"]")
+	server.AddGetResponse("/api/2.0/spaces/", http.StatusOK, spacesResponse)
+	server.AddGetResponse("/api/2.0/static-routes/", http.StatusOK, staticRoutesResponse)
+	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
+	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
+	server.AddGetResponse("/api/2.0/zones/", http.StatusOK, zoneResponse)
+	server.Start()
+}
+
+func getController() *controller {
+	controller, _ := NewController(ControllerArgs{
+		BaseURL: server.URL,
+		APIKey:  "fake:as:key",
+	})
+	return controller
 }

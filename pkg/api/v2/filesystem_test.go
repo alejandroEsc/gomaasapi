@@ -9,13 +9,10 @@ import (
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	"testing"
 )
 
-type filesystemSuite struct{}
-
-var _ = gc.Suite(&filesystemSuite{})
-
-func (*filesystemSuite) TestParse2_0(c *gc.C) {
+func  TestParse2_0(t *testing.T) {
 	source := map[string]interface{}{
 		"Type":        "ext4",
 		"mount_point": "/",
@@ -36,7 +33,7 @@ func (*filesystemSuite) TestParse2_0(c *gc.C) {
 	c.Check(fs.UUID, gc.Equals, "fake-UUID")
 }
 
-func (*filesystemSuite) TestParse2_Defaults(c *gc.C) {
+func  TestParse2_Defaults(t *testing.T) {
 	source := map[string]interface{}{
 		"Type":        "ext4",
 		"mount_point": nil,
@@ -56,7 +53,7 @@ func (*filesystemSuite) TestParse2_Defaults(c *gc.C) {
 	c.Check(fs.UUID, gc.Equals, "fake-UUID")
 }
 
-func (*filesystemSuite) TestParse2_0BadSchema(c *gc.C) {
+func  TestParse2_0BadSchema(t *testing.T) {
 	source := map[string]interface{}{
 		"mount_point": "/",
 		"Label":       "root",

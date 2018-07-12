@@ -10,189 +10,188 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"testing"
 
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
+	"github.com/stretchr/testify/assert"
 )
 
-type ClientSuite struct{}
 
-var _ = gc.Suite(&ClientSuite{})
-
-func (*ClientSuite) TestReadAndCloseReturnsEmptyStringForNil(c *gc.C) {
+func  TestReadAndCloseReturnsEmptyStringForNil(t *testing.T) {
 	data, err := readAndClose(nil)
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(string(data), gc.Equals, "")
+	assert.Nil(t, err)
+	assert.Equal(t, string(data), "")
 }
 
-func (*ClientSuite) TestReadAndCloseReturnsContents(c *gc.C) {
+func  TestReadAndCloseReturnsContents(t *testing.T) {
 	content := "Stream contents."
 	stream := ioutil.NopCloser(strings.NewReader(content))
 
 	data, err := readAndClose(stream)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
-	c.Check(string(data), gc.Equals, content)
+	assert.Equal(t, string(data), content)
 }
 
-func (suite *ClientSuite) TestClientdispatchRequestReturnsServerError(c *gc.C) {
+func TestClientdispatchRequestReturnsServerError(t *testing.T) {
 	URI := "/some/url/?param1=test"
 	expectedResult := "expected:result"
 	server := newSingleServingServer(URI, expectedResult, http.StatusBadRequest)
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	request, err := http.NewRequest("GET", server.URL+URI, nil)
 
 	result, err := client.dispatchRequest(request)
 
 	expectedErrorString := fmt.Sprintf("ServerError: 400 Bad Request (%v)", expectedResult)
-	c.Check(err.Error(), gc.Equals, expectedErrorString)
+	assert.EqualError(t, err, expectedErrorString)
 
 	svrError, ok := GetServerError(err)
-	c.Assert(ok, jc.IsTrue)
-	c.Check(svrError.StatusCode, gc.Equals, 400)
-	c.Check(string(result), gc.Equals, expectedResult)
+	assert.True(t, ok)
+	assert.Equal(t, svrError.StatusCode, 400)
+	assert.Equal(t,string(result), expectedResult)
 }
 
-func (suite *ClientSuite) TestClientdispatchRequestRetries503(c *gc.C) {
+func TestClientdispatchRequestRetries503(t *testing.T) {
 	URI := "/some/url/?param1=test"
 	server := newFlakyServer(URI, 503, NumberOfRetries)
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	content := "Content"
 	request, err := http.NewRequest("GET", server.URL+URI, ioutil.NopCloser(strings.NewReader(content)))
 
 	_, err = client.dispatchRequest(request)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(*server.nbRequests, gc.Equals, NumberOfRetries+1)
+	assert.Nil(t, err)
+	assert.Equal(t, *server.nbRequests, NumberOfRetries+1)
 	expectedRequestsContent := make([][]byte, NumberOfRetries+1)
 	for i := 0; i < NumberOfRetries+1; i++ {
 		expectedRequestsContent[i] = []byte(content)
 	}
-	c.Check(*server.requests, jc.DeepEquals, expectedRequestsContent)
+	assert.EqualValues(t, *server.requests, expectedRequestsContent)
 }
 
-func (suite *ClientSuite) TestClientdispatchRequestDoesntRetry200(c *gc.C) {
+func TestClientdispatchRequestDoesntRetry200(t *testing.T) {
 	URI := "/some/url/?param1=test"
 	server := newFlakyServer(URI, 200, 10)
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	request, err := http.NewRequest("GET", server.URL+URI, nil)
 
 	_, err = client.dispatchRequest(request)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(*server.nbRequests, gc.Equals, 1)
+	assert.Nil(t, err)
+	assert.Equal(t, *server.nbRequests, 1)
 }
 
-func (suite *ClientSuite) TestClientdispatchRequestRetriesIsLimited(c *gc.C) {
+func TestClientdispatchRequestRetriesIsLimited(t *testing.T) {
 	URI := "/some/url/?param1=test"
 	// Make the server return 503 responses NumberOfRetries + 1 times.
 	server := newFlakyServer(URI, 503, NumberOfRetries+1)
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	request, err := http.NewRequest("GET", server.URL+URI, nil)
 
 	_, err = client.dispatchRequest(request)
 
-	c.Check(*server.nbRequests, gc.Equals, NumberOfRetries+1)
+	assert.Equal(t, *server.nbRequests, NumberOfRetries+1)
 	svrError, ok := GetServerError(err)
-	c.Assert(ok, jc.IsTrue)
-	c.Assert(svrError.StatusCode, gc.Equals, 503)
+	assert.True(t, ok)
+	assert.Equal(t, svrError.StatusCode,  503)
 }
 
-func (suite *ClientSuite) TestClientDispatchRequestReturnsNonServerError(c *gc.C) {
+func TestClientDispatchRequestReturnsNonServerError(t *testing.T) {
 	client, err := NewAnonymousClient("/foo", "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	// Create a bad request that will fail to dispatch.
 	request, err := http.NewRequest("GET", "/", nil)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	result, err := client.dispatchRequest(request)
-	c.Check(err, gc.NotNil)
+	assert.NotNil(t, err)
 	// This type of failure is an error, but not a ServerError.
 	_, ok := GetServerError(err)
-	c.Assert(ok, jc.IsFalse)
+	assert.False(t, ok)
 	// For this kind of error, result is guaranteed to be nil.
-	c.Check(result, gc.IsNil)
+	assert.Nil(t, result)
 }
 
-func (suite *ClientSuite) TestClientdispatchRequestSignsRequest(c *gc.C) {
+func TestClientdispatchRequestSignsRequest(t *testing.T) {
 	URI := "/some/url/?param1=test"
 	expectedResult := "expected:result"
 	server := newSingleServingServer(URI, expectedResult, http.StatusOK)
 	defer server.Close()
 	client, err := NewAuthenticatedMAASClient(server.URL, "the:api:key")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	request, err := http.NewRequest("GET", server.URL+URI, nil)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	result, err := client.dispatchRequest(request)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(string(result), gc.Equals, expectedResult)
-	c.Check((*server.requestHeader)["Authorization"][0], gc.Matches, "^OAuth .*")
+	assert.Nil(t, err)
+	assert.Equal(t, string(result), expectedResult)
+
+	authHeader := (*server.requestHeader)["Authorization"][0]
+	assert.Contains(t, authHeader, "OAuth")
 }
 
-func (suite *ClientSuite) TestClientGetFormatsGetParameters(c *gc.C) {
+func TestClientGetFormatsGetParameters(t *testing.T) {
 	URI, err := url.Parse("/some/url")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	expectedResult := "expected:result"
 	params := url.Values{"test": {"123"}}
 	fullURI := URI.String() + "?test=123"
 	server := newSingleServingServer(fullURI, expectedResult, http.StatusOK)
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	result, err := client.Get(URI, "", params)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(string(result), gc.Equals, expectedResult)
+	assert.Nil(t, err)
+	assert.Equal(t, string(result), expectedResult)
 }
 
-func (suite *ClientSuite) TestClientGetFormatsOperationAsGetParameter(c *gc.C) {
+func TestClientGetFormatsOperationAsGetParameter(t *testing.T) {
 	URI, err := url.Parse("/some/url")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	expectedResult := "expected:result"
 	fullURI := URI.String() + "?op=list"
 	server := newSingleServingServer(fullURI, expectedResult, http.StatusOK)
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	result, err := client.Get(URI, "list", nil)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(string(result), gc.Equals, expectedResult)
+	assert.Nil(t, err)
+	assert.Equal(t, string(result), expectedResult)
 }
 
-func (suite *ClientSuite) TestClientPostSendsRequestWithParams(c *gc.C) {
+func TestClientPostSendsRequestWithParams(t *testing.T) {
 	URI, err := url.Parse("/some/url")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	expectedResult := "expected:result"
 	fullURI := URI.String() + "?op=list"
 	params := url.Values{"test": {"123"}}
 	server := newSingleServingServer(fullURI, expectedResult, http.StatusOK)
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	result, err := client.Post(URI, "list", params, nil)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(string(result), gc.Equals, expectedResult)
+	assert.Nil(t, err)
+	assert.Equal(t, string(result), expectedResult)
 	postedValues, err := url.ParseQuery(*server.requestContent)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	expectedPostedValues, err := url.ParseQuery("test=123")
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(postedValues, jc.DeepEquals, expectedPostedValues)
+	assert.Nil(t, err)
+	assert.EqualValues(t,postedValues, expectedPostedValues)
 }
 
 // extractFileContent extracts from the request built using 'requestContent',
@@ -216,75 +215,74 @@ func extractFileContent(requestContent string, requestHeader *http.Header, reque
 	return fileContent, nil
 }
 
-func (suite *ClientSuite) TestClientPostSendsMultipartRequest(c *gc.C) {
+func TestClientPostSendsMultipartRequest(t *testing.T) {
 	URI, err := url.Parse("/some/url")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	expectedResult := "expected:result"
 	fullURI := URI.String() + "?op=add"
 	server := newSingleServingServer(fullURI, expectedResult, http.StatusOK)
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	fileContent := []byte("Content")
 	files := map[string][]byte{"testfile": fileContent}
 
 	result, err := client.Post(URI, "add", nil, files)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(string(result), gc.Equals, expectedResult)
+	assert.Nil(t, err)
+	assert.Equal(t, string(result), expectedResult)
 	receivedFileContent, err := extractFileContent(*server.requestContent, server.requestHeader, fullURI, "testfile")
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(receivedFileContent, jc.DeepEquals, fileContent)
+	assert.Nil(t, err)
+	assert.EqualValues(t, receivedFileContent, fileContent)
 }
 
-func (suite *ClientSuite) TestClientPutSendsRequest(c *gc.C) {
+func TestClientPutSendsRequest(t *testing.T) {
 	URI, err := url.Parse("/some/url")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	expectedResult := "expected:result"
 	params := url.Values{"test": {"123"}}
 	server := newSingleServingServer(URI.String(), expectedResult, http.StatusOK)
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	result, err := client.Put(URI, params)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(string(result), gc.Equals, expectedResult)
-	c.Check(*server.requestContent, gc.Equals, "test=123")
+	assert.Nil(t, err)
+	assert.Equal(t,string(result), expectedResult)
+	assert.Equal(t,*server.requestContent, "test=123")
 }
 
-func (suite *ClientSuite) TestClientDeleteSendsRequest(c *gc.C) {
+func TestClientDeleteSendsRequest(t *testing.T) {
 	URI, err := url.Parse("/some/url")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	expectedResult := "expected:result"
 	server := newSingleServingServer(URI.String(), expectedResult, http.StatusOK)
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	err = client.Delete(URI)
-
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 }
 
-func (suite *ClientSuite) TestNewAnonymousClientEnsuresTrailingSlash(c *gc.C) {
+func TestNewAnonymousClientEnsuresTrailingSlash(t *testing.T) {
 	client, err := NewAnonymousClient("http://cmd.com/", "1.0")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	expectedURL, err := url.Parse("http://cmd.com/api/1.0/")
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(client.APIURL, jc.DeepEquals, expectedURL)
+	assert.Nil(t, err)
+	assert.EqualValues(t, client.APIURL, expectedURL)
 }
 
-func (suite *ClientSuite) TestNewAuthenticatedClientEnsuresTrailingSlash(c *gc.C) {
+func TestNewAuthenticatedClientEnsuresTrailingSlash(t *testing.T) {
 	client, err := NewAuthenticatedMAASClient("http://cmd.com/api/1.0", "a:b:c")
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	expectedURL, err := url.Parse("http://cmd.com/api/1.0/")
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(client.APIURL, jc.DeepEquals, expectedURL)
+	assert.Nil(t, err)
+	assert.EqualValues(t, client.APIURL, expectedURL)
 }
 
-func (suite *ClientSuite) TestNewAuthenticatedClientParsesApiKey(c *gc.C) {
+func TestNewAuthenticatedClientParsesApiKey(t *testing.T) {
 	// NewAuthenticatedMAASClient returns a plainTextOAuthSigneri configured
 	// to use the given API key.
 	consumerKey := "consumerKey"
@@ -295,33 +293,32 @@ func (suite *ClientSuite) TestNewAuthenticatedClientParsesApiKey(c *gc.C) {
 
 	client, err := NewAuthenticatedMAASClient("http://cmd.com/api/1.0/", apiKey)
 
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	signer := client.Signer.(*plainTextOAuthSigner)
-	c.Check(signer.token.ConsumerKey, gc.Equals, consumerKey)
-	c.Check(signer.token.TokenKey, gc.Equals, tokenKey)
-	c.Check(signer.token.TokenSecret, gc.Equals, tokenSecret)
+	assert.Equal(t,signer.token.ConsumerKey,  consumerKey)
+	assert.Equal(t,signer.token.TokenKey,  tokenKey)
+	assert.Equal(t,signer.token.TokenSecret, tokenSecret)
 }
 
-func (suite *ClientSuite) TestNewAuthenticatedClientFailsIfInvalidKey(c *gc.C) {
+func TestNewAuthenticatedClientFailsIfInvalidKey(t *testing.T) {
 	client, err := NewAuthenticatedMAASClient("", "invalid-key")
 
-	c.Check(err, gc.ErrorMatches, "invalid API key.*")
-	c.Check(client, gc.IsNil)
-
+	assert.Contains(t, err.Error(), "invalid API key")
+	assert.Nil(t, client)
 }
 
-func (suite *ClientSuite) TestAddAPIVersionToURL(c *gc.C) {
+func TestAddAPIVersionToURL(t *testing.T) {
 	addVersion := AddAPIVersionToURL
-	c.Assert(addVersion("http://cmd.com/MAAS", "1.0"), gc.Equals, "http://cmd.com/MAAS/api/1.0/")
-	c.Assert(addVersion("http://cmd.com/MAAS/", "2.0"), gc.Equals, "http://cmd.com/MAAS/api/2.0/")
+	assert.Equal(t, addVersion("http://cmd.com/MAAS", "1.0"),  "http://cmd.com/MAAS/api/1.0/")
+	assert.Equal(t, addVersion("http://cmd.com/MAAS/", "2.0"), "http://cmd.com/MAAS/api/2.0/")
 }
 
-func (suite *ClientSuite) TestSplitVersionedURL(c *gc.C) {
+func TestSplitVersionedURL(t *testing.T) {
 	check := func(url, expectedBase, expectedVersion string, expectedResult bool) {
 		base, version, ok := SplitVersionedURL(url)
-		c.Check(ok, gc.Equals, expectedResult)
-		c.Check(base, gc.Equals, expectedBase)
-		c.Check(version, gc.Equals, expectedVersion)
+		assert.Equal(t,ok, expectedResult)
+		assert.Equal(t,base, expectedBase)
+		assert.Equal(t,version, expectedVersion)
 	}
 	check("http://maas.server/MAAS", "http://maas.server/MAAS", "", false)
 	check("http://maas.server/MAAS/api/3.0", "http://maas.server/MAAS/", "3.0", true)
