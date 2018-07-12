@@ -4,8 +4,8 @@
 package gomaasapi
 
 import (
+	"encoding/json"
 	jc "github.com/juju/testing/checkers"
-	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 )
 
@@ -14,35 +14,26 @@ type spaceSuite struct{}
 var _ = gc.Suite(&spaceSuite{})
 
 func (*spaceSuite) TestReadSpacesBadSchema(c *gc.C) {
-	_, err := readSpaces(twoDotOh, "wat?")
+	var r space
+	err = json.Unmarshal([]byte("wat?"), &r)
 	c.Assert(err.Error(), gc.Equals, `space base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*spaceSuite) TestReadSpaces(c *gc.C) {
-	spaces, err := readSpaces(twoDotOh, parseJSON(c, spacesResponse))
+	var spaces []space
+	err = json.Unmarshal([]byte(spacesResponse), &spaces)
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(spaces, gc.HasLen, 1)
 
 	space := spaces[0]
-	c.Assert(space.ID(), gc.Equals, 0)
-	c.Assert(space.Name(), gc.Equals, "space-0")
-	subnets := space.Subnets()
+	c.Assert(space.ID, gc.Equals, 0)
+	c.Assert(space.Name, gc.Equals, "space-0")
+	subnets := space.Subnets
 	c.Assert(subnets, gc.HasLen, 2)
-	c.Assert(subnets[0].ID(), gc.Equals, 34)
+	c.Assert(subnets[0].ID, gc.Equals, 34)
 }
 
-func (*spaceSuite) TestLowVersion(c *gc.C) {
-	_, err := readSpaces(version.MustParse("1.9.0"), parseJSON(c, spacesResponse))
-	c.Assert(err.Error(), gc.Equals, `no space read func for version 1.9.0`)
-}
-
-func (*spaceSuite) TestHighVersion(c *gc.C) {
-	spaces, err := readSpaces(version.MustParse("2.1.9"), parseJSON(c, spacesResponse))
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(spaces, gc.HasLen, 1)
-}
-
-var spacesResponse = `
+const spacesResponse = `
 [
     {
         "Subnets": [

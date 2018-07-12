@@ -4,8 +4,8 @@
 package gomaasapi
 
 import (
+	"encoding/json"
 	jc "github.com/juju/testing/checkers"
-	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 )
 
@@ -17,14 +17,16 @@ var (
 )
 
 func (*blockdeviceSuite) TestReadBlockDevicesBadSchema(c *gc.C) {
-
-	_, err := readBlockDevices(twoDotOh, "wat?")
+	var b BlockDevice
+	err = json.Unmarshal([]byte("wat?"), &b)
 	c.Check(err, jc.Satisfies, IsDeserializationError)
 	c.Assert(err.Error(), gc.Equals, `BlockDevice base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*blockdeviceSuite) TestReadBlockDevices(c *gc.C) {
-	blockdevices, err := readBlockDevices(twoDotOh, parseJSON(c, blockdevicesResponse))
+	var blockdevices []BlockDevice
+	err = json.Unmarshal([]byte(blockdevicesResponse), &blockdevices)
+
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(blockdevices, gc.HasLen, 1)
 	blockdevice := blockdevices[0]
@@ -43,29 +45,20 @@ func (*blockdeviceSuite) TestReadBlockDevices(c *gc.C) {
 	partitions := blockdevice.Partitions
 	c.Assert(partitions, gc.HasLen, 1)
 	partition := partitions[0]
-	c.Check(partition.ID(), gc.Equals, 1)
-	c.Check(partition.UsedFor(), gc.Equals, "ext4 formatted filesystem mounted at /")
+	c.Check(partition.ID, gc.Equals, 1)
+	c.Check(partition.UsedFor, gc.Equals, "ext4 formatted filesystem mounted at /")
 }
 
 func (*blockdeviceSuite) TestReadBlockDevicesWithNulls(c *gc.C) {
-	blockdevices, err := readBlockDevices(twoDotOh, parseJSON(c, blockdevicesWithNullsResponse))
+	var blockdevices []BlockDevice
+	err = json.Unmarshal([]byte(blockdevicesWithNullsResponse), &blockdevices)
+
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(blockdevices, gc.HasLen, 1)
 	blockdevice := blockdevices[0]
 
 	c.Check(blockdevice.Model, gc.Equals, "")
 	c.Check(blockdevice.IDPath, gc.Equals, "")
-}
-
-func (*blockdeviceSuite) TestLowVersion(c *gc.C) {
-	_, err := readBlockDevices(version.MustParse("1.9.0"), parseJSON(c, blockdevicesResponse))
-	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-}
-
-func (*blockdeviceSuite) TestHighVersion(c *gc.C) {
-	blockdevices, err := readBlockDevices(version.MustParse("2.1.9"), parseJSON(c, blockdevicesResponse))
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(blockdevices, gc.HasLen, 1)
 }
 
 var blockdevicesResponse = `
@@ -112,7 +105,6 @@ var blockdevicesResponse = `
     }
 ]
 `
-
 var blockdevicesWithNullsResponse = `
 [
     {

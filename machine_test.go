@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"encoding/json"
 	"github.com/juju/errors"
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
-	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 )
 
@@ -21,117 +21,104 @@ type machineSuite struct {
 var _ = gc.Suite(&machineSuite{})
 
 func (*machineSuite) TestNilGetters(c *gc.C) {
-	var empty MachineInterface
-	c.Check(empty.Zone() == nil, jc.IsTrue)
+	var empty Machine
+	c.Check(empty.Zone == nil, jc.IsTrue)
 	c.Check(empty.PhysicalBlockDevice(0) == nil, jc.IsTrue)
 	c.Check(empty.Interface(0) == nil, jc.IsTrue)
-	c.Check(empty.BootInterface() == nil, jc.IsTrue)
+	c.Check(empty.BootInterface == nil, jc.IsTrue)
 }
 
 func (*machineSuite) TestReadMachinesBadSchema(c *gc.C) {
-	_, err := readMachines(twoDotOh, "wat?")
+	var m Machine
+	err = json.Unmarshal([]byte("wat?"), &m)
 	c.Check(err, jc.Satisfies, IsDeserializationError)
 	c.Assert(err.Error(), gc.Equals, `MachineInterface base schema check failed: expected list, got string("wat?")`)
-
-	_, err = readMachines(twoDotOh, []map[string]interface{}{
-		{
-			"wat": "?",
-		},
-	})
-	c.Check(err, jc.Satisfies, IsDeserializationError)
-	c.Assert(err, gc.ErrorMatches, `MachineInterface 0: MachineInterface 2.0 schema check failed: .*`)
 }
 
 func (*machineSuite) TestReadMachines(c *gc.C) {
-	machines, err := readMachines(twoDotOh, parseJSON(c, machinesResponse))
+	var machines []Machine
+	err = json.Unmarshal([]byte(machineResponse), &machines)
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(machines, gc.HasLen, 3)
 
 	machine := machines[0]
 
-	c.Check(machine.SystemID(), gc.Equals, "4y3ha3")
-	c.Check(machine.Hostname(), gc.Equals, "untasted-markita")
-	c.Check(machine.FQDN(), gc.Equals, "untasted-markita.maas")
-	c.Check(machine.Tags(), jc.DeepEquals, []string{"virtual", "magic"})
-	c.Check(machine.OwnerData(), jc.DeepEquals, map[string]string{
+	c.Check(machine.SystemID, gc.Equals, "4y3ha3")
+	c.Check(machine.Hostname, gc.Equals, "untasted-markita")
+	c.Check(machine.FQDN, gc.Equals, "untasted-markita.maas")
+	c.Check(machine.Tags, jc.DeepEquals, []string{"virtual", "magic"})
+	c.Check(machine.OwnerData, jc.DeepEquals, map[string]string{
 		"fez":            "phil fish",
 		"frog-fractions": "jim crawford",
 	})
 
-	c.Check(machine.IPAddresses(), jc.DeepEquals, []string{"192.168.100.4"})
-	c.Check(machine.Memory(), gc.Equals, 1024)
-	c.Check(machine.CPUCount(), gc.Equals, 1)
-	c.Check(machine.PowerState(), gc.Equals, "on")
-	c.Check(machine.Zone().Name(), gc.Equals, "default")
-	c.Check(machine.OperatingSystem(), gc.Equals, "ubuntu")
-	c.Check(machine.DistroSeries(), gc.Equals, "trusty")
-	c.Check(machine.Architecture(), gc.Equals, "amd64/generic")
-	c.Check(machine.StatusName(), gc.Equals, "Deployed")
-	c.Check(machine.StatusMessage(), gc.Equals, "From 'Deploying' to 'Deployed'")
+	c.Check(machine.IPAddresses, jc.DeepEquals, []string{"192.168.100.4"})
+	c.Check(machine.Memory, gc.Equals, 1024)
+	c.Check(machine.CPUCount, gc.Equals, 1)
+	c.Check(machine.PowerState, gc.Equals, "on")
+	c.Check(machine.Zone.Name, gc.Equals, "default")
+	c.Check(machine.OperatingSystem, gc.Equals, "ubuntu")
+	c.Check(machine.DistroSeries, gc.Equals, "trusty")
+	c.Check(machine.Architecture, gc.Equals, "amd64/generic")
+	c.Check(machine.StatusName, gc.Equals, "Deployed")
+	c.Check(machine.StatusMessage, gc.Equals, "From 'Deploying' to 'Deployed'")
 
-	bootInterface := machine.BootInterface()
+	bootInterface := machine.BootInterface
 	c.Assert(bootInterface, gc.NotNil)
-	c.Check(bootInterface.Name(), gc.Equals, "eth0")
+	c.Check(bootInterface.Name, gc.Equals, "eth0")
 
-	interfaceSet := machine.InterfaceSet()
+	interfaceSet := machine.InterfaceSet
 	c.Assert(interfaceSet, gc.HasLen, 2)
-	id := interfaceSet[0].ID()
+	id := interfaceSet[0].ID
 	c.Assert(machine.Interface(id), jc.DeepEquals, interfaceSet[0])
 	c.Assert(machine.Interface(id+5), gc.IsNil)
 
-	blockDevices := machine.BlockDevices()
+	blockDevices := machine.BlockDevices
 	c.Assert(blockDevices, gc.HasLen, 3)
-	c.Assert(blockDevices[0].Name(), gc.Equals, "sda")
-	c.Assert(blockDevices[1].Name(), gc.Equals, "sdb")
-	c.Assert(blockDevices[2].Name(), gc.Equals, "md0")
+	c.Assert(blockDevices[0].Name, gc.Equals, "sda")
+	c.Assert(blockDevices[1].Name, gc.Equals, "sdb")
+	c.Assert(blockDevices[2].Name, gc.Equals, "md0")
 
-	blockDevices = machine.PhysicalBlockDevices()
+	blockDevices = machine.PhysicalBlockDevices
 	c.Assert(blockDevices, gc.HasLen, 2)
-	c.Assert(blockDevices[0].Name(), gc.Equals, "sda")
-	c.Assert(blockDevices[1].Name(), gc.Equals, "sdb")
+	c.Assert(blockDevices[0].Name, gc.Equals, "sda")
+	c.Assert(blockDevices[1].Name, gc.Equals, "sdb")
 
-	id = blockDevices[0].ID()
+	id = blockDevices[0].ID
 	c.Assert(machine.PhysicalBlockDevice(id), jc.DeepEquals, blockDevices[0])
 	c.Assert(machine.PhysicalBlockDevice(id+5), gc.IsNil)
 }
 
 func (*machineSuite) TestReadMachinesNilValues(c *gc.C) {
-	json := parseJSON(c, machinesResponse)
-	data := json.([]interface{})[0].(map[string]interface{})
+	j := parseJSON(c, machinesResponse)
+	data := j.([]interface{})[0].(map[string]interface{})
 	data["Architecture"] = nil
 	data["status_message"] = nil
 	data["boot_interface"] = nil
-	machines, err := readMachines(twoDotOh, json)
+
+	jr, err := json.Marshal(data)
+	c.Assert(err, jc.ErrorIsNil)
+
+	var machines []Machine
+	err = json.Unmarshal(jr, &machines)
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(machines, gc.HasLen, 3)
 	machine := machines[0]
-	c.Check(machine.Architecture(), gc.Equals, "")
-	c.Check(machine.StatusMessage(), gc.Equals, "")
-	c.Check(machine.BootInterface(), gc.IsNil)
+	c.Check(machine.Architecture, gc.Equals, "")
+	c.Check(machine.StatusMessage, gc.Equals, "")
+	c.Check(machine.BootInterface, gc.IsNil)
 }
 
-func (*machineSuite) TestLowVersion(c *gc.C) {
-	_, err := readMachines(version.MustParse("1.9.0"), parseJSON(c, machinesResponse))
-	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-	c.Assert(err.Error(), gc.Equals, `no MachineInterface read func for version 1.9.0`)
-}
-
-func (*machineSuite) TestHighVersion(c *gc.C) {
-	machines, err := readMachines(version.MustParse("2.1.9"), parseJSON(c, machinesResponse))
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(machines, gc.HasLen, 3)
-}
-
-func (s *machineSuite) getServerAndMachine(c *gc.C) (*SimpleTestServer, *MachineInterface) {
+func (s *machineSuite) getServerAndMachine(c *gc.C) (*SimpleTestServer, *Machine) {
 	server, controller := createTestServerController(c, s)
 	// Just have machines return one MachineInterface
 	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, "["+machineResponse+"]")
 	machines, err := controller.Machines(MachinesArgs{})
 	c.Assert(err, jc.ErrorIsNil)
 	c.Check(machines, gc.HasLen, 1)
-	machine := machines[0].(*MachineInterface)
+	machine := machines[0]
 	server.ResetRequests()
-	return server, machine
+	return server, &machine
 }
 
 func (s *machineSuite) TestStart(c *gc.C) {
@@ -149,8 +136,8 @@ func (s *machineSuite) TestStart(c *gc.C) {
 		Comment:      "a comment",
 	})
 	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(machine.StatusName(), gc.Equals, "Deploying")
-	c.Assert(machine.StatusMessage(), gc.Equals, "for testing")
+	c.Assert(machine.StatusName, gc.Equals, "Deploying")
+	c.Assert(machine.StatusMessage, gc.Equals, "for testing")
 
 	request := server.LastRequest()
 	// There should be one entry in the form Values for each of the args.
@@ -208,7 +195,7 @@ func (s *machineSuite) TestDevices(c *gc.C) {
 	devices, err := machine.Devices(DevicesArgs{})
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(devices, gc.HasLen, 1)
-	c.Assert(devices[0].Parent(), gc.Equals, machine.SystemID())
+	c.Assert(devices[0].Parent, gc.Equals, machine.SystemID)
 }
 
 func (s *machineSuite) TestDevicesNone(c *gc.C) {
@@ -237,11 +224,11 @@ func (s *machineSuite) TestCreateMachineDeviceArgsValidate(c *gc.C) {
 		args: CreateMachineDeviceArgs{
 			InterfaceName: "eth1",
 			MACAddress:    "something",
-			Subnet: &fakeSubnet{
-				cidr: "1.2.3.4/5",
-				vlan: &fakeVLAN{id: 42},
+			Subnet: &subnet{
+				CIDR: "1.2.3.4/5",
+				VLAN: &vlan{ID: 42},
 			},
-			VLAN: &fakeVLAN{id: 10},
+			VLAN: &vlan{ID: 10},
 		},
 		errText: `given Subnet "1.2.3.4/5" on VLAN 42 does not match given VLAN 10`,
 	}, {
@@ -250,13 +237,13 @@ func (s *machineSuite) TestCreateMachineDeviceArgsValidate(c *gc.C) {
 			InterfaceName: "eth1",
 			MACAddress:    "something",
 			Subnet:        nil,
-			VLAN:          &fakeVLAN{},
+			VLAN:          &vlan{},
 		},
 	}, {
 		args: CreateMachineDeviceArgs{
 			InterfaceName: "eth1",
 			MACAddress:    "something",
-			Subnet:        &fakeSubnet{},
+			Subnet:        &subnet{},
 			VLAN:          nil,
 		},
 	}, {
@@ -300,16 +287,16 @@ func (s *machineSuite) TestCreateDevice(c *gc.C) {
 		"resource_uri": "/MAAS/api/2.0/nodes/4y3haf/interfaces/48/",
 	})
 	server.AddPostResponse("/MAAS/api/2.0/nodes/4y3haf/interfaces/48/?op=link_subnet", http.StatusOK, linkSubnetResponse)
-	subnet := machine.BootInterface().Links()[0].Subnet()
+	subnet := machine.BootInterface.Links[0].Subnet
 	device, err := machine.CreateDevice(CreateMachineDeviceArgs{
 		InterfaceName: "eth4",
 		MACAddress:    "fake-mac-address",
 		Subnet:        subnet,
-		VLAN:          subnet.VLAN(),
+		VLAN:          subnet.VLAN,
 	})
 	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(device.InterfaceSet()[0].Name(), gc.Equals, "eth4")
-	c.Assert(device.InterfaceSet()[0].VLAN().ID(), gc.Equals, subnet.VLAN().ID())
+	c.Assert(device.InterfaceSet[0].Name, gc.Equals, "eth4")
+	c.Assert(device.InterfaceSet[0].VLAN.ID, gc.Equals, subnet.VLAN.ID)
 }
 
 func (s *machineSuite) TestCreateDeviceWithoutSubnetOrVLAN(c *gc.C) {
@@ -329,10 +316,10 @@ func (s *machineSuite) TestCreateDeviceWithoutSubnetOrVLAN(c *gc.C) {
 		VLAN:          nil,
 	})
 	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(device.InterfaceSet()[0].Name(), gc.Equals, "eth4")
+	c.Assert(device.InterfaceSet[0].Name, gc.Equals, "eth4")
 	// No specifc Subnet or VLAN should be set.
-	c.Assert(device.InterfaceSet()[0].VLAN().ID(), gc.Equals, 1) // set in interfaceResponse
-	c.Assert(device.InterfaceSet()[0].Links(), gc.HasLen, 0)     // set above
+	c.Assert(device.InterfaceSet[0].VLAN.ID, gc.Equals, 1) // set in interfaceResponse
+	c.Assert(device.InterfaceSet[0].Links, gc.HasLen, 0)   // set above
 }
 
 func (s *machineSuite) TestCreateDeviceWithVLANOnly(c *gc.C) {
@@ -357,12 +344,12 @@ func (s *machineSuite) TestCreateDeviceWithVLANOnly(c *gc.C) {
 		InterfaceName: "eth4",
 		MACAddress:    "fake-mac-address",
 		Subnet:        nil,
-		VLAN:          &fakeVLAN{id: 42},
+		VLAN:          &vlan{ID: 42},
 	})
 	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(device.InterfaceSet()[0].Name(), gc.Equals, "eth4")
+	c.Assert(device.InterfaceSet[0].Name, gc.Equals, "eth4")
 	// VLAN should be set.
-	c.Assert(device.InterfaceSet()[0].VLAN().ID(), gc.Equals, 42)
+	c.Assert(device.InterfaceSet[0].VLAN.ID, gc.Equals, 42)
 }
 
 func (s *machineSuite) TestCreateDeviceTriesToDeleteDeviceOnError(c *gc.C) {
@@ -377,7 +364,7 @@ func (s *machineSuite) TestCreateDeviceTriesToDeleteDeviceOnError(c *gc.C) {
 	server.AddPutResponse("/MAAS/api/2.0/nodes/4y3haf/interfaces/48/", http.StatusOK, updateInterfaceResponse)
 	server.AddPostResponse("/MAAS/api/2.0/nodes/4y3haf/interfaces/48/?op=link_subnet", http.StatusServiceUnavailable, "no addresses")
 	// We'll ignore that that it fails to delete, all we care about testing is that it tried.
-	subnet := machine.BootInterface().Links()[0].Subnet()
+	subnet := machine.BootInterface.Links[0].Subnet
 	_, err := machine.CreateDevice(CreateMachineDeviceArgs{
 		InterfaceName: "eth4",
 		MACAddress:    "fake-mac-address",
@@ -391,10 +378,10 @@ func (s *machineSuite) TestCreateDeviceTriesToDeleteDeviceOnError(c *gc.C) {
 }
 
 func (s *machineSuite) TestOwnerDataCopies(c *gc.C) {
-	machine := MachineInterface{OwnerData: make(map[string]string)}
-	ownerData := machine.OwnerData()
+	machine := Machine{OwnerData: make(map[string]string)}
+	ownerData := machine.OwnerData
 	ownerData["sad"] = "Children"
-	c.Assert(machine.OwnerData(), gc.DeepEquals, map[string]string{})
+	c.Assert(machine.OwnerData, gc.DeepEquals, map[string]string{})
 }
 
 func (s *machineSuite) TestSetOwnerData(c *gc.C) {
@@ -405,7 +392,7 @@ func (s *machineSuite) TestSetOwnerData(c *gc.C) {
 		"empty": "", // Check that empty strings get passed along.
 	})
 	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(machine.OwnerData(), gc.DeepEquals, map[string]string{"returned": "data"})
+	c.Assert(machine.OwnerData, gc.DeepEquals, map[string]string{"returned": "data"})
 	form := server.LastRequest().PostForm
 	// Looking at the map directly so we can tell the difference
 	// between no value and an explicit empty string.

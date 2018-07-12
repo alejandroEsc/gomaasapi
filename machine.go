@@ -17,35 +17,35 @@ type Machine struct {
 	Controller *controller
 
 	ResourceURI string `json:"resource_uri,omitempty"`
-	SystemID    string `json:"resource_uri,omitempty"`
-	Hostname    string `json:"resource_uri,omitempty"`
-	FQDN        string `json:"resource_uri,omitempty"`
+	SystemID    string `json:"system_id,omitempty"`
+	Hostname    string `json:"Hostname,omitempty"`
+	FQDN        string `json:"FQDN,omitempty"`
 	Tags        []string
 	// OwnerData returns a copy of the key/value data stored for this
 	// object.
-	OwnerData       map[string]string `json:"resource_uri,omitempty"`
-	OperatingSystem string            `json:"resource_uri,omitempty"`
-	DistroSeries    string            `json:"resource_uri,omitempty"`
-	Architecture    string            `json:"resource_uri,omitempty"`
-	Memory          int               `json:"resource_uri,omitempty"`
-	CPUCount        int               `json:"resource_uri,omitempty"`
-	IPAddresses     []string          `json:"resource_uri,omitempty"`
-	PowerState      string            `json:"resource_uri,omitempty"`
+	OwnerData       map[string]string `json:"owner_data,omitempty"`
+	OperatingSystem string            `json:"osystem,omitempty"`
+	DistroSeries    string            `json:"distro_series,omitempty"`
+	Architecture    string            `json:"Architecture,omitempty"`
+	Memory          int               `json:"Memory,omitempty"`
+	CPUCount        int               `json:"cpu_count,omitempty"`
+	IPAddresses     []string          `json:"ip_addresses,omitempty"`
+	PowerState      string            `json:"power_state,omitempty"`
 	// NOTE: consider some form of status struct
-	StatusName    string `json:"resource_uri,omitempty"`
-	StatusMessage string `json:"resource_uri,omitempty"`
+	StatusName    string `json:"status_name,omitempty"`
+	StatusMessage string `json:"status_message,omitempty"`
 	// BootInterface returns the interface that was used to boot the MachineInterface.
-	BootInterface *MachineNetworkInterface `json:"resource_uri,omitempty"`
+	BootInterface *MachineNetworkInterface `json:"boot_interface,omitempty"`
 	// InterfaceSet returns all the interfaces for the MachineInterface.
-	InterfaceSet []*MachineNetworkInterface `json:"resource_uri,omitempty"`
-	Zone         *zone                      `json:"resource_uri,omitempty"`
+	InterfaceSet []*MachineNetworkInterface `json:"interface_set,omitempty"`
+	Zone         *zone                      `json:"Zone,omitempty"`
 	// Don't really know the difference between these two lists:
 
 	// PhysicalBlockDevice returns the physical block device for the MachineInterface
 	// that matches the ID specified. If there is no match, nil is returned.
-	PhysicalBlockDevices []*BlockDevice `json:"resource_uri,omitempty"`
+	PhysicalBlockDevices []*BlockDevice `json:"physicalblockdevice_set,omitempty"`
 	// BlockDevices returns all the physical and virtual block devices on the MachineInterface.
-	BlockDevices []*BlockDevice `json:"resource_uri,omitempty"`
+	BlockDevices []*BlockDevice `json:"blockdevice_set,omitempty"`
 }
 
 func (m *Machine) updateFrom(other *Machine) {

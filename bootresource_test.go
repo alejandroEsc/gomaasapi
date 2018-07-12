@@ -5,8 +5,8 @@ package gomaasapi
 
 import (
 	"encoding/json"
+	jc "github.com/juju/testing/checkers"
 	"github.com/juju/utils/set"
-	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 )
 
@@ -25,8 +25,9 @@ func (*bootResourceSuite) TestReadBootResourcesBadSchema(c *gc.C) {
 }
 
 func (*bootResourceSuite) TestReadBootResources(c *gc.C) {
+	var bootResources []bootResource
+	err = json.Unmarshal([]byte(blockdevicesWithNullsResponse), &bootResources)
 
-	bootResources, err := readBootResources(twoDotOh, parseJSON(c, bootResourcesResponse))
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(bootResources, gc.HasLen, 5)
 	trusty := bootResources[0]
@@ -38,17 +39,6 @@ func (*bootResourceSuite) TestReadBootResources(c *gc.C) {
 	c.Assert(trusty.Architecture, gc.Equals, "amd64/hwe-t")
 	c.Assert(trusty.SubArchitectures, jc.DeepEquals, subarches)
 	c.Assert(trusty.KernelFlavor, gc.Equals, "generic")
-}
-
-func (*bootResourceSuite) TestLowVersion(c *gc.C) {
-	_, err := readBootResources(version.MustParse("1.9.0"), parseJSON(c, bootResourcesResponse))
-	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-}
-
-func (*bootResourceSuite) TestHighVersion(c *gc.C) {
-	bootResources, err := readBootResources(version.MustParse("2.1.9"), parseJSON(c, bootResourcesResponse))
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(bootResources, gc.HasLen, 5)
 }
 
 var bootResourcesResponse = `

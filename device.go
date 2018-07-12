@@ -71,7 +71,7 @@ func (d *device) interfacesURI() string {
 }
 
 // CreateInterface implements DeviceInterface.
-func (d *device) CreateInterface(args CreateInterfaceArgs) (MachineNetworkInterface, error) {
+func (d *device) CreateInterface(args CreateInterfaceArgs) (*MachineNetworkInterface, error) {
 	if err := args.Validate(); err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -107,7 +107,7 @@ func (d *device) CreateInterface(args CreateInterfaceArgs) (MachineNetworkInterf
 
 	// TODO: add to the interfaces for the device when the interfaces are returned.
 	// lp:bug 1567213.
-	return iface, nil
+	return &iface, nil
 }
 
 // Delete implements DeviceInterface.
@@ -129,7 +129,7 @@ func (d *device) Delete() error {
 
 type DeviceInterface interface {
 	// CreateInterface will create a physical interface for this MachineInterface.
-	CreateInterface(CreateInterfaceArgs) (MachineNetworkInterface, error)
+	CreateInterface(CreateInterfaceArgs) (*MachineNetworkInterface, error)
 	// Delete will remove this DeviceInterface.
 	Delete() error
 }

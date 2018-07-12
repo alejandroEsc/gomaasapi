@@ -6,10 +6,10 @@ package gomaasapi
 import (
 	"net/http"
 
+	"encoding/json"
 	"github.com/juju/errors"
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
-	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 )
 
@@ -21,91 +21,65 @@ var _ = gc.Suite(&interfaceSuite{})
 
 func (*interfaceSuite) TestNilVLAN(c *gc.C) {
 	var empty MachineNetworkInterface
-	c.Check(empty.VLAN() == nil, jc.IsTrue)
+	c.Check(empty.VLAN == nil, jc.IsTrue)
 }
 
 func (*interfaceSuite) TestReadInterfacesBadSchema(c *gc.C) {
-	_, err := readInterfaces(twoDotOh, "wat?")
+	var b MachineNetworkInterface
+	err = json.Unmarshal([]byte("wat?"), &b)
+
 	c.Check(err, jc.Satisfies, IsDeserializationError)
 	c.Assert(err.Error(), gc.Equals, `interface base schema check failed: expected list, got string("wat?")`)
-
-	_, err = readInterfaces(twoDotOh, []map[string]interface{}{
-		{
-			"wat": "?",
-		},
-	})
-	c.Check(err, jc.Satisfies, IsDeserializationError)
-	c.Assert(err, gc.ErrorMatches, `interface 0: interface 2.0 schema check failed: .*`)
 }
 
 func (*interfaceSuite) TestReadInterfacesNulls(c *gc.C) {
-	iface, err := readInterface(twoDotOh, parseJSON(c, interfaceNullsResponse))
+	var iface MachineNetworkInterface
+	err = json.Unmarshal([]byte(interfaceNullsResponse), &iface)
+
 	c.Assert(err, jc.ErrorIsNil)
 
-	c.Check(iface.MACAddress(), gc.Equals, "")
-	c.Check(iface.Tags(), jc.DeepEquals, []string{})
-	c.Check(iface.VLAN(), gc.IsNil)
+	c.Check(iface.MACAddress, gc.Equals, "")
+	c.Check(iface.Tags, jc.DeepEquals, []string{})
+	c.Check(iface.VLAN, gc.IsNil)
 }
 
 func (s *interfaceSuite) checkInterface(c *gc.C, iface *MachineNetworkInterface) {
-	c.Check(iface.ID(), gc.Equals, 40)
-	c.Check(iface.Name(), gc.Equals, "eth0")
-	c.Check(iface.Type(), gc.Equals, "physical")
-	c.Check(iface.Enabled(), jc.IsTrue)
-	c.Check(iface.Tags(), jc.DeepEquals, []string{"foo", "bar"})
+	c.Check(iface.ID, gc.Equals, 40)
+	c.Check(iface.Name, gc.Equals, "eth0")
+	c.Check(iface.Type, gc.Equals, "physical")
+	c.Check(iface.Enabled, jc.IsTrue)
+	c.Check(iface.Tags, jc.DeepEquals, []string{"foo", "bar"})
 
-	c.Check(iface.MACAddress(), gc.Equals, "52:54:00:c9:6a:45")
-	c.Check(iface.EffectiveMTU(), gc.Equals, 1500)
+	c.Check(iface.MACAddress, gc.Equals, "52:54:00:c9:6a:45")
+	c.Check(iface.EffectiveMTU, gc.Equals, 1500)
 
-	c.Check(iface.Parents(), jc.DeepEquals, []string{"bond0"})
-	c.Check(iface.Children(), jc.DeepEquals, []string{"eth0.1", "eth0.2"})
+	c.Check(iface.Parents, jc.DeepEquals, []string{"bond0"})
+	c.Check(iface.Children, jc.DeepEquals, []string{"eth0.1", "eth0.2"})
 
-	vlan := iface.VLAN()
+	vlan := iface.VLAN
 	c.Assert(vlan, gc.NotNil)
-	c.Check(vlan.Name(), gc.Equals, "untagged")
+	c.Check(vlan.Name, gc.Equals, "untagged")
 
-	links := iface.Links()
+	links := iface.Links
 	c.Assert(links, gc.HasLen, 1)
-	c.Check(links[0].ID(), gc.Equals, 69)
+	c.Check(links[0].ID, gc.Equals, 69)
 }
 
 func (s *interfaceSuite) TestReadInterfaces(c *gc.C) {
-	interfaces, err := readInterfaces(twoDotOh, parseJSON(c, interfacesResponse))
+	var interfaces []MachineNetworkInterface
+	err = json.Unmarshal([]byte(interfacesResponse), &interfaces)
+
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(interfaces, gc.HasLen, 1)
-	s.checkInterface(c, interfaces[0])
+	s.checkInterface(c, &interfaces[0])
 }
 
 func (s *interfaceSuite) TestReadInterface(c *gc.C) {
-	result, err := readInterface(twoDotOh, parseJSON(c, interfaceResponse))
-	c.Assert(err, jc.ErrorIsNil)
-	s.checkInterface(c, result)
-}
+	var iface MachineNetworkInterface
+	err = json.Unmarshal([]byte(interfacesResponse), &iface)
 
-func (s *interfaceSuite) TestReadInterfaceNilMAC(c *gc.C) {
-	json := parseJSON(c, interfaceResponse)
-	json.(map[string]interface{})["mac_address"] = nil
-	result, err := readInterface(twoDotOh, json)
 	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(result.MACAddress(), gc.Equals, "")
-}
-
-func (*interfaceSuite) TestLowVersion(c *gc.C) {
-	_, err := readInterfaces(version.MustParse("1.9.0"), parseJSON(c, interfacesResponse))
-	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-	c.Assert(err.Error(), gc.Equals, `no interface read func for version 1.9.0`)
-
-	_, err = readInterface(version.MustParse("1.9.0"), parseJSON(c, interfaceResponse))
-	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-	c.Assert(err.Error(), gc.Equals, `no interface read func for version 1.9.0`)
-}
-
-func (*interfaceSuite) TestHighVersion(c *gc.C) {
-	read, err := readInterfaces(version.MustParse("2.1.9"), parseJSON(c, interfacesResponse))
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(read, gc.HasLen, 1)
-	_, err = readInterface(version.MustParse("2.1.9"), parseJSON(c, interfaceResponse))
-	c.Assert(err, jc.ErrorIsNil)
+	s.checkInterface(c, &iface)
 }
 
 func (s *interfaceSuite) getServerAndNewInterface(c *gc.C) (*SimpleTestServer, *MachineNetworkInterface) {
@@ -113,18 +87,18 @@ func (s *interfaceSuite) getServerAndNewInterface(c *gc.C) (*SimpleTestServer, *
 	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
 	devices, err := controller.Devices(DevicesArgs{})
 	c.Assert(err, jc.ErrorIsNil)
-	device := devices[0].(*device)
+	device := devices[0]
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusOK, interfaceResponse)
 	iface, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	c.Assert(err, jc.ErrorIsNil)
-	return server, iface.(*MachineNetworkInterface)
+	return server, iface
 }
 
 func (s *interfaceSuite) TestDelete(c *gc.C) {
 	server, iface := s.getServerAndNewInterface(c)
 	// Successful delete is 204 - StatusNoContent - We hope, would be consistent
 	// with device deletions.
-	server.AddDeleteResponse(iface.resourceURI, http.StatusNoContent, "")
+	server.AddDeleteResponse(iface.ResourceURI, http.StatusNoContent, "")
 	err := iface.Delete()
 	c.Assert(err, jc.ErrorIsNil)
 }
@@ -138,35 +112,16 @@ func (s *interfaceSuite) TestDelete404(c *gc.C) {
 
 func (s *interfaceSuite) TestDeleteForbidden(c *gc.C) {
 	server, iface := s.getServerAndNewInterface(c)
-	server.AddDeleteResponse(iface.resourceURI, http.StatusForbidden, "")
+	server.AddDeleteResponse(iface.ResourceURI, http.StatusForbidden, "")
 	err := iface.Delete()
 	c.Assert(err, jc.Satisfies, IsPermissionError)
 }
 
 func (s *interfaceSuite) TestDeleteUnknown(c *gc.C) {
 	server, iface := s.getServerAndNewInterface(c)
-	server.AddDeleteResponse(iface.resourceURI, http.StatusConflict, "")
+	server.AddDeleteResponse(iface.ResourceURI, http.StatusConflict, "")
 	err := iface.Delete()
 	c.Assert(err, jc.Satisfies, IsUnexpectedError)
-}
-
-type fakeSubnet struct {
-	Subnet
-	id   int
-	cidr string
-	vlan VLAN
-}
-
-func (f *fakeSubnet) ID() int {
-	return f.id
-}
-
-func (f *fakeSubnet) CIDR() string {
-	return f.cidr
-}
-
-func (f *fakeSubnet) VLAN() VLAN {
-	return f.vlan
 }
 
 func (s *interfaceSuite) TestLinkSubnetArgs(c *gc.C) {
@@ -182,26 +137,26 @@ func (s *interfaceSuite) TestLinkSubnetArgs(c *gc.C) {
 		args:    LinkSubnetArgs{Mode: InterfaceLinkMode("foo")},
 		errText: `unknown Mode value ("foo") not valid`,
 	}, {
-		args: LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &fakeSubnet{}},
+		args: LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &subnet{}},
 	}, {
-		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &fakeSubnet{}},
+		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &subnet{}},
 	}, {
-		args: LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &fakeSubnet{}},
+		args: LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &subnet{}},
 	}, {
-		args:    LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &fakeSubnet{}, IPAddress: "10.10.10.10"},
+		args:    LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &subnet{}, IPAddress: "10.10.10.10"},
 		errText: `setting IP Address when Mode is not LinkModeStatic not valid`,
 	}, {
-		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &fakeSubnet{}, IPAddress: "10.10.10.10"},
+		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &subnet{}, IPAddress: "10.10.10.10"},
 	}, {
-		args:    LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &fakeSubnet{}, IPAddress: "10.10.10.10"},
+		args:    LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &subnet{}, IPAddress: "10.10.10.10"},
 		errText: `setting IP Address when Mode is not LinkModeStatic not valid`,
 	}, {
-		args:    LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &fakeSubnet{}, DefaultGateway: true},
+		args:    LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &subnet{}, DefaultGateway: true},
 		errText: `specifying DefaultGateway for Mode "DHCP" not valid`,
 	}, {
-		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &fakeSubnet{}, DefaultGateway: true},
+		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &subnet{}, DefaultGateway: true},
 	}, {
-		args:    LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &fakeSubnet{}, DefaultGateway: true},
+		args:    LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &subnet{}, DefaultGateway: true},
 		errText: `specifying DefaultGateway for Mode "LINK_UP" not valid`,
 	}} {
 		c.Logf("test %d", i)
@@ -229,16 +184,16 @@ func (s *interfaceSuite) TestLinkSubnetGood(c *gc.C) {
 	response := updateJSONMap(c, interfaceResponse, map[string]interface{}{
 		"Name": "eth42",
 	})
-	server.AddPostResponse(iface.resourceURI+"?op=link_subnet", http.StatusOK, response)
+	server.AddPostResponse(iface.ResourceURI+"?op=link_subnet", http.StatusOK, response)
 	args := LinkSubnetArgs{
 		Mode:           LinkModeStatic,
-		Subnet:         &fakeSubnet{id: 42},
+		Subnet:         &subnet{ID: 42},
 		IPAddress:      "10.10.10.10",
 		DefaultGateway: true,
 	}
 	err := iface.LinkSubnet(args)
 	c.Check(err, jc.ErrorIsNil)
-	c.Check(iface.Name(), gc.Equals, "eth42")
+	c.Check(iface.Name, gc.Equals, "eth42")
 
 	request := server.LastRequest()
 	form := request.PostForm
@@ -252,7 +207,7 @@ func (s *interfaceSuite) TestLinkSubnetMissing(c *gc.C) {
 	_, iface := s.getServerAndNewInterface(c)
 	args := LinkSubnetArgs{
 		Mode:   LinkModeStatic,
-		Subnet: &fakeSubnet{id: 42},
+		Subnet: &subnet{ID: 42},
 	}
 	err := iface.LinkSubnet(args)
 	c.Check(err, jc.Satisfies, IsBadRequestError)
@@ -260,10 +215,10 @@ func (s *interfaceSuite) TestLinkSubnetMissing(c *gc.C) {
 
 func (s *interfaceSuite) TestLinkSubnetForbidden(c *gc.C) {
 	server, iface := s.getServerAndNewInterface(c)
-	server.AddPostResponse(iface.resourceURI+"?op=link_subnet", http.StatusForbidden, "bad user")
+	server.AddPostResponse(iface.ResourceURI+"?op=link_subnet", http.StatusForbidden, "bad user")
 	args := LinkSubnetArgs{
 		Mode:   LinkModeStatic,
-		Subnet: &fakeSubnet{id: 42},
+		Subnet: &subnet{ID: 42},
 	}
 	err := iface.LinkSubnet(args)
 	c.Check(err, jc.Satisfies, IsPermissionError)
@@ -272,10 +227,10 @@ func (s *interfaceSuite) TestLinkSubnetForbidden(c *gc.C) {
 
 func (s *interfaceSuite) TestLinkSubnetNoAddressesAvailable(c *gc.C) {
 	server, iface := s.getServerAndNewInterface(c)
-	server.AddPostResponse(iface.resourceURI+"?op=link_subnet", http.StatusServiceUnavailable, "no addresses")
+	server.AddPostResponse(iface.ResourceURI+"?op=link_subnet", http.StatusServiceUnavailable, "no addresses")
 	args := LinkSubnetArgs{
 		Mode:   LinkModeStatic,
-		Subnet: &fakeSubnet{id: 42},
+		Subnet: &subnet{ID: 42},
 	}
 	err := iface.LinkSubnet(args)
 	c.Check(err, jc.Satisfies, IsCannotCompleteError)
@@ -284,10 +239,10 @@ func (s *interfaceSuite) TestLinkSubnetNoAddressesAvailable(c *gc.C) {
 
 func (s *interfaceSuite) TestLinkSubnetUnknown(c *gc.C) {
 	server, iface := s.getServerAndNewInterface(c)
-	server.AddPostResponse(iface.resourceURI+"?op=link_subnet", http.StatusMethodNotAllowed, "wat?")
+	server.AddPostResponse(iface.ResourceURI+"?op=link_subnet", http.StatusMethodNotAllowed, "wat?")
 	args := LinkSubnetArgs{
 		Mode:   LinkModeStatic,
-		Subnet: &fakeSubnet{id: 42},
+		Subnet: &subnet{ID: 42},
 	}
 	err := iface.LinkSubnet(args)
 	c.Check(err, jc.Satisfies, IsUnexpectedError)
@@ -303,7 +258,7 @@ func (s *interfaceSuite) TestUnlinkSubnetValidates(c *gc.C) {
 
 func (s *interfaceSuite) TestUnlinkSubnetNotLinked(c *gc.C) {
 	_, iface := s.getServerAndNewInterface(c)
-	err := iface.UnlinkSubnet(&fakeSubnet{id: 42})
+	err := iface.UnlinkSubnet(&subnet{ID: 42})
 	c.Check(err, jc.Satisfies, errors.IsNotValid)
 	c.Check(err.Error(), gc.Equals, "unlinked Subnet not valid")
 }
@@ -315,10 +270,10 @@ func (s *interfaceSuite) TestUnlinkSubnetGood(c *gc.C) {
 	response := updateJSONMap(c, interfaceResponse, map[string]interface{}{
 		"Name": "eth42",
 	})
-	server.AddPostResponse(iface.resourceURI+"?op=unlink_subnet", http.StatusOK, response)
-	err := iface.UnlinkSubnet(&fakeSubnet{id: 1})
+	server.AddPostResponse(iface.ResourceURI+"?op=unlink_subnet", http.StatusOK, response)
+	err := iface.UnlinkSubnet(&subnet{ID: 1})
 	c.Check(err, jc.ErrorIsNil)
-	c.Check(iface.Name(), gc.Equals, "eth42")
+	c.Check(iface.Name, gc.Equals, "eth42")
 
 	request := server.LastRequest()
 	form := request.PostForm
@@ -328,22 +283,22 @@ func (s *interfaceSuite) TestUnlinkSubnetGood(c *gc.C) {
 
 func (s *interfaceSuite) TestUnlinkSubnetMissing(c *gc.C) {
 	_, iface := s.getServerAndNewInterface(c)
-	err := iface.UnlinkSubnet(&fakeSubnet{id: 1})
+	err := iface.UnlinkSubnet(&subnet{ID: 1})
 	c.Check(err, jc.Satisfies, IsBadRequestError)
 }
 
 func (s *interfaceSuite) TestUnlinkSubnetForbidden(c *gc.C) {
 	server, iface := s.getServerAndNewInterface(c)
-	server.AddPostResponse(iface.resourceURI+"?op=unlink_subnet", http.StatusForbidden, "bad user")
-	err := iface.UnlinkSubnet(&fakeSubnet{id: 1})
+	server.AddPostResponse(iface.ResourceURI+"?op=unlink_subnet", http.StatusForbidden, "bad user")
+	err := iface.UnlinkSubnet(&subnet{ID: 1})
 	c.Check(err, jc.Satisfies, IsPermissionError)
 	c.Check(err.Error(), gc.Equals, "bad user")
 }
 
 func (s *interfaceSuite) TestUnlinkSubnetUnknown(c *gc.C) {
 	server, iface := s.getServerAndNewInterface(c)
-	server.AddPostResponse(iface.resourceURI+"?op=unlink_subnet", http.StatusMethodNotAllowed, "wat?")
-	err := iface.UnlinkSubnet(&fakeSubnet{id: 1})
+	server.AddPostResponse(iface.ResourceURI+"?op=unlink_subnet", http.StatusMethodNotAllowed, "wat?")
+	err := iface.UnlinkSubnet(&subnet{ID: 1})
 	c.Check(err, jc.Satisfies, IsUnexpectedError)
 	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
@@ -364,7 +319,7 @@ func (s *interfaceSuite) TestUpdateMissing(c *gc.C) {
 
 func (s *interfaceSuite) TestUpdateForbidden(c *gc.C) {
 	server, iface := s.getServerAndNewInterface(c)
-	server.AddPutResponse(iface.resourceURI, http.StatusForbidden, "bad user")
+	server.AddPutResponse(iface.ResourceURI, http.StatusForbidden, "bad user")
 	err := iface.Update(UpdateInterfaceArgs{Name: "eth2"})
 	c.Check(err, jc.Satisfies, IsPermissionError)
 	c.Check(err.Error(), gc.Equals, "bad user")
@@ -372,7 +327,7 @@ func (s *interfaceSuite) TestUpdateForbidden(c *gc.C) {
 
 func (s *interfaceSuite) TestUpdateUnknown(c *gc.C) {
 	server, iface := s.getServerAndNewInterface(c)
-	server.AddPutResponse(iface.resourceURI, http.StatusMethodNotAllowed, "wat?")
+	server.AddPutResponse(iface.ResourceURI, http.StatusMethodNotAllowed, "wat?")
 	err := iface.Update(UpdateInterfaceArgs{Name: "eth2"})
 	c.Check(err, jc.Satisfies, IsUnexpectedError)
 	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 405 Method Not Allowed (wat?)")
@@ -385,15 +340,15 @@ func (s *interfaceSuite) TestUpdateGood(c *gc.C) {
 	response := updateJSONMap(c, interfaceResponse, map[string]interface{}{
 		"Name": "eth42",
 	})
-	server.AddPutResponse(iface.resourceURI, http.StatusOK, response)
+	server.AddPutResponse(iface.ResourceURI, http.StatusOK, response)
 	args := UpdateInterfaceArgs{
 		Name:       "eth42",
 		MACAddress: "c3-52-51-b4-50-cd",
-		VLAN:       &fakeVLAN{id: 13},
+		VLAN:       &vlan{ID: 13},
 	}
 	err := iface.Update(args)
 	c.Check(err, jc.ErrorIsNil)
-	c.Check(iface.Name(), gc.Equals, "eth42")
+	c.Check(iface.Name, gc.Equals, "eth42")
 
 	request := server.LastRequest()
 	form := request.PostForm

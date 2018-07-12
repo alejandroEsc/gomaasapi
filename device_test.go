@@ -6,10 +6,10 @@ package gomaasapi
 import (
 	"net/http"
 
+	"encoding/json"
 	"github.com/juju/errors"
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
-	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 )
 
@@ -21,69 +21,38 @@ var _ = gc.Suite(&deviceSuite{})
 
 func (*deviceSuite) TestNilZone(c *gc.C) {
 	var empty device
-	c.Check(empty.Zone() == nil, jc.IsTrue)
+	c.Check(empty.Zone == nil, jc.IsTrue)
 }
 
 func (*deviceSuite) TestReadDevicesBadSchema(c *gc.C) {
-	_, err := readDevices(twoDotOh, "wat?")
+	var d device
+	err = json.Unmarshal([]byte("wat?"), &d)
 	c.Check(err, jc.Satisfies, IsDeserializationError)
 	c.Assert(err.Error(), gc.Equals, `device base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*deviceSuite) TestReadDevices(c *gc.C) {
-	devices, err := readDevices(twoDotOh, parseJSON(c, devicesResponse))
+	var devices []device
+	err = json.Unmarshal([]byte(devicesResponse), &devices)
+
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(devices, gc.HasLen, 1)
 
 	device := devices[0]
-	c.Check(device.SystemID(), gc.Equals, "4y3haf")
-	c.Check(device.Hostname(), gc.Equals, "furnacelike-brittney")
-	c.Check(device.FQDN(), gc.Equals, "furnacelike-brittney.maas")
-	c.Check(device.IPAddresses(), jc.DeepEquals, []string{"192.168.100.11"})
-	zone := device.Zone()
+	c.Check(device.SystemID, gc.Equals, "4y3haf")
+	c.Check(device.Hostname, gc.Equals, "furnacelike-brittney")
+	c.Check(device.FQDN, gc.Equals, "furnacelike-brittney.maas")
+	c.Check(device.IPAddresses, jc.DeepEquals, []string{"192.168.100.11"})
+	zone := device.Zone
 	c.Check(zone, gc.NotNil)
-	c.Check(zone.Name(), gc.Equals, "default")
-}
-
-func (*deviceSuite) TestReadDevicesNils(c *gc.C) {
-	json := parseJSON(c, devicesResponse)
-	deviceMap := json.([]interface{})[0].(map[string]interface{})
-	deviceMap["Owner"] = nil
-	deviceMap["Parent"] = nil
-	devices, err := readDevices(twoDotOh, json)
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(devices, gc.HasLen, 1)
-
-	device := devices[0]
-	c.Check(device.Owner(), gc.Equals, "")
-	c.Check(device.Parent(), gc.Equals, "")
-}
-
-func (*deviceSuite) TestLowVersion(c *gc.C) {
-	_, err := readDevices(version.MustParse("1.9.0"), parseJSON(c, devicesResponse))
-	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-}
-
-func (*deviceSuite) TestHighVersion(c *gc.C) {
-	devices, err := readDevices(version.MustParse("2.1.9"), parseJSON(c, devicesResponse))
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(devices, gc.HasLen, 1)
+	c.Check(zone.Name, gc.Equals, "default")
 }
 
 func (s *deviceSuite) TestInterfaceSet(c *gc.C) {
 	server, device := s.getServerAndDevice(c)
 	server.AddGetResponse(device.interfacesURI(), http.StatusOK, interfacesResponse)
-	ifaces := device.InterfaceSet()
+	ifaces := device.InterfaceSet
 	c.Assert(ifaces, gc.HasLen, 2)
-}
-
-type fakeVLAN struct {
-	VLAN
-	id int
-}
-
-func (f *fakeVLAN) ID() int {
-	return f.id
 }
 
 func (s *controllerSuite) TestCreateInterfaceArgsValidate(c *gc.C) {
@@ -99,7 +68,7 @@ func (s *controllerSuite) TestCreateInterfaceArgsValidate(c *gc.C) {
 		args:    CreateInterfaceArgs{Name: "eth3", MACAddress: "a-mac-address"},
 		errText: `missing VLAN not valid`,
 	}, {
-		args: CreateInterfaceArgs{Name: "eth3", MACAddress: "a-mac-address", VLAN: &fakeVLAN{}},
+		args: CreateInterfaceArgs{Name: "eth3", MACAddress: "a-mac-address", VLAN: &vlan{}},
 	}} {
 		c.Logf("test %d", i)
 		err := test.args.Validate()
@@ -125,7 +94,7 @@ func (s *deviceSuite) TestCreateInterface(c *gc.C) {
 	iface, err := device.CreateInterface(CreateInterfaceArgs{
 		Name:       "eth43",
 		MACAddress: "some-mac-address",
-		VLAN:       &fakeVLAN{id: 33},
+		VLAN:       &vlan{ID: 33},
 		Tags:       []string{"foo", "bar"},
 	})
 	c.Assert(err, jc.ErrorIsNil)
@@ -143,7 +112,7 @@ func minimalCreateInterfaceArgs() CreateInterfaceArgs {
 	return CreateInterfaceArgs{
 		Name:       "eth43",
 		MACAddress: "some-mac-address",
-		VLAN:       &fakeVLAN{id: 33},
+		VLAN:       &vlan{ID: 33},
 	}
 }
 
@@ -194,7 +163,7 @@ func (s *deviceSuite) getServerAndDevice(c *gc.C) (*SimpleTestServer, *device) {
 	devices, err := controller.Devices(DevicesArgs{})
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(devices, gc.HasLen, 1)
-	return server, devices[0].(*device)
+	return server, &devices[0]
 }
 
 func (s *deviceSuite) TestDelete(c *gc.C) {

@@ -23,16 +23,13 @@ import (
 
 var (
 	logger = loggo.GetLogger("maas")
-
 	// The supported versions should be ordered from most desirable version to
 	// least as they will be tried in order.
 	supportedAPIVersions = []string{"2.0"}
-
 	// Each of the api versions that change the request or response structure
 	// for any given call should have a value defined for easy definition of
 	// the deserialization functions.
 	twoDotOh = version.Number{Major: 2, Minor: 0}
-
 	// Current request number. Informational only for logging.
 	requestNumber int64
 )
@@ -52,7 +49,7 @@ type ControllerArgs struct {
 //
 // If the APIKey is not valid, a NotValid error is returned.
 // If the credentials are incorrect, a PermissionError is returned.
-func NewController(args ControllerArgs) (ControllerInterface, error) {
+func NewController(args ControllerArgs) (*controller, error) {
 	base, apiVersion, includesVersion := SplitVersionedURL(args.BaseURL)
 	if includesVersion {
 		if !supportedVersion(apiVersion) {
@@ -72,7 +69,7 @@ func supportedVersion(value string) bool {
 	return false
 }
 
-func newControllerWithVersion(baseURL, apiVersion, apiKey string) (ControllerInterface, error) {
+func newControllerWithVersion(baseURL, apiVersion, apiKey string) (*controller, error) {
 	major, minor, err := version.ParseMajorMinor(apiVersion)
 	// We should not get an error here. See the test.
 	if err != nil {
@@ -105,7 +102,7 @@ func newControllerWithVersion(baseURL, apiVersion, apiKey string) (ControllerInt
 	return controller, nil
 }
 
-func newControllerUnknownVersion(args ControllerArgs) (ControllerInterface, error) {
+func newControllerUnknownVersion(args ControllerArgs) (*controller, error) {
 	// For now we don't need to test multiple versions. It is expected that at
 	// some time in the future, we will try the most up to date version and then
 	// work our way backwards.
@@ -125,9 +122,14 @@ func newControllerUnknownVersion(args ControllerArgs) (ControllerInterface, erro
 	return nil, NewUnsupportedVersionError("ControllerInterface at %s does not support any of %s", args.BaseURL, supportedAPIVersions)
 }
 
+// Controller represents an API connection to a MAAS ControllerInterface. Since the API
+// is restful, there is no long held connection to the API server, but instead
+// HTTP calls are made and JSON response structures parsed.
 type controller struct {
-	Client       *Client
-	APIVersion   version.Number
+	Client     *Client
+	APIVersion version.Number
+	// Capabilities returns a set of Capabilities as defined by the string
+	// constants.
 	Capabilities set.Strings
 }
 
@@ -137,15 +139,14 @@ func (c *controller) BootResources() ([]*bootResource, error) {
 	if err != nil {
 		return nil, NewUnexpectedError(err)
 	}
-	resources, err := readBootResources(c.APIVersion, source)
+
+	var resources []*bootResource
+	err = json.Unmarshal(source, &resources)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []*bootResource
-	for _, b := range resources {
-		result = append(result, b)
-	}
-	return result, nil
+
+	return resources, nil
 }
 
 // Fabrics returns the list of Fabrics defined in the MAAS ControllerInterface.
@@ -202,17 +203,11 @@ func (c *controller) Zones() ([]zone, error) {
 		return nil, NewUnexpectedError(err)
 	}
 	var zones []zone
-
 	err = json.Unmarshal(source, &zones)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-
-	var result []zone
-	for _, z := range zones {
-		result = append(result, z)
-	}
-	return result, nil
+	return zones, nil
 }
 
 // DevicesArgs is a argument struct for selecting Devices.
@@ -226,7 +221,7 @@ type DevicesArgs struct {
 	AgentName    string
 }
 
-// Devices implements ControllerInterface.
+// Devices returns a list of devices that match the params.
 func (c *controller) Devices(args DevicesArgs) ([]device, error) {
 	params := NewURLParams()
 	params.MaybeAddMany("Hostname", args.Hostname)
@@ -245,12 +240,10 @@ func (c *controller) Devices(args DevicesArgs) ([]device, error) {
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []device
 	for _, d := range devices {
 		d.Controller = c
-		result = append(result, d)
 	}
-	return result, nil
+	return devices, nil
 }
 
 // CreateDeviceArgs is a argument struct for passing information into CreateDevice.
@@ -261,7 +254,7 @@ type CreateDeviceArgs struct {
 	Parent       string
 }
 
-// Devices implements ControllerInterface.
+// CreateDevice creates and returns a new DeviceInterface.
 func (c *controller) CreateDevice(args CreateDeviceArgs) (*device, error) {
 	// There must be at least one mac address.
 	if len(args.MACAddresses) == 0 {
@@ -304,7 +297,7 @@ type MachinesArgs struct {
 	OwnerData    map[string]string
 }
 
-// Machines implements ControllerInterface.
+// Machines returns a list of machines that match the params.
 func (c *controller) Machines(args MachinesArgs) ([]Machine, error) {
 	params := NewURLParams()
 	params.MaybeAddMany("Hostname", args.Hostnames)
@@ -516,11 +509,11 @@ type ConstraintMatches struct {
 	Storage map[string][]BlockDevice
 }
 
-// AllocateMachine implements ControllerInterface.
-//
+// AllocateMachine will attempt to allocate a MachineInterface to the user.
+// If successful, the allocated MachineInterface is returned.
 // Returns an error that satisfies IsNoMatchError if the requested
 // constraints cannot be met.
-func (c *controller) AllocateMachine(args AllocateMachineArgs) (*MachineInterface, ConstraintMatches, error) {
+func (c *controller) AllocateMachine(args AllocateMachineArgs) (*Machine, ConstraintMatches, error) {
 	var matches ConstraintMatches
 	params := NewURLParams()
 	params.MaybeAdd("Name", args.Hostname)
@@ -573,8 +566,8 @@ type ReleaseMachinesArgs struct {
 	Comment   string
 }
 
-// ReleaseMachines implements ControllerInterface.
-//
+// ReleaseMachines will stop the specified machines, and release them
+// from the user making them available to be allocated again.
 // Release multiple machines at once. Returns
 //  - BadRequestError if any of the machines cannot be found
 //  - PermissionError if the user does not have permission to release any of the machines
@@ -880,7 +873,7 @@ func (c *controller) readAPIVersionInfo() (set.Strings, error) {
 	return capabilities, nil
 }
 
-func parseAllocateConstraintsResponse(source interface{}, machine *MachineInterface) (ConstraintMatches, error) {
+func parseAllocateConstraintsResponse(source interface{}, machine *Machine) (ConstraintMatches, error) {
 	var empty ConstraintMatches
 	matchFields := schema.Fields{
 		"storage":    schema.StringMap(schema.List(schema.ForceInt())),
@@ -914,7 +907,7 @@ func parseAllocateConstraintsResponse(source interface{}, machine *MachineInterf
 				if iface == nil {
 					return empty, NewDeserializationError("constraint match interface %q: %d does not match an interface for the MachineInterface", label, id)
 				}
-				interfaces[index] = iface
+				interfaces[index] = *iface
 			}
 			result.Interfaces[label] = interfaces
 		}
@@ -929,7 +922,7 @@ func parseAllocateConstraintsResponse(source interface{}, machine *MachineInterf
 				if blockDevice == nil {
 					return empty, NewDeserializationError("constraint match storage %q: %d does not match a block device for the MachineInterface", label, id)
 				}
-				blockDevices[index] = blockDevice
+				blockDevices[index] = *blockDevice
 			}
 			result.Storage[label] = blockDevices
 		}

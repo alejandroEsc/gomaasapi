@@ -4,8 +4,8 @@
 package gomaasapi
 
 import (
+	"encoding/json"
 	jc "github.com/juju/testing/checkers"
-	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 )
 
@@ -14,16 +14,18 @@ type vlanSuite struct{}
 var _ = gc.Suite(&vlanSuite{})
 
 func (*vlanSuite) TestReadVLANsBadSchema(c *gc.C) {
-	_, err := readVLANs(twoDotOh, "wat?")
+	var v vlan
+	err = json.Unmarshal([]byte("wat?"), &v)
 	c.Assert(err.Error(), gc.Equals, `VLAN base schema check failed: expected list, got string("wat?")`)
 }
 
 func (s *vlanSuite) TestReadVLANsWithName(c *gc.C) {
-	vlans, err := readVLANs(twoDotOh, parseJSON(c, vlanResponseWithName))
+	var vlans []vlan
+	err = json.Unmarshal([]byte(vlanResponseWithName), &vlans)
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(vlans, gc.HasLen, 1)
 	readVLAN := vlans[0]
-	s.assertVLAN(c, readVLAN, &vlan{
+	s.assertVLAN(c, &readVLAN, &vlan{
 		ID:            1,
 		Name:          "untagged",
 		Fabric:        "Fabric-0",
@@ -36,22 +38,23 @@ func (s *vlanSuite) TestReadVLANsWithName(c *gc.C) {
 }
 
 func (*vlanSuite) assertVLAN(c *gc.C, givenVLAN, expectedVLAN *vlan) {
-	c.Check(givenVLAN.ID(), gc.Equals, expectedVLAN.ID)
-	c.Check(givenVLAN.Name(), gc.Equals, expectedVLAN.Name)
-	c.Check(givenVLAN.Fabric(), gc.Equals, expectedVLAN.Fabric)
-	c.Check(givenVLAN.VID(), gc.Equals, expectedVLAN.VID)
-	c.Check(givenVLAN.MTU(), gc.Equals, expectedVLAN.MTU)
-	c.Check(givenVLAN.DHCP(), gc.Equals, expectedVLAN.DHCP)
-	c.Check(givenVLAN.PrimaryRack(), gc.Equals, expectedVLAN.PrimaryRack)
-	c.Check(givenVLAN.SecondaryRack(), gc.Equals, expectedVLAN.SecondaryRack)
+	c.Check(givenVLAN.ID, gc.Equals, expectedVLAN.ID)
+	c.Check(givenVLAN.Name, gc.Equals, expectedVLAN.Name)
+	c.Check(givenVLAN.Fabric, gc.Equals, expectedVLAN.Fabric)
+	c.Check(givenVLAN.VID, gc.Equals, expectedVLAN.VID)
+	c.Check(givenVLAN.MTU, gc.Equals, expectedVLAN.MTU)
+	c.Check(givenVLAN.DHCP, gc.Equals, expectedVLAN.DHCP)
+	c.Check(givenVLAN.PrimaryRack, gc.Equals, expectedVLAN.PrimaryRack)
+	c.Check(givenVLAN.SecondaryRack, gc.Equals, expectedVLAN.SecondaryRack)
 }
 
 func (s *vlanSuite) TestReadVLANsWithoutName(c *gc.C) {
-	vlans, err := readVLANs(twoDotOh, parseJSON(c, vlanResponseWithoutName))
+	var vlans []vlan
+	err = json.Unmarshal([]byte(vlanResponseWithoutName), &vlans)
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(vlans, gc.HasLen, 1)
 	readVLAN := vlans[0]
-	s.assertVLAN(c, readVLAN, &vlan{
+	s.assertVLAN(c, &readVLAN, &vlan{
 		ID:            5006,
 		Name:          "",
 		Fabric:        "maas-management",
@@ -61,17 +64,6 @@ func (s *vlanSuite) TestReadVLANsWithoutName(c *gc.C) {
 		PrimaryRack:   "4y3h7n",
 		SecondaryRack: "",
 	})
-}
-
-func (*vlanSuite) TestLowVersion(c *gc.C) {
-	_, err := readVLANs(version.MustParse("1.9.0"), parseJSON(c, vlanResponseWithName))
-	c.Assert(err.Error(), gc.Equals, `no VLAN read func for version 1.9.0`)
-}
-
-func (*vlanSuite) TestHighVersion(c *gc.C) {
-	vlans, err := readVLANs(version.MustParse("2.1.9"), parseJSON(c, vlanResponseWithoutName))
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(vlans, gc.HasLen, 1)
 }
 
 const (

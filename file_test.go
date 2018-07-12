@@ -6,9 +6,9 @@ package gomaasapi
 import (
 	"net/http"
 
+	"encoding/json"
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
-	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 )
 
@@ -19,28 +19,19 @@ type fileSuite struct {
 var _ = gc.Suite(&fileSuite{})
 
 func (*fileSuite) TestReadFilesBadSchema(c *gc.C) {
-	_, err := readFiles(twoDotOh, "wat?")
+	var f File
+	err = json.Unmarshal([]byte("wat?"), &f)
 	c.Check(err, jc.Satisfies, IsDeserializationError)
 	c.Assert(err.Error(), gc.Equals, `File base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*fileSuite) TestReadFiles(c *gc.C) {
-	files, err := readFiles(twoDotOh, parseJSON(c, filesResponse))
+	var files []File
+	err = json.Unmarshal([]byte(filesResponse), &files)
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(files, gc.HasLen, 2)
 	file := files[0]
-	c.Assert(file.Filename(), gc.Equals, "test")
-}
-
-func (*fileSuite) TestLowVersion(c *gc.C) {
-	_, err := readFiles(version.MustParse("1.9.0"), parseJSON(c, filesResponse))
-	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-}
-
-func (*fileSuite) TestHighVersion(c *gc.C) {
-	files, err := readFiles(version.MustParse("2.1.9"), parseJSON(c, filesResponse))
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(files, gc.HasLen, 2)
+	c.Assert(file.Filename, gc.Equals, "test")
 }
 
 func (s *fileSuite) TestReadAllFromGetFile(c *gc.C) {
@@ -90,7 +81,7 @@ func (s *fileSuite) TestDelete(c *gc.C) {
 	c.Assert(err, jc.Satisfies, IsNoMatchError)
 }
 
-var (
+const (
 	fileResponse = `
 {
     "resource_uri": "/MAAS/api/2.0/files/testing/",

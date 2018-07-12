@@ -4,8 +4,8 @@
 package gomaasapi
 
 import (
+	"encoding/json"
 	jc "github.com/juju/testing/checkers"
-	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 )
 
@@ -19,13 +19,17 @@ func (*partitionSuite) TestNilFileSystem(c *gc.C) {
 }
 
 func (*partitionSuite) TestReadPartitionsBadSchema(c *gc.C) {
-	_, err := readPartitions(twoDotOh, "wat?")
+	var p partition
+	err = json.Unmarshal([]byte("wat?"), &p)
+
 	c.Check(err, jc.Satisfies, IsDeserializationError)
 	c.Assert(err.Error(), gc.Equals, `partition base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*partitionSuite) TestReadPartitions(c *gc.C) {
-	partitions, err := readPartitions(twoDotOh, parseJSON(c, partitionsResponse))
+	var partitions []partition
+	err = json.Unmarshal([]byte(partitionsResponse), &partitions)
+
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(partitions, gc.HasLen, 1)
 	partition := partitions[0]
@@ -38,32 +42,27 @@ func (*partitionSuite) TestReadPartitions(c *gc.C) {
 
 	fs := partition.FileSystem
 	c.Assert(fs, gc.NotNil)
-	c.Assert(fs.Type(), gc.Equals, "ext4")
-	c.Assert(fs.MountPoint(), gc.Equals, "/")
+	c.Assert(fs.Type, gc.Equals, "ext4")
+	c.Assert(fs.MountPoint, gc.Equals, "/")
 }
 
 func (*partitionSuite) TestReadPartitionsNilUUID(c *gc.C) {
-	json := parseJSON(c, partitionsResponse)
-	json.([]interface{})[0].(map[string]interface{})["UUID"] = nil
-	partitions, err := readPartitions(twoDotOh, json)
+	j := parseJSON(c, partitionsResponse)
+	j.([]interface{})[0].(map[string]interface{})["UUID"] = nil
+
+	jr, err := json.Marshal(j)
+	c.Assert(err, jc.ErrorIsNil)
+
+	var partitions []partition
+	err = json.Unmarshal(jr, &partitions)
+
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(partitions, gc.HasLen, 1)
 	partition := partitions[0]
 	c.Check(partition.UUID, gc.Equals, "")
 }
 
-func (*partitionSuite) TestLowVersion(c *gc.C) {
-	_, err := readPartitions(version.MustParse("1.9.0"), parseJSON(c, partitionsResponse))
-	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-}
-
-func (*partitionSuite) TestHighVersion(c *gc.C) {
-	partitions, err := readPartitions(version.MustParse("2.1.9"), parseJSON(c, partitionsResponse))
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(partitions, gc.HasLen, 1)
-}
-
-var partitionsResponse = `
+const partitionsResponse = `
 [
     {
         "bootable": false,

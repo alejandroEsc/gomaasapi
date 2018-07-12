@@ -4,8 +4,8 @@
 package gomaasapi
 
 import (
+	"encoding/json"
 	jc "github.com/juju/testing/checkers"
-	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 )
 
@@ -19,12 +19,15 @@ func (*subnetSuite) TestNilVLAN(c *gc.C) {
 }
 
 func (*subnetSuite) TestReadSubnetsBadSchema(c *gc.C) {
-	_, err := readSubnets(twoDotOh, "wat?")
+	var s subnet
+	err = json.Unmarshal([]byte("wat?"), &s)
+
 	c.Assert(err.Error(), gc.Equals, `Subnet base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*subnetSuite) TestReadSubnets(c *gc.C) {
-	subnets, err := readSubnets(twoDotOh, parseJSON(c, subnetResponse))
+	var subnets []subnet
+	err = json.Unmarshal([]byte(blockdevicesWithNullsResponse), &subnets)
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(subnets, gc.HasLen, 2)
 
@@ -40,18 +43,7 @@ func (*subnetSuite) TestReadSubnets(c *gc.C) {
 	c.Assert(subnet.DNSServers, jc.DeepEquals, []string{"8.8.8.8", "8.8.4.4"})
 }
 
-func (*subnetSuite) TestLowVersion(c *gc.C) {
-	_, err := readSubnets(version.MustParse("1.9.0"), parseJSON(c, subnetResponse))
-	c.Assert(err.Error(), gc.Equals, `no Subnet read func for version 1.9.0`)
-}
-
-func (*subnetSuite) TestHighVersion(c *gc.C) {
-	subnets, err := readSubnets(version.MustParse("2.1.9"), parseJSON(c, subnetResponse))
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(subnets, gc.HasLen, 2)
-}
-
-var subnetResponse = `
+const subnetResponse = `
 [
     {
         "gateway_ip": "192.168.100.1",

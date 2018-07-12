@@ -20,91 +20,6 @@ func makeFakeResourceURI() string {
 	return "http://example.com/" + fmt.Sprint(rand.Int31())
 }
 
-// JSONObjects containing MAAS objects convert only to map or to MAASObject.
-func (suite *MAASObjectSuite) TestConversionsMAASObject(c *C) {
-	input := map[string]interface{}{resourceURI: "someplace"}
-	obj := maasify(Client{}, input)
-
-	mp, err := obj.GetMap()
-	c.Check(err, IsNil)
-	text, err := mp[resourceURI].GetString()
-	c.Check(err, IsNil)
-	c.Check(text, Equals, "someplace")
-
-	var maasobj MAASObject
-	maasobj, err = obj.GetMAASObject()
-	c.Assert(err, IsNil)
-	c.Check(maasobj, NotNil)
-
-	_, err = obj.GetString()
-	c.Check(err, NotNil)
-	_, err = obj.GetFloat64()
-	c.Check(err, NotNil)
-	_, err = obj.GetArray()
-	c.Check(err, NotNil)
-	_, err = obj.GetBool()
-	c.Check(err, NotNil)
-}
-
-func (suite *MAASObjectSuite) TestNewJSONMAASObjectPanicsIfNoResourceURI(c *C) {
-	defer func() {
-		recoveredError := recover()
-		c.Check(recoveredError, NotNil)
-		msg := recoveredError.(error).Error()
-		c.Check(msg, Matches, ".*no 'resource_uri' key.*")
-	}()
-
-	input := map[string]interface{}{"test": "test"}
-	newJSONMAASObject(input, Client{})
-}
-
-func (suite *MAASObjectSuite) TestNewJSONMAASObjectPanicsIfResourceURINotString(c *C) {
-	defer func() {
-		recoveredError := recover()
-		c.Check(recoveredError, NotNil)
-		msg := recoveredError.(error).Error()
-		c.Check(msg, Matches, ".*invalid resource_uri.*")
-	}()
-
-	input := map[string]interface{}{resourceURI: 77.77}
-	newJSONMAASObject(input, Client{})
-}
-
-func (suite *MAASObjectSuite) TestNewJSONMAASObjectPanicsIfResourceURINotURL(c *C) {
-	defer func() {
-		recoveredError := recover()
-		c.Check(recoveredError, NotNil)
-		msg := recoveredError.(error).Error()
-		c.Check(msg, Matches, ".*resource_uri.*valid URL.*")
-	}()
-
-	input := map[string]interface{}{resourceURI: "%z"}
-	newJSONMAASObject(input, Client{})
-}
-
-func (suite *MAASObjectSuite) TestNewJSONMAASObjectSetsUpURI(c *C) {
-	URI, err := url.Parse("http://example.com/a/resource")
-	c.Assert(err, IsNil)
-	attrs := map[string]interface{}{resourceURI: URI.String()}
-	obj := newJSONMAASObject(attrs, Client{})
-	c.Check(obj.URI, DeepEquals, URI)
-}
-
-func (suite *MAASObjectSuite) TestURL(c *C) {
-	baseURL, err := url.Parse("http://example.com/")
-	c.Assert(err, IsNil)
-	uri := "http://example.com/a/resource"
-	resourceURL, err := url.Parse(uri)
-	c.Assert(err, IsNil)
-	input := map[string]interface{}{resourceURI: uri}
-	client := Client{APIURL: baseURL}
-	obj := newJSONMAASObject(input, client)
-
-	URL := obj.URL()
-
-	c.Check(URL, DeepEquals, resourceURL)
-}
-
 // makeFakeMAASObject creates a MAASObject for some imaginary resource.
 // There is no actual HTTP service or resource attached.
 // serviceURL is the base URL of the service, and ResourceURI is the Path for
@@ -116,8 +31,18 @@ func makeFakeMAASObject(serviceURL, resourcePath string) MAASObject {
 	}
 	uri := serviceURL + resourcePath
 	input := map[string]interface{}{resourceURI: uri}
+	j, err := json.Marshal(input)
+	if err != nil {
+		panic(fmt.Errorf("creation of fake object failed: %v", err))
+	}
+
+	resourceURL, err := url.Parse(uri)
+	if err != nil {
+		panic(fmt.Errorf("creation of fake object failed: %v", err))
+	}
+
 	client := Client{APIURL: baseURL}
-	return newJSONMAASObject(input, client)
+	return MAASObject{URI: resourceURL, Client: client, Values: j}
 }
 
 // Passing GetSubObject a relative Path effectively concatenates that Path to
@@ -182,27 +107,15 @@ func (suite *MAASObjectSuite) TestGetField(c *C) {
 	input := map[string]interface{}{
 		resourceURI: uri, fieldName: fieldValue,
 	}
-	obj := newJSONMAASObject(input, Client{})
-	value, err := obj.GetField(fieldName)
+	j, err := json.Marshal(input)
 	c.Check(err, IsNil)
+
+	resourceURL, err := url.Parse(uri)
+	c.Check(err, IsNil)
+	obj := MAASObject{URI: resourceURL, Client: Client{}, Values: j}
+
+	value := obj.GetField(fieldName)
 	c.Check(value, Equals, fieldValue)
-}
-
-func (suite *MAASObjectSuite) TestSerializesToJSON(c *C) {
-	attrs := map[string]interface{}{
-		resourceURI: "http://maas.example.com/",
-		"counter":   5.0,
-		"active":    true,
-		"macs":      map[string]interface{}{"eth0": "AA:BB:CC:DD:EE:FF"},
-	}
-	obj := maasify(Client{}, attrs)
-	output, err := json.Marshal(obj)
-	c.Assert(err, IsNil)
-
-	var deserialized map[string]interface{}
-	err = json.Unmarshal(output, &deserialized)
-	c.Assert(err, IsNil)
-	c.Check(deserialized, DeepEquals, attrs)
 }
 
 type MAASSuite struct{}
@@ -213,7 +126,7 @@ func (suite *MAASSuite) TestNewMAASUsesBaseURLFromClient(c *C) {
 	baseURLString := "https://server.com:888/"
 	baseURL, _ := url.Parse(baseURLString)
 	client := Client{APIURL: baseURL}
-	maas, _ := NewMAAS(client)
+	maas := NewMAAS(client)
 	URL := maas.URL()
 	c.Check(URL, DeepEquals, baseURL)
 }

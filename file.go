@@ -16,7 +16,7 @@ type File struct {
 	ResourceURI string `json:"resource_uri,omitempty"`
 	// Filename is the Name of the File. No Path, just the Filename.
 	Filename string `json:"Filename,omitempty"`
-	// AnonymousURL is a URL that can be used to retrieve the conents of the
+	// AnonymousURI is a URL that can be used to retrieve the conents of the
 	// File without credentials.
 	AnonymousURI *url.URL `json:"anon_resource_uri,omitempty"`
 	Content      string   `json:"Content,omitempty"`

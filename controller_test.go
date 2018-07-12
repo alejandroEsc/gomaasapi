@@ -5,10 +5,6 @@ package gomaasapi
 
 import (
 	"bytes"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-
 	"github.com/juju/errors"
 	"github.com/juju/loggo"
 	"github.com/juju/testing"
@@ -16,6 +12,18 @@ import (
 	"github.com/juju/utils/set"
 	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
+	"io/ioutil"
+	"net/http"
+)
+
+const (
+	// Capability constants.
+	NetworksManagement      = "networks-management"
+	StaticIPAddresses       = "static-ipaddresses"
+	IPv6DeploymentUbuntu    = "ipv6-deployment-ubuntu"
+	DevicesManagement       = "devices-management"
+	StorageDeploymentUbuntu = "storage-deployment-ubuntu"
+	NetworkDeploymentUbuntu = "network-deployment-ubuntu"
 )
 
 type versionSuite struct {
@@ -58,7 +66,7 @@ func (s *controllerSuite) SetUpTest(c *gc.C) {
 	s.server = server
 }
 
-func (s *controllerSuite) getController(c *gc.C) ControllerInterface {
+func (s *controllerSuite) getController(c *gc.C) *controller {
 	controller, err := NewController(ControllerArgs{
 		BaseURL: s.server.URL,
 		APIKey:  "fake:as:key",
@@ -79,7 +87,7 @@ func (s *controllerSuite) TestNewController(c *gc.C) {
 		NetworkDeploymentUbuntu,
 	)
 
-	capabilities := controller.Capabilities()
+	capabilities := controller.Capabilities
 	c.Assert(capabilities.Difference(expectedCapabilities), gc.HasLen, 0)
 	c.Assert(expectedCapabilities.Difference(capabilities), gc.HasLen, 0)
 }
@@ -139,9 +147,8 @@ func (s *controllerSuite) TestNewControllerKnownVersion(c *gc.C) {
 		APIKey:  "fake:as:key",
 	})
 	c.Assert(err, jc.ErrorIsNil)
-	rawController, ok := officialController.(*controller)
-	c.Assert(ok, jc.IsTrue)
-	c.Assert(rawController.APIVersion, gc.Equals, version.Number{
+
+	c.Assert(officialController.APIVersion, gc.Equals, version.Number{
 		Major: 2,
 		Minor: 0,
 	})
@@ -277,7 +284,7 @@ func (s *controllerSuite) TestCreateDevice(c *gc.C) {
 		MACAddresses: []string{"a-mac-address"},
 	})
 	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(device.SystemID(), gc.Equals, "4y3haf")
+	c.Assert(device.SystemID, gc.Equals, "4y3haf")
 }
 
 func (s *controllerSuite) TestCreateDeviceMissingAddress(c *gc.C) {
@@ -357,7 +364,7 @@ func (s *controllerSuite) TestMachinesFilter(c *gc.C) {
 	})
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(machines, gc.HasLen, 1)
-	c.Assert(machines[0].Hostname(), gc.Equals, "untasted-markita")
+	c.Assert(machines[0].Hostname, gc.Equals, "untasted-markita")
 }
 
 func (s *controllerSuite) TestMachinesFilterWithOwnerData(c *gc.C) {
@@ -381,8 +388,8 @@ func (s *controllerSuite) TestMachinesFilterWithOwnerData_MultipleMatches(c *gc.
 	})
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(machines, gc.HasLen, 2)
-	c.Assert(machines[0].Hostname(), gc.Equals, "lowlier-glady")
-	c.Assert(machines[1].Hostname(), gc.Equals, "icier-nina")
+	c.Assert(machines[0].Hostname, gc.Equals, "lowlier-glady")
+	c.Assert(machines[1].Hostname, gc.Equals, "icier-nina")
 }
 
 func (s *controllerSuite) TestMachinesFilterWithOwnerData_RequiresAllMatch(c *gc.C) {
@@ -395,7 +402,7 @@ func (s *controllerSuite) TestMachinesFilterWithOwnerData_RequiresAllMatch(c *gc
 	})
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(machines, gc.HasLen, 1)
-	c.Assert(machines[0].Hostname(), gc.Equals, "lowlier-glady")
+	c.Assert(machines[0].Hostname, gc.Equals, "lowlier-glady")
 }
 
 func (s *controllerSuite) TestMachinesArgs(c *gc.C) {
@@ -581,7 +588,7 @@ func (s *controllerSuite) TestAllocateMachine(c *gc.C) {
 	controller := s.getController(c)
 	machine, _, err := controller.AllocateMachine(AllocateMachineArgs{})
 	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(machine.SystemID(), gc.Equals, "4y3ha3")
+	c.Assert(machine.SystemID, gc.Equals, "4y3ha3")
 }
 
 func (s *controllerSuite) TestAllocateMachineInterfacesMatch(c *gc.C) {
@@ -600,8 +607,8 @@ func (s *controllerSuite) TestAllocateMachineInterfacesMatch(c *gc.C) {
 	c.Assert(match.Interfaces, gc.HasLen, 1)
 	ifaces := match.Interfaces["database"]
 	c.Assert(ifaces, gc.HasLen, 2)
-	c.Assert(ifaces[0].ID(), gc.Equals, 35)
-	c.Assert(ifaces[1].ID(), gc.Equals, 99)
+	c.Assert(ifaces[0].ID, gc.Equals, 35)
+	c.Assert(ifaces[1].ID, gc.Equals, 99)
 }
 
 func (s *controllerSuite) TestAllocateMachineInterfacesMatchMissing(c *gc.C) {
@@ -636,8 +643,8 @@ func (s *controllerSuite) TestAllocateMachineStorageMatches(c *gc.C) {
 	c.Assert(match.Storage, gc.HasLen, 1)
 	storages := match.Storage["root"]
 	c.Assert(storages, gc.HasLen, 2)
-	c.Assert(storages[0].ID(), gc.Equals, 34)
-	c.Assert(storages[1].ID(), gc.Equals, 98)
+	c.Assert(storages[0].ID, gc.Equals, 34)
+	c.Assert(storages[1].ID, gc.Equals, 98)
 }
 
 func (s *controllerSuite) TestAllocateMachineStorageLogicalMatches(c *gc.C) {
@@ -782,12 +789,10 @@ func (s *controllerSuite) TestFiles(c *gc.C) {
 	c.Assert(files, gc.HasLen, 2)
 
 	file := files[0]
-	c.Assert(file.Filename(), gc.Equals, "test")
-	uri, err := url.Parse(file.AnonymousURL())
-	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(file.Filename, gc.Equals, "test")
 
-	c.Assert(uri.Scheme, gc.Equals, "http")
-	c.Assert(uri.RequestURI(), gc.Equals, "/MAAS/api/2.0/files/?op=get_by_key&key=3afba564-fb7d-11e5-932f-52540051bf22")
+	c.Assert(file.AnonymousURI.Scheme, gc.Equals, "http")
+	c.Assert(file.AnonymousURI.RequestURI(), gc.Equals, "/MAAS/api/2.0/files/?op=get_by_key&key=3afba564-fb7d-11e5-932f-52540051bf22")
 }
 
 func (s *controllerSuite) TestGetFile(c *gc.C) {
@@ -796,11 +801,11 @@ func (s *controllerSuite) TestGetFile(c *gc.C) {
 	file, err := controller.GetFile("testing")
 	c.Assert(err, jc.ErrorIsNil)
 
-	c.Assert(file.Filename(), gc.Equals, "testing")
-	uri, err := url.Parse(file.AnonymousURL())
+	c.Assert(file.Filename, gc.Equals, "testing")
+
 	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(uri.Scheme, gc.Equals, "http")
-	c.Assert(uri.RequestURI(), gc.Equals, "/MAAS/api/2.0/files/?op=get_by_key&key=88e64b76-fb82-11e5-932f-52540051bf22")
+	c.Assert(file.AnonymousURI.Scheme, gc.Equals, "http")
+	c.Assert(file.AnonymousURI.RequestURI(), gc.Equals, "/MAAS/api/2.0/files/?op=get_by_key&key=88e64b76-fb82-11e5-932f-52540051bf22")
 }
 
 func (s *controllerSuite) TestGetFileMissing(c *gc.C) {
@@ -922,7 +927,7 @@ type cleanup interface {
 // createTestServerController creates a ControllerInterface backed on to a test server
 // that has sufficient knowledge of versions and users to be able to create a
 // valid ControllerInterface.
-func createTestServerController(c *gc.C, suite cleanup) (*SimpleTestServer, ControllerInterface) {
+func createTestServerController(c *gc.C, suite cleanup) (*SimpleTestServer, *controller) {
 	server := NewSimpleServer()
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)

@@ -4,8 +4,8 @@
 package gomaasapi
 
 import (
+	"encoding/json"
 	jc "github.com/juju/testing/checkers"
-	"github.com/juju/version"
 	gc "gopkg.in/check.v1"
 )
 
@@ -14,38 +14,30 @@ type staticRouteSuite struct{}
 var _ = gc.Suite(&staticRouteSuite{})
 
 func (*staticRouteSuite) TestReadStaticRoutesBadSchema(c *gc.C) {
-	_, err := readStaticRoutes(twoDotOh, "wat?")
+	var s staticRoute
+	err = json.Unmarshal([]byte("wat?"), &s)
 	c.Assert(err.Error(), gc.Equals, `static-route base schema check failed: expected list, got string("wat?")`)
 }
 
 func (*staticRouteSuite) TestReadStaticRoutes(c *gc.C) {
-	staticRoutes, err := readStaticRoutes(twoDotOh, parseJSON(c, staticRoutesResponse))
+	var staticRoutes []staticRoute
+	err = json.Unmarshal([]byte(staticRoutesResponse), &staticRoutes)
+
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(staticRoutes, gc.HasLen, 1)
 
-	staticRoute := staticRoutes[0]
-	c.Assert(staticRoute.ID(), gc.Equals, 2)
-	c.Assert(staticRoute.Metric(), gc.Equals, int(0))
-	c.Assert(staticRoute.GatewayIP(), gc.Equals, "192.168.0.1")
-	source := staticRoute.Source()
+	sr := staticRoutes[0]
+	c.Assert(sr.ID, gc.Equals, 2)
+	c.Assert(sr.Metric, gc.Equals, int(0))
+	c.Assert(sr.GatewayIP, gc.Equals, "192.168.0.1")
+	source := sr.Source
 	c.Assert(source, gc.NotNil)
-	c.Assert(source.Name(), gc.Equals, "192.168.0.0/24")
-	c.Assert(source.CIDR(), gc.Equals, "192.168.0.0/24")
-	destination := staticRoute.Destination()
+	c.Assert(source.Name, gc.Equals, "192.168.0.0/24")
+	c.Assert(source.CIDR, gc.Equals, "192.168.0.0/24")
+	destination := sr.Destination
 	c.Assert(destination, gc.NotNil)
-	c.Assert(destination.Name(), gc.Equals, "Local-192")
-	c.Assert(destination.CIDR(), gc.Equals, "192.168.0.0/16")
-}
-
-func (*staticRouteSuite) TestLowVersion(c *gc.C) {
-	_, err := readStaticRoutes(version.MustParse("1.9.0"), parseJSON(c, staticRoutesResponse))
-	c.Assert(err.Error(), gc.Equals, `no static-route read func for version 1.9.0`)
-}
-
-func (*staticRouteSuite) TestHighVersion(c *gc.C) {
-	staticRoutes, err := readStaticRoutes(version.MustParse("2.1.9"), parseJSON(c, staticRoutesResponse))
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(staticRoutes, gc.HasLen, 1)
+	c.Assert(destination.Name, gc.Equals, "Local-192")
+	c.Assert(destination.CIDR, gc.Equals, "192.168.0.0/16")
 }
 
 var staticRoutesResponse = `
