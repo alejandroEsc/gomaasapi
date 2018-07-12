@@ -4,63 +4,60 @@
 package util
 
 import (
-	gc "gopkg.in/check.v1"
+	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
-type urlParamsSuite struct {
-}
 
-var _ = gc.Suite(&urlParamsSuite{})
-
-func (*urlParamsSuite) TestNewParamsNonNilValues(c *gc.C) {
+func TestNewParamsNonNilValues(t *testing.T) {
 	params := NewURLParams()
-	c.Assert(params.Values, gc.NotNil)
+	assert.NotNil(t, params.Values)
 }
 
-func (*urlParamsSuite) TestNewMaybeAddEmpty(c *gc.C) {
+func TestNewMaybeAddEmpty(t *testing.T) {
 	params := NewURLParams()
 	params.MaybeAdd("foo", "")
-	c.Assert(params.Values.Encode(), gc.Equals, "")
+	assert.Equal(t, params.Values.Encode(), "")
 }
 
-func (*urlParamsSuite) TestNewMaybeAddWithValue(c *gc.C) {
+func TestNewMaybeAddWithValue(t *testing.T) {
 	params := NewURLParams()
 	params.MaybeAdd("foo", "bar")
-	c.Assert(params.Values.Encode(), gc.Equals, "foo=bar")
+	assert.Equal(t, params.Values.Encode(), "foo=bar")
 }
 
-func (*urlParamsSuite) TestNewMaybeAddIntZero(c *gc.C) {
+func TestNewMaybeAddIntZero(t *testing.T) {
 	params := NewURLParams()
 	params.MaybeAddInt("foo", 0)
-	c.Assert(params.Values.Encode(), gc.Equals, "")
+	assert.Equal(t, params.Values.Encode(),  "")
 }
 
-func (*urlParamsSuite) TestNewMaybeAddIntWithValue(c *gc.C) {
+func TestNewMaybeAddIntWithValue(t *testing.T) {
 	params := NewURLParams()
 	params.MaybeAddInt("foo", 42)
-	c.Assert(params.Values.Encode(), gc.Equals, "foo=42")
+	assert.Equal(t, params.Values.Encode(), "foo=42")
 }
 
-func (*urlParamsSuite) TestNewMaybeAddBoolFalse(c *gc.C) {
+func TestNewMaybeAddBoolFalse(t *testing.T) {
 	params := NewURLParams()
 	params.MaybeAddBool("foo", false)
-	c.Assert(params.Values.Encode(), gc.Equals, "")
+	assert.Equal(t, params.Values.Encode(), "")
 }
 
-func (*urlParamsSuite) TestNewMaybeAddBoolTrue(c *gc.C) {
+func TestNewMaybeAddBoolTrue(t *testing.T) {
 	params := NewURLParams()
 	params.MaybeAddBool("foo", true)
-	c.Assert(params.Values.Encode(), gc.Equals, "foo=true")
+	assert.Equal(t, params.Values.Encode(), "foo=true")
 }
 
-func (*urlParamsSuite) TestNewMaybeAddManyNil(c *gc.C) {
+func TestNewMaybeAddManyNil(t *testing.T) {
 	params := NewURLParams()
 	params.MaybeAddMany("foo", nil)
-	c.Assert(params.Values.Encode(), gc.Equals, "")
+	assert.Equal(t, params.Values.Encode(), "")
 }
 
-func (*urlParamsSuite) TestNewMaybeAddManyValues(c *gc.C) {
+func TestNewMaybeAddManyValues(t *testing.T) {
 	params := NewURLParams()
 	params.MaybeAddMany("foo", []string{"two", "", "values"})
-	c.Assert(params.Values.Encode(), gc.Equals, "foo=two&foo=values")
+	assert.Equal(t, params.Values.Encode(), "foo=two&foo=values")
 }

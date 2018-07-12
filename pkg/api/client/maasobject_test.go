@@ -9,12 +9,9 @@ import (
 	"math/rand"
 	"net/url"
 
-	. "gopkg.in/check.v1"
+	"testing"
+	"github.com/stretchr/testify/assert"
 )
-
-type MAASObjectSuite struct{}
-
-var _ = Suite(&MAASObjectSuite{})
 
 func makeFakeResourceURI() string {
 	return "http://cmd.com/" + fmt.Sprint(rand.Int31())
@@ -47,7 +44,7 @@ func makeFakeMAASObject(serviceURL, resourcePath string) MAASObject {
 
 // Passing GetSubObject a relative Path effectively concatenates that Path to
 // the original object's resource URI.
-func (suite *MAASObjectSuite) TestGetSubObjectRelative(c *C) {
+func TestGetSubObjectRelative(t *testing.T) {
 	obj := makeFakeMAASObject("http://cmd.com/", "a/resource/")
 
 	subObj := obj.GetSubObject("test")
@@ -56,28 +53,28 @@ func (suite *MAASObjectSuite) TestGetSubObjectRelative(c *C) {
 	// URI ends with a slash and subName starts with one, but the two paths
 	// should be concatenated as "http://example.com/a/resource/test/".
 	expectedSubURL, err := url.Parse("http://cmd.com/a/resource/test/")
-	c.Assert(err, IsNil)
-	c.Check(subURL, DeepEquals, expectedSubURL)
+	assert.Nil(t, err)
+	assert.EqualValues(t, subURL, expectedSubURL)
 }
 
 // Passing GetSubObject an absolute Path effectively substitutes that Path for
 // the Path component in the original object's resource URI.
-func (suite *MAASObjectSuite) TestGetSubObjectAbsolute(c *C) {
+func TestGetSubObjectAbsolute(t *testing.T) {
 	obj := makeFakeMAASObject("http://cmd.com/", "a/resource/")
 
 	subObj := obj.GetSubObject("/b/test")
 	subURL := subObj.URL()
 
 	expectedSubURL, err := url.Parse("http://cmd.com/b/test/")
-	c.Assert(err, IsNil)
-	c.Check(subURL, DeepEquals, expectedSubURL)
+	assert.Nil(t, err)
+	assert.EqualValues(t, subURL, expectedSubURL)
 }
 
 // An absolute Path passed to GetSubObject is rooted at the server root, not
 // at the service root.  So every absolute resource URI must repeat the part
 // of the Path that leads to the service root.  This does not double that part
 // of the URI.
-func (suite *MAASObjectSuite) TestGetSubObjectAbsoluteDoesNotDoubleServiceRoot(c *C) {
+func TestGetSubObjectAbsoluteDoesNotDoubleServiceRoot(t *testing.T) {
 	obj := makeFakeMAASObject("http://cmd.com/service", "a/resource/")
 
 	subObj := obj.GetSubObject("/service/test")
@@ -85,22 +82,22 @@ func (suite *MAASObjectSuite) TestGetSubObjectAbsoluteDoesNotDoubleServiceRoot(c
 
 	// The "/service" part is not repeated; it must be included.
 	expectedSubURL, err := url.Parse("http://cmd.com/service/test/")
-	c.Assert(err, IsNil)
-	c.Check(subURL, DeepEquals, expectedSubURL)
+	assert.Nil(t, err)
+	assert.EqualValues(t, subURL, expectedSubURL)
 }
 
 // The argument to GetSubObject is a relative Path, not a URL.  So it won't
 // take a query part.  The special characters that mark a query are escaped
 // so they are recognized as parts of the Path.
-func (suite *MAASObjectSuite) TestGetSubObjectTakesPathNotURL(c *C) {
+func TestGetSubObjectTakesPathNotURL(t *testing.T) {
 	obj := makeFakeMAASObject("http://cmd.com/", "x/")
 
 	subObj := obj.GetSubObject("/y?z")
 
-	c.Check(subObj.URL().String(), Equals, "http://cmd.com/y%3Fz/")
+	assert.Equal(t, subObj.URL().String(), "http://cmd.com/y%3Fz/")
 }
 
-func (suite *MAASObjectSuite) TestGetField(c *C) {
+func TestGetField(t *testing.T) {
 	uri := "http://cmd.com/a/resource"
 	fieldName := "field Name"
 	fieldValue := "a value"
@@ -108,25 +105,22 @@ func (suite *MAASObjectSuite) TestGetField(c *C) {
 		resourceURI: uri, fieldName: fieldValue,
 	}
 	j, err := json.Marshal(input)
-	c.Check(err, IsNil)
+	assert.Nil(t, err)
 
 	resourceURL, err := url.Parse(uri)
-	c.Check(err, IsNil)
+	assert.Nil(t, err)
 	obj := MAASObject{URI: resourceURL, Client: MAASClient{}, Values: j}
 
 	value := obj.GetField(fieldName)
-	c.Check(value, Equals, fieldValue)
+	assert.Equal(t, value, fieldValue)
 }
 
-type MAASSuite struct{}
 
-var _ = Suite(&MAASSuite{})
-
-func (suite *MAASSuite) TestNewMAASUsesBaseURLFromClient(c *C) {
+func TestNewMAASUsesBaseURLFromClient(t *testing.T) {
 	baseURLString := "https://server.com:888/"
 	baseURL, _ := url.Parse(baseURLString)
 	client := MAASClient{APIURL: baseURL}
 	maas := NewMAAS(client)
 	URL := maas.URL()
-	c.Check(URL, DeepEquals, baseURL)
+	assert.EqualValues(t, URL, baseURL)
 }

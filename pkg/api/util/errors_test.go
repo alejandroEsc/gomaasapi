@@ -7,78 +7,75 @@ import (
 	"strings"
 
 	"github.com/juju/errors"
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-type errorTypesSuite struct{}
 
-var _ = gc.Suite(&errorTypesSuite{})
-
-func (*errorTypesSuite) TestNoMatchError(c *gc.C) {
+func TestNoMatchError(t *testing.T) {
 	err := NewNoMatchError("foo")
-	c.Assert(err, gc.NotNil)
-	c.Assert(err, jc.Satisfies, IsNoMatchError)
+	assert.NotNil(t, err)
+	assert.True(t, IsNoMatchError(err))
 }
 
-func (*errorTypesSuite) TestUnexpectedError(c *gc.C) {
+func TestUnexpectedError(t *testing.T) {
 	err := errors.New("wat")
 	err = NewUnexpectedError(err)
-	c.Assert(err, gc.NotNil)
-	c.Assert(err, jc.Satisfies, IsUnexpectedError)
-	c.Assert(err.Error(), gc.Equals, "unexpected: wat")
+	assert.NotNil(t, err)
+	assert.True(t, IsUnexpectedError(err))
+	assert.Equal(t, err.Error(),  "unexpected: wat")
 }
 
-func (*errorTypesSuite) TestUnsupportedVersionError(c *gc.C) {
+func TestUnsupportedVersionError(t *testing.T) {
 	err := NewUnsupportedVersionError("foo %d", 42)
-	c.Assert(err, gc.NotNil)
-	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-	c.Assert(err.Error(), gc.Equals, "foo 42")
+	assert.NotNil(t, err)
+	assert.True(t, IsUnsupportedVersionError(err))
+	assert.Equal(t, err.Error(), "foo 42")
 }
 
-func (*errorTypesSuite) TestWrapWithUnsupportedVersionError(c *gc.C) {
+func TestWrapWithUnsupportedVersionError(t *testing.T) {
 	err := WrapWithUnsupportedVersionError(errors.New("bad"))
-	c.Assert(err, gc.NotNil)
-	c.Assert(err, jc.Satisfies, IsUnsupportedVersionError)
-	c.Assert(err.Error(), gc.Equals, "unsupported version: bad")
+	assert.NotNil(t, err)
+	assert.True(t, IsUnsupportedVersionError(err))
+	assert.Equal(t, err.Error(), "unsupported version: bad")
 	stack := errors.ErrorStack(err)
-	c.Assert(strings.Split(stack, "\n"), gc.HasLen, 2)
+	assert.Len(t, strings.Split(stack, "\n"), 2)
 }
 
-func (*errorTypesSuite) TestDeserializationError(c *gc.C) {
+func TestDeserializationError(t *testing.T) {
 	err := NewDeserializationError("foo %d", 42)
-	c.Assert(err, gc.NotNil)
-	c.Assert(err, jc.Satisfies, IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, "foo 42")
+	assert.NotNil(t, err)
+	assert.True(t, IsDeserializationError(err))
+	assert.Equal(t, err.Error(), "foo 42")
 }
 
-func (*errorTypesSuite) TestWrapWithDeserializationError(c *gc.C) {
+func TestWrapWithDeserializationError(t *testing.T) {
 	err := errors.New("base error")
 	err = WrapWithDeserializationError(err, "foo %d", 42)
-	c.Assert(err, gc.NotNil)
-	c.Assert(err, jc.Satisfies, IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, "foo 42: base error")
+	assert.NotNil(t, err)
+	assert.True(t, IsDeserializationError(err))
+	assert.Equal(t, err.Error(), "foo 42: base error")
 	stack := errors.ErrorStack(err)
-	c.Assert(strings.Split(stack, "\n"), gc.HasLen, 2)
+	assert.Len(t, strings.Split(stack, "\n"), 2)
 }
 
-func (*errorTypesSuite) TestBadRequestError(c *gc.C) {
+func TestBadRequestError(t *testing.T) {
 	err := NewBadRequestError("omg")
-	c.Assert(err, gc.NotNil)
-	c.Assert(err, jc.Satisfies, IsBadRequestError)
-	c.Assert(err.Error(), gc.Equals, "omg")
+	assert.NotNil(t, err)
+	assert.True(t, IsBadRequestError(err))
+	assert.Equal(t,err.Error(), "omg")
 }
 
-func (*errorTypesSuite) TestPermissionError(c *gc.C) {
+func TestPermissionError(t *testing.T) {
 	err := NewPermissionError("naughty")
-	c.Assert(err, gc.NotNil)
-	c.Assert(err, jc.Satisfies, IsPermissionError)
-	c.Assert(err.Error(), gc.Equals, "naughty")
+	assert.NotNil(t, err)
+	assert.True(t, IsPermissionError(err))
+	assert.Equal(t, err.Error(), "naughty")
 }
 
-func (*errorTypesSuite) TestCannotCompleteError(c *gc.C) {
+func TestCannotCompleteError(t *testing.T) {
 	err := NewCannotCompleteError("server says no")
-	c.Assert(err, gc.NotNil)
-	c.Assert(err, jc.Satisfies, IsCannotCompleteError)
-	c.Assert(err.Error(), gc.Equals, "server says no")
+	assert.NotNil(t, err)
+	assert.True(t, IsCannotCompleteError(err))
+	assert.Equal(t, err.Error(),"server says no")
 }

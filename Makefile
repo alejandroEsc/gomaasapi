@@ -28,7 +28,6 @@ endif
 
 test: ## run go test (must be maintained)
 	go test ./pkg/api/client
-	go test ./pkg/api/templates
 	go test ./pkg/api/util
 	go test ./pkg/api/v2
 
