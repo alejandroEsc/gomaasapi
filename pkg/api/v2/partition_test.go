@@ -1,0 +1,87 @@
+// Copyright 2016 Canonical Ltd.
+// Licensed under the LGPLv3, see LICENCE File for details.
+
+package maasapiv2
+
+import (
+	"encoding/json"
+
+	jc "github.com/juju/testing/checkers"
+	gc "gopkg.in/check.v1"
+	"github.com/juju/gomaasapi/pkg/api/util"
+)
+
+type partitionSuite struct{}
+
+var _ = gc.Suite(&partitionSuite{})
+
+func (*partitionSuite) TestNilFileSystem(c *gc.C) {
+	var empty partition
+	c.Assert(empty.FileSystem == nil, jc.IsTrue)
+}
+
+func (*partitionSuite) TestReadPartitionsBadSchema(c *gc.C) {
+	var p partition
+	err = json.Unmarshal([]byte("wat?"), &p)
+
+	c.Check(err, jc.Satisfies, util.IsDeserializationError)
+	c.Assert(err.Error(), gc.Equals, `partition base schema check failed: expected list, got string("wat?")`)
+}
+
+func (*partitionSuite) TestReadPartitions(c *gc.C) {
+	var partitions []partition
+	err = json.Unmarshal([]byte(partitionsResponse), &partitions)
+
+	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(partitions, gc.HasLen, 1)
+	partition := partitions[0]
+
+	c.Check(partition.ID, gc.Equals, 1)
+	c.Check(partition.Path, gc.Equals, "/dev/disk/by-dname/sda-part1")
+	c.Check(partition.UUID, gc.Equals, "6199b7c9-b66f-40f6-a238-a938a58a0adf")
+	c.Check(partition.UsedFor, gc.Equals, "ext4 formatted filesystem mounted at /")
+	c.Check(partition.Size, gc.Equals, uint64(8581545984))
+
+	fs := partition.FileSystem
+	c.Assert(fs, gc.NotNil)
+	c.Assert(fs.Type, gc.Equals, "ext4")
+	c.Assert(fs.MountPoint, gc.Equals, "/")
+}
+
+func (*partitionSuite) TestReadPartitionsNilUUID(c *gc.C) {
+	j := util.ParseJSON(c, partitionsResponse)
+	j.([]interface{})[0].(map[string]interface{})["UUID"] = nil
+
+	jr, err := json.Marshal(j)
+	c.Assert(err, jc.ErrorIsNil)
+
+	var partitions []partition
+	err = json.Unmarshal(jr, &partitions)
+
+	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(partitions, gc.HasLen, 1)
+	partition := partitions[0]
+	c.Check(partition.UUID, gc.Equals, "")
+}
+
+const partitionsResponse = `
+[
+    {
+        "bootable": false,
+        "ID": 1,
+        "Path": "/dev/disk/by-dname/sda-part1",
+        "filesystem": {
+            "Type": "ext4",
+            "mount_point": "/",
+            "Label": "root",
+            "mount_options": null,
+            "UUID": "fcd7745e-f1b5-4f5d-9575-9b0bb796b752"
+        },
+        "type": "partition",
+        "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/partition/1",
+        "UUID": "6199b7c9-b66f-40f6-a238-a938a58a0adf",
+        "used_for": "ext4 formatted filesystem mounted at /",
+        "Size": 8581545984
+    }
+]
+`

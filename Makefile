@@ -1,26 +1,37 @@
-# Build, and run tests.
-check: examples
-	go test ./...
+test: ##run tests.
+	go test ./pkg/api/v2
 
-example_source := $(wildcard example/*.go)
-example_binaries := $(patsubst %.go,%,$(example_source))
+clean: ## clean build output
+	rm -rf bin/*
 
-# Clean up binaries.
-clean:
-	$(RM) $(example_binaries)
+go-clean: ## Invoke gofmt's "simplify" option to streamline the source code.
+	gofmt -w -s ./pkg
+	gofmt -w -s ./cmd
+	goimports -w $(git ls-files "**/*.go" "*.go" | grep -v -e "vendor")
 
-# Reformat the source files to match our layout standards.
-format:
-	gofmt -w .
+.PHONY: install-tools
+install-tools: ## install tools needed by go-link-checks
+	GOIMPORTS_CMD=$(shell command -v goimports 2> /dev/null)
+ifndef GOIMPORTS_CMD
+	go get golang.org/x/tools/cmd/goimports
+endif
 
-# Invoke gofmt's "simplify" option to streamline the source code.
-simplify:
-	gofmt -w -s .
+	GOLINT_CMD=$(shell command -v golint 2> /dev/null)
+ifndef GOLINT_CMD
+	go get github.com/golang/lint/golint
+endif
 
-# Build the examples (we have no tests for them).
-examples: $(example_binaries)
+	GOCYCLO_CMD=$(shell command -v gocyclo 2> /dev/null)
+ifndef GOLINT_CMD
+	go get github.com/fzipp/gocyclo
+endif
 
-%: %.go
-	go build -o $@ $<
+test: ## run go test (must be maintained)
+	go test ./pkg/api/client
+	go test ./pkg/api/templates
+	go test ./pkg/api/util
+	go test ./pkg/api/v2
 
-.PHONY: check clean format examples simplify
+.PHONY: help
+help:  ## Show help messages for make targets
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}'
