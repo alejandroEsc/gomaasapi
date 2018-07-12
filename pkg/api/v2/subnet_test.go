@@ -6,43 +6,33 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
-type subnetSuite struct{}
-
-var _ = gc.Suite(&subnetSuite{})
-
-func TestNilVLAN(t *testing.T) {
-	var empty subnet
-	c.Check(empty.VLAN == nil, jc.IsTrue)
-}
 
 func TestReadSubnetsBadSchema(t *testing.T) {
 	var s subnet
 	err = json.Unmarshal([]byte("wat?"), &s)
-
-	c.Assert(err.Error(), gc.Equals, `Subnet base schema check failed: expected list, got string("wat?")`)
+	assert.Error(t, err)
 }
 
 func TestReadSubnets(t *testing.T) {
 	var subnets []subnet
 	err = json.Unmarshal([]byte(subnetResponse), &subnets)
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(subnets, gc.HasLen, 2)
+	assert.Nil(t, err)
+	assert.Len(t, subnets, 2)
 
 	subnet := subnets[0]
-	c.Assert(subnet.ID, gc.Equals, 1)
-	c.Assert(subnet.Name, gc.Equals, "192.168.100.0/24")
-	c.Assert(subnet.Space, gc.Equals, "space-0")
-	c.Assert(subnet.Gateway, gc.Equals, "192.168.100.1")
-	c.Assert(subnet.CIDR, gc.Equals, "192.168.100.0/24")
+	assert.Equal(t, subnet.ID,  1)
+	assert.Equal(t,subnet.Name,  "192.168.100.0/24")
+	assert.Equal(t,subnet.Space,  "space-0")
+	assert.Equal(t,subnet.Gateway,  "192.168.100.1")
+	assert.Equal(t,subnet.CIDR,  "192.168.100.0/24")
 	vlan := subnet.VLAN
-	c.Assert(vlan, gc.NotNil)
-	c.Assert(vlan.Name, gc.Equals, "untagged")
-	c.Assert(subnet.DNSServers, jc.DeepEquals, []string{"8.8.8.8", "8.8.4.4"})
+	assert.NotNil(t, vlan)
+	assert.Equal(t, vlan.Name,  "untagged")
+	assert.EqualValues(t, subnet.DNSServers, []string{"8.8.8.8", "8.8.4.4"})
 }
 
 const subnetResponse = `

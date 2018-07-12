@@ -5,60 +5,52 @@ package maasapiv2
 
 import (
 	"encoding/json"
-
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
-	"github.com/juju/gomaasapi/pkg/api/util"
 	"testing"
+	"github.com/juju/gomaasapi/pkg/api/util"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestNilFileSystem(t *testing.T) {
-	var empty partition
-	c.Assert(empty.FileSystem == nil, jc.IsTrue)
-}
 
 func TestReadPartitionsBadSchema(t *testing.T) {
 	var p partition
 	err = json.Unmarshal([]byte("wat?"), &p)
-
-	c.Check(err, jc.Satisfies, util.IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, `partition base schema check failed: expected list, got string("wat?")`)
+	assert.Error(t, err)
 }
 
 func TestReadPartitions(t *testing.T) {
 	var partitions []partition
 	err = json.Unmarshal([]byte(partitionsResponse), &partitions)
-
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(partitions, gc.HasLen, 1)
+	assert.Nil(t, err)
+	
+	assert.Len(t, partitions,  1)
 	partition := partitions[0]
 
-	c.Check(partition.ID, gc.Equals, 1)
-	c.Check(partition.Path, gc.Equals, "/dev/disk/by-dname/sda-part1")
-	c.Check(partition.UUID, gc.Equals, "6199b7c9-b66f-40f6-a238-a938a58a0adf")
-	c.Check(partition.UsedFor, gc.Equals, "ext4 formatted filesystem mounted at /")
-	c.Check(partition.Size, gc.Equals, uint64(8581545984))
+	assert.Equal(t, partition.ID, 1)
+	assert.Equal(t, partition.Path, "/dev/disk/by-dname/sda-part1")
+	assert.Equal(t, partition.UUID, "6199b7c9-b66f-40f6-a238-a938a58a0adf")
+	assert.Equal(t, partition.UsedFor, "ext4 formatted filesystem mounted at /")
+	assert.Equal(t, partition.Size, uint64(8581545984))
 
 	fs := partition.FileSystem
-	c.Assert(fs, gc.NotNil)
-	c.Assert(fs.Type, gc.Equals, "ext4")
-	c.Assert(fs.MountPoint, gc.Equals, "/")
+	assert.NotNil(t, fs)
+	assert.Equal(t, fs.Type, "ext4")
+	assert.Equal(t, fs.MountPoint, "/")
 }
 
 func TestReadPartitionsNilUUID(t *testing.T) {
-	j := util.ParseJSON(c, partitionsResponse)
+	j := util.ParseJSON(t, partitionsResponse)
 	j.([]interface{})[0].(map[string]interface{})["UUID"] = nil
 
 	jr, err := json.Marshal(j)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	var partitions []partition
 	err = json.Unmarshal(jr, &partitions)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(partitions, gc.HasLen, 1)
+	assert.Nil(t, err)
+	assert.Len(t, partitions, 1)
 	partition := partitions[0]
-	c.Check(partition.UUID, gc.Equals, "")
+	assert.Equal(t, partition.UUID, "")
 }
 
 const partitionsResponse = `

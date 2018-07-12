@@ -6,8 +6,8 @@ package util
 import (
 	"strings"
 	"encoding/json"
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
+	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 // JoinURLs joins a base URL and a subpath together.
@@ -31,22 +31,22 @@ func EnsureTrailingSlash(URL string) string {
 
 
 // ParseJSON parses a string source a map to be used in testing
-func ParseJSON(c *gc.C, source string) interface{} {
+func ParseJSON(t *testing.T, source string) interface{} {
 	var parsed interface{}
 	err := json.Unmarshal([]byte(source), &parsed)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	return parsed
 }
 
 // UpdateJSONMap updates a json with changes
-func UpdateJSONMap(c *gc.C, source string, changes map[string]interface{}) string {
+func UpdateJSONMap(t *testing.T, source string, changes map[string]interface{}) string {
 	var parsed map[string]interface{}
 	err := json.Unmarshal([]byte(source), &parsed)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	for key, value := range changes {
 		parsed[key] = value
 	}
 	bytes, err := json.Marshal(parsed)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 	return string(bytes)
 }

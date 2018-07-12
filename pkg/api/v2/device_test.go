@@ -9,49 +9,45 @@ import (
 	"encoding/json"
 
 	"github.com/juju/errors"
-	"github.com/juju/testing"
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/juju/gomaasapi/pkg/api/client"
+	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
-func  TestNilZone(t *testing.T) {
-	var empty device
-	c.Check(empty.Zone == nil, jc.IsTrue)
-}
 
 func  TestReadDevicesBadSchema(t *testing.T) {
 	var d device
 	err = json.Unmarshal([]byte("wat?"), &d)
-	c.Check(err, jc.Satisfies, util.IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, `device base schema check failed: expected list, got string("wat?")`)
+	assert.Error(t, err)
 }
 
 func  TestReadDevices(t *testing.T) {
 	var devices []device
 	err = json.Unmarshal([]byte(devicesResponse), &devices)
+	assert.Nil(t, err)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(devices, gc.HasLen, 1)
+	assert.Len(t, devices, 1)
 
 	device := devices[0]
-	c.Check(device.SystemID, gc.Equals, "4y3haf")
-	c.Check(device.Hostname, gc.Equals, "furnacelike-brittney")
-	c.Check(device.FQDN, gc.Equals, "furnacelike-brittney.maas")
-	c.Check(device.IPAddresses, jc.DeepEquals, []string{"192.168.100.11"})
+	assert.Equal(t, device.SystemID,  "4y3haf")
+	assert.Equal(t, device.Hostname,  "furnacelike-brittney")
+	assert.Equal(t, device.FQDN,  "furnacelike-brittney.maas")
+	assert.EqualValues(t, device.IPAddresses, []string{"192.168.100.11"})
 	zone := device.Zone
-	c.Check(zone, gc.NotNil)
-	c.Check(zone.Name, gc.Equals, "default")
+	assert.NotNil(t, zone)
+	assert.Equal(t, zone.Name, "default")
 }
 
 func TestInterfaceSet(t *testing.T) {
-	server, device := s.getServerAndDevice(c)
+	server, device := getServerAndDevice(t)
 	server.AddGetResponse(device.interfacesURI(), http.StatusOK, interfacesResponse)
 	ifaces := device.InterfaceSet
-	c.Assert(ifaces, gc.HasLen, 2)
+	assert.Len(t, ifaces, 2)
 }
 
-func (s *controllerSuite) TestCreateInterfaceArgsValidate(t *testing.T) {
-	for i, test := range []struct {
+func TestCreateInterfaceArgsValidate(t *testing.T) {
+	for _, test := range []struct {
 		args    CreateInterfaceArgs
 		errText string
 	}{{
@@ -65,25 +61,24 @@ func (s *controllerSuite) TestCreateInterfaceArgsValidate(t *testing.T) {
 	}, {
 		args: CreateInterfaceArgs{Name: "eth3", MACAddress: "a-mac-address", VLAN: &vlan{}},
 	}} {
-		c.Logf("test %d", i)
 		err := test.args.Validate()
 		if test.errText == "" {
-			c.Check(err, jc.ErrorIsNil)
+			assert.Nil(t, err)
 		} else {
-			c.Check(err, jc.Satisfies, errors.IsNotValid)
-			c.Check(err.Error(), gc.Equals, test.errText)
+			assert.True(t, errors.IsNotValid(err))
+			assert.Equal(t, err.Error(), test.errText)
 		}
 	}
 }
 
 func TestCreateInterfaceValidates(t *testing.T) {
-	_, device := s.getServerAndDevice(c)
+	_, device := getServerAndDevice(t)
 	_, err := device.CreateInterface(CreateInterfaceArgs{})
-	c.Assert(err, jc.Satisfies, errors.IsNotValid)
+	assert.True(t, errors.IsNotValid(err))
 }
 
 func TestCreateInterface(t *testing.T) {
-	server, device := s.getServerAndDevice(c)
+	server, device := getServerAndDevice(t)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusOK, interfaceResponse)
 
 	iface, err := device.CreateInterface(CreateInterfaceArgs{
@@ -92,15 +87,15 @@ func TestCreateInterface(t *testing.T) {
 		VLAN:       &vlan{ID: 33},
 		Tags:       []string{"foo", "bar"},
 	})
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(iface, gc.NotNil)
+	assert.Nil(t, err)
+	assert.NotNil(t, iface)
 
 	request := server.LastRequest()
 	form := request.PostForm
-	c.Assert(form.Get("Name"), gc.Equals, "eth43")
-	c.Assert(form.Get("mac_address"), gc.Equals, "some-mac-address")
-	c.Assert(form.Get("VLAN"), gc.Equals, "33")
-	c.Assert(form.Get("Tags"), gc.Equals, "foo,bar")
+	assert.Equal(t, form.Get("Name"),  "eth43")
+	assert.Equal(t, form.Get("mac_address"), "some-mac-address")
+	assert.Equal(t, form.Get("VLAN"),  "33")
+	assert.Equal(t, form.Get("Tags"), "foo,bar")
 }
 
 func minimalCreateInterfaceArgs() CreateInterfaceArgs {
@@ -112,82 +107,82 @@ func minimalCreateInterfaceArgs() CreateInterfaceArgs {
 }
 
 func TestCreateInterfaceNotFound(t *testing.T) {
-	server, device := s.getServerAndDevice(c)
+	server, device := getServerAndDevice(t)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusNotFound, "can't find device")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
-	c.Assert(err, jc.Satisfies, util.IsBadRequestError)
-	c.Assert(err.Error(), gc.Equals, "can't find device")
+	assert.True(t, util.IsBadRequestError(err))
+	assert.Equal(t, err.Error(),  "can't find device")
 }
 
 func TestCreateInterfaceConflict(t *testing.T) {
-	server, device := s.getServerAndDevice(c)
+	server, device := getServerAndDevice(t)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusConflict, "device not allocated")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
-	c.Assert(err, jc.Satisfies,util.IsBadRequestError)
-	c.Assert(err.Error(), gc.Equals, "device not allocated")
+	assert.True(t, util.IsBadRequestError(err))
+	assert.Equal(t,err.Error(),  "device not allocated")
 }
 
 func TestCreateInterfaceForbidden(t *testing.T) {
-	server, device := s.getServerAndDevice(c)
+	server, device := getServerAndDevice(t)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusForbidden, "device not yours")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
-	c.Assert(err, jc.Satisfies, util.IsPermissionError)
-	c.Assert(err.Error(), gc.Equals, "device not yours")
+	assert.True(t, util.IsPermissionError(err))
+	assert.Equal(t, err.Error(), "device not yours")
 }
 
 func TestCreateInterfaceServiceUnavailable(t *testing.T) {
-	server, device := s.getServerAndDevice(c)
+	server, device := getServerAndDevice(t)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusServiceUnavailable, "no ip addresses available")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
-	c.Assert(err, jc.Satisfies, util.IsCannotCompleteError)
-	c.Assert(err.Error(), gc.Equals, "no ip addresses available")
+	assert.True(t, util.IsCannotCompleteError(err))
+	assert.Equal(t, err.Error(), "no ip addresses available")
 }
 
-func TestCreateInterfaceUnknown(t *testing.T) {
-	server, device := s.getServerAndDevice(c)
+func TestDeviceCreateInterfaceUnknown(t *testing.T) {
+	server, device := getServerAndDevice(t)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusMethodNotAllowed, "wat?")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
-	c.Assert(err, jc.Satisfies, util.IsUnexpectedError)
-	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 405 Method Not Allowed (wat?)")
+	assert.True(t, util.IsUnexpectedError(err))
+	assert.Equal(t,err.Error(),"unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
 
 func getServerAndDevice(t *testing.T) (*client.SimpleTestServer, *device) {
-	server, controller := createTestServerController(c, s)
+	server, controller := createTestServerController(t)
 	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
 
 	devices, err := controller.Devices(DevicesArgs{})
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(devices, gc.HasLen, 1)
+	assert.Nil(t, err)
+	assert.Len(t, devices,1)
 	return server, &devices[0]
 }
 
-func TestDelete(t *testing.T) {
-	server, device := s.getServerAndDevice(c)
+func TestDeviceDelete(t *testing.T) {
+	server, device := getServerAndDevice(t)
 	// Successful delete is 204 - StatusNoContent
 	server.AddDeleteResponse(device.ResourceURI, http.StatusNoContent, "")
 	err := device.Delete()
-	c.Assert(err, jc.ErrorIsNil)
+	assert.NotNil(t, err)
 }
 
-func TestDelete404(t *testing.T) {
-	_, device := s.getServerAndDevice(c)
+func TestDeviceDelete404(t *testing.T) {
+	_, device := getServerAndDevice(t)
 	// No Path, so 404
 	err := device.Delete()
-	c.Assert(err, jc.Satisfies, util.IsNoMatchError)
+	assert.True(t, util.IsNoMatchError(err))
 }
 
-func TestDeleteForbidden(t *testing.T) {
-	server, device := s.getServerAndDevice(c)
+func TestDeviceDeleteForbidden(t *testing.T) {
+	server, device := getServerAndDevice(t)
 	server.AddDeleteResponse(device.ResourceURI, http.StatusForbidden, "")
 	err := device.Delete()
-	c.Assert(err, jc.Satisfies, util.IsPermissionError)
+	assert.True(t, util.IsPermissionError(err))
 }
 
-func TestDeleteUnknown(t *testing.T) {
-	server, device := s.getServerAndDevice(c)
+func TestDeviceDeleteUnknown(t *testing.T) {
+	server, device := getServerAndDevice(t)
 	server.AddDeleteResponse(device.ResourceURI, http.StatusConflict, "")
 	err := device.Delete()
-	c.Assert(err, jc.Satisfies, util.IsUnexpectedError)
+	assert.True(t, util.IsUnexpectedError(err))
 }
 
 const (

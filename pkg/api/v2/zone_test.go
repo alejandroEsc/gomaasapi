@@ -18,7 +18,6 @@ func TestReadZonesBadSchema(t *testing.T) {
 func TestReadZones(t *testing.T) {
 	var zones []zone
 	err = json.Unmarshal([]byte(zoneResponse), &zones)
-
 	assert.Nil(t, err)
 
 	assert.Len(t, zones, 2)

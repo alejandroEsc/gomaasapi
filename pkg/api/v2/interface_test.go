@@ -9,25 +9,19 @@ import (
 	"encoding/json"
 
 	"github.com/juju/errors"
-	"github.com/juju/testing"
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	"testing"
 )
 
-type interfaceSuite struct {
-	testing.CleanupSuite
-}
 
-var _ = gc.Suite(&interfaceSuite{})
 
-func  TestNilVLAN(t *testing.T) {
+func TestNilVLAN(t *testing.T) {
 	var empty MachineNetworkInterface
 	c.Check(empty.VLAN == nil, jc.IsTrue)
 }
 
-func  TestReadInterfacesBadSchema(t *testing.T) {
+func TestReadInterfacesBadSchema(t *testing.T) {
 	var b MachineNetworkInterface
 	err = json.Unmarshal([]byte("wat?"), &b)
 
@@ -35,7 +29,7 @@ func  TestReadInterfacesBadSchema(t *testing.T) {
 	c.Assert(err.Error(), gc.Equals, `interface base schema check failed: expected list, got string("wat?")`)
 }
 
-func  TestReadInterfacesNulls(t *testing.T) {
+func TestReadInterfacesNulls(t *testing.T) {
 	var iface MachineNetworkInterface
 	err = json.Unmarshal([]byte(interfaceNullsResponse), &iface)
 
@@ -46,7 +40,7 @@ func  TestReadInterfacesNulls(t *testing.T) {
 	c.Check(iface.VLAN, gc.IsNil)
 }
 
-func  checkInterface(t *testing.T, iface *MachineNetworkInterface) {
+func checkInterface(t *testing.T, iface *MachineNetworkInterface) {
 	c.Check(iface.ID, gc.Equals, 40)
 	c.Check(iface.Name, gc.Equals, "eth0")
 	c.Check(iface.Type, gc.Equals, "physical")
@@ -306,7 +300,7 @@ func  TestUnlinkSubnetUnknown(t *testing.T) {
 	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
 
-func  TestUpdateNoChangeNoRequest(t *testing.T) {
+func TestInterfaceUpdateNoChangeNoRequest(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	count := server.RequestCount()
 	err := iface.Update(UpdateInterfaceArgs{})
@@ -314,13 +308,13 @@ func  TestUpdateNoChangeNoRequest(t *testing.T) {
 	c.Assert(server.RequestCount(), gc.Equals, count)
 }
 
-func  TestUpdateMissing(t *testing.T) {
+func TestInterfaceUpdateMissing(t *testing.T) {
 	_, iface := s.getServerAndNewInterface(c)
 	err := iface.Update(UpdateInterfaceArgs{Name: "eth2"})
 	c.Check(err, jc.Satisfies, util.IsNoMatchError)
 }
 
-func  TestUpdateForbidden(t *testing.T) {
+func  TestInterfaceUpdateForbidden(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	server.AddPutResponse(iface.ResourceURI, http.StatusForbidden, "bad user")
 	err := iface.Update(UpdateInterfaceArgs{Name: "eth2"})
@@ -328,7 +322,7 @@ func  TestUpdateForbidden(t *testing.T) {
 	c.Check(err.Error(), gc.Equals, "bad user")
 }
 
-func  TestUpdateUnknown(t *testing.T) {
+func TestInterfaceUpdateUnknown(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	server.AddPutResponse(iface.ResourceURI, http.StatusMethodNotAllowed, "wat?")
 	err := iface.Update(UpdateInterfaceArgs{Name: "eth2"})
@@ -336,7 +330,7 @@ func  TestUpdateUnknown(t *testing.T) {
 	c.Assert(err.Error(), gc.Equals, "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
 
-func  TestUpdateGood(t *testing.T) {
+func TestUpdateGood(t *testing.T) {
 	server, iface := s.getServerAndNewInterface(c)
 	// The changed information is there just for the test to show that the response
 	// is parsed and the interface updated

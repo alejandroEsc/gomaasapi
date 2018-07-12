@@ -6,32 +6,28 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
+	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
-type spaceSuite struct{}
-
-var _ = gc.Suite(&spaceSuite{})
-
-func (*spaceSuite) TestReadSpacesBadSchema(t *testing.T) {
+func TestReadSpacesBadSchema(t *testing.T) {
 	var r space
 	err = json.Unmarshal([]byte("wat?"), &r)
-	c.Assert(err.Error(), gc.Equals, `space base schema check failed: expected list, got string("wat?")`)
+	assert.Error(t, err)
 }
 
-func (*spaceSuite) TestReadSpaces(t *testing.T) {
+func TestReadSpaces(t *testing.T) {
 	var spaces []space
 	err = json.Unmarshal([]byte(spacesResponse), &spaces)
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(spaces, gc.HasLen, 1)
+	assert.Nil(t, err)
+	assert.Len(t, spaces,  1)
 
 	space := spaces[0]
-	c.Assert(space.ID, gc.Equals, 0)
-	c.Assert(space.Name, gc.Equals, "space-0")
+	assert.Equal(t, space.ID,  0)
+	assert.Equal(t, space.Name,  "space-0")
 	subnets := space.Subnets
-	c.Assert(subnets, gc.HasLen, 2)
-	c.Assert(subnets[0].ID, gc.Equals, 34)
+	assert.Len(t, subnets, 2)
+	assert.Equal(t, subnets[0].ID,  34)
 }
 
 const spacesResponse = `

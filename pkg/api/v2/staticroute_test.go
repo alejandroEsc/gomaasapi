@@ -6,36 +6,34 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadStaticRoutesBadSchema(t *testing.T) {
 	var s staticRoute
 	err = json.Unmarshal([]byte("wat?"), &s)
-	c.Assert(err.Error(), gc.Equals, `static-route base schema check failed: expected list, got string("wat?")`)
+	assert.Error(t, err)
 }
 
 func TestReadStaticRoutes(t *testing.T) {
 	var staticRoutes []staticRoute
 	err = json.Unmarshal([]byte(staticRoutesResponse), &staticRoutes)
-
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(staticRoutes, gc.HasLen, 1)
+	assert.Nil(t, err)
+	assert.Len(t, staticRoutes, 1)
 
 	sr := staticRoutes[0]
-	c.Assert(sr.ID, gc.Equals, 2)
-	c.Assert(sr.Metric, gc.Equals, int(0))
-	c.Assert(sr.GatewayIP, gc.Equals, "192.168.0.1")
+	assert.Equal(t, sr.ID,  2)
+	assert.Equal(t, sr.Metric,  int(0))
+	assert.Equal(t, sr.GatewayIP,  "192.168.0.1")
 	source := sr.Source
-	c.Assert(source, gc.NotNil)
-	c.Assert(source.Name, gc.Equals, "192.168.0.0/24")
-	c.Assert(source.CIDR, gc.Equals, "192.168.0.0/24")
+	assert.NotNil(t, source)
+	assert.Equal(t,source.Name,  "192.168.0.0/24")
+	assert.Equal(t,source.CIDR,  "192.168.0.0/24")
 	destination := sr.Destination
-	c.Assert(destination, gc.NotNil)
-	c.Assert(destination.Name, gc.Equals, "Local-192")
-	c.Assert(destination.CIDR, gc.Equals, "192.168.0.0/16")
+	assert.NotNil(t, destination)
+	assert.Equal(t,destination.Name,  "Local-192")
+	assert.Equal(t,destination.CIDR,  "192.168.0.0/16")
 }
 
 const staticRoutesResponse = `
