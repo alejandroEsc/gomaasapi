@@ -88,7 +88,7 @@ const (
 [
     {
         "resource_uri": "/MAAS/api/2.0/files/test/",
-        "anon_resource_uri": "/MAAS/api/2.0/files/?op=get_by_key&key=3afba564-fb7d-11e5-932f-52540051bf22",
+        "anon_resource_uri": "http://MAAS/api/2.0/files/?op=get_by_key&key=3afba564-fb7d-11e5-932f-52540051bf22",
         "Filename": "test"
     },
     {

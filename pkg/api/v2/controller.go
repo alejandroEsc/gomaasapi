@@ -81,7 +81,8 @@ func newControllerWithVersion(baseURL, apiVersion, apiKey string) (*controller, 
 	if err != nil {
 		// If the credentials aren't valid, return now.
 		if errors.IsNotValid(err) {
-			return nil, errors.Trace(err)
+			//return nil, errors.Trace(err)
+			return nil, err
 		}
 		// Any other error attempting to create the authenticated Client
 		// is an unexpected error and return now.
@@ -95,11 +96,13 @@ func newControllerWithVersion(baseURL, apiVersion, apiKey string) (*controller, 
 	controller.Capabilities, err = controller.readAPIVersionInfo()
 	if err != nil {
 		logger.Debugf("read version failed: %#v", err)
-		return nil, errors.Trace(err)
+		//return nil, errors.Trace(err)
+		return nil, err
 	}
 
 	if err := controller.checkCreds(); err != nil {
-		return nil, errors.Trace(err)
+		//return nil, errors.Trace(err)
+		return nil, err
 	}
 	return controller, nil
 }
@@ -117,7 +120,8 @@ func newControllerUnknownVersion(args ControllerArgs) (*controller, error) {
 			// This will only come back from readAPIVersionInfo for 410/404.
 			continue
 		default:
-			return nil, errors.Trace(err)
+			//return nil, errors.Trace(err)
+			return nil, err
 		}
 	}
 
@@ -312,12 +316,14 @@ func (c *controller) Machines(args MachinesArgs) ([]Machine, error) {
 	// data so we do that ourselves below.
 	source, err := c.getQuery("machines", params.Values)
 	if err != nil {
-		return nil, util.NewUnexpectedError(err)
+		//return nil, util.NewUnexpectedError(err)
+		return nil, err
 	}
 	var machines []Machine
 	err = json.Unmarshal(source, &machines)
 	if err != nil {
-		return nil, errors.Trace(err)
+		//return nil, errors.Trace(err)
+		return nil, err
 	}
 	var result []Machine
 	for _, m := range machines {
@@ -546,14 +552,20 @@ func (c *controller) AllocateMachine(args AllocateMachineArgs) (*Machine, Constr
 	}
 
 	var machine *Machine
+	var source map[string]interface{}
 	err = json.Unmarshal(result, &machine)
 	if err != nil {
 		return nil, matches, errors.Trace(err)
 	}
 	machine.Controller = c
 
+	err = json.Unmarshal(result, &source)
+	if err != nil {
+		return nil, matches, errors.Trace(err)
+	}
+
 	// Parse the constraint matches.
-	matches, err = parseAllocateConstraintsResponse(result, machine)
+	matches, err = parseAllocateConstraintsResponse(source, machine)
 	if err != nil {
 		return nil, matches, errors.Trace(err)
 	}
@@ -608,7 +620,7 @@ func (c *controller) Files(prefix string) ([]File, error) {
 	var files []File
 	err = json.Unmarshal(source, &files)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 
 	for _, f := range files {
@@ -795,7 +807,8 @@ func (c *controller) getOp(path, op string) ([]byte, error) {
 func (c *controller) _get(path, op string, params url.Values) ([]byte, error) {
 	bytes, err := c._getRaw(path, op, params)
 	if err != nil {
-		return nil, errors.Trace(err)
+		//return nil, errors.Trace(err)
+		return nil, err
 	}
 
 	return bytes, nil
@@ -803,6 +816,7 @@ func (c *controller) _get(path, op string, params url.Values) ([]byte, error) {
 
 func (c *controller) _getRaw(path, op string, params url.Values) ([]byte, error) {
 	path = util.EnsureTrailingSlash(path)
+	url := &url.URL{Path: path}
 	requestID := nextRequestID()
 	if logger.IsTraceEnabled() {
 		var query string
@@ -811,11 +825,13 @@ func (c *controller) _getRaw(path, op string, params url.Values) ([]byte, error)
 		}
 		logger.Tracef("request %x: GET %s%s%s", requestID, c.Client.APIURL, path, query)
 	}
-	bytes, err := c.Client.Get(&url.URL{Path: path}, op, params)
+
+	bytes, err := c.Client.Get(url, op, params)
 	if err != nil {
 		logger.Tracef("response %x: error: %q", requestID, err.Error())
 		logger.Tracef("error detail: %#v", err)
-		return nil, errors.Trace(err)
+		//return nil, errors.Trace(err)
+		return nil, err
 	}
 	logger.Tracef("response %x: %s", requestID, string(bytes))
 	return bytes, nil
@@ -844,13 +860,18 @@ func indicatesUnsupportedVersion(err error) bool {
 }
 
 func (c *controller) readAPIVersionInfo() (set.Strings, error) {
-	parsed, err := c.get("version")
+	var parsed map[string]interface{}
+	parsedBytes, err := c.get("version")
 	if indicatesUnsupportedVersion(err) {
 		return nil, util.WrapWithUnsupportedVersionError(err)
 	} else if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
+		//return nil, errors.Trace(err)
 	}
-
+	err = json.Unmarshal(parsedBytes, &parsed)
+	if err != nil {
+		return nil, util.WrapWithDeserializationError(err, "unmarshal error")
+	}
 	// As we care about other fields, add them.
 	fields := schema.Fields{
 		"Capabilities": schema.List(schema.String()),

@@ -11,17 +11,19 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	"encoding/json"
+	"strings"
 )
 
 type File struct {
 	Controller  *controller
-	ResourceURI string `json:"resource_uri,omitempty"`
+	ResourceURI string `json:"resource_uri,string,omitempty"`
 	// Filename is the Name of the File. No Path, just the Filename.
-	Filename string `json:"Filename,omitempty"`
+	Filename string `json:"Filename,string,omitempty"`
 	// AnonymousURI is a URL that can be used to retrieve the conents of the
 	// File without credentials.
-	AnonymousURI *url.URL `json:"anon_resource_uri,omitempty"`
-	Content      string   `json:"Content,omitempty"`
+	AnonymousURI *url.URL `json:"anon_resource_uri,string,omitempty"`
+	Content      string   `json:"Content,string,omitempty"`
 }
 
 // Delete implements FileInterface.
@@ -78,4 +80,32 @@ type FileInterface interface {
 	Delete() error
 	// ReadAll returns the Content of the File.
 	ReadAll() ([]byte, error)
+}
+
+func (f *File) UnmarshalJSON(j []byte) error {
+	var rawStrings map[string]string
+
+	err := json.Unmarshal(j, &rawStrings)
+	if err != nil {
+		return err
+	}
+
+	for k, v := range rawStrings {
+		switch strings.ToLower(k) {
+		case "resource_uri":
+			f.ResourceURI = v
+		case "filename":
+			f.Filename = v
+		case "anon_resource_uri":
+			u, err := url.Parse(v)
+			if err != nil {
+				return err
+			}
+			f.AnonymousURI = u
+		case "content":
+			f.Content = v
+		}
+	}
+
+	return nil
 }
