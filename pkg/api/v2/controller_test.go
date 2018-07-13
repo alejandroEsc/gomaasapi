@@ -17,16 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	// Capability constants.
-	NetworksManagement      = "networks-management"
-	StaticIPAddresses       = "static-ipaddresses"
-	IPv6DeploymentUbuntu    = "ipv6-deployment-ubuntu"
-	DevicesManagement       = "devices-management"
-	StorageDeploymentUbuntu = "storage-deployment-ubuntu"
-	NetworkDeploymentUbuntu = "network-deployment-ubuntu"
-)
-
 var (
 	server *client.SimpleTestServer
 	versionResponse = `{"version": "unknown", "subversion": "", "Capabilities": ["networks-management", "static-ipaddresses", "ipv6-deployment-ubuntu", "devices-management", "storage-deployment-ubuntu", "network-deployment-ubuntu"]}`
@@ -47,12 +37,12 @@ func TestNewController(t *testing.T) {
 	controller := getController()
 
 	expectedCapabilities := set.NewStrings(
-		NetworksManagement,
-		StaticIPAddresses,
-		IPv6DeploymentUbuntu,
-		DevicesManagement,
-		StorageDeploymentUbuntu,
-		NetworkDeploymentUbuntu,
+		"networks-management",
+		"static-ipaddresses",
+		"ipv6-deployment-ubuntu",
+		"devices-management",
+		"storage-deployment-ubuntu",
+		"network-deployment-ubuntu",
 	)
 
 	capabilities := controller.Capabilities
@@ -857,7 +847,6 @@ func TestAddFileReader(t *testing.T) {
 	assertFile(t, request, "foo.txt", "test\n")
 }
 
-
 func assertFile(t *testing.T, request *http.Request, filename, content string) {
 	form := request.Form
 	assert.Equal(t, form.Get("Filename"), filename)
@@ -869,7 +858,6 @@ func assertFile(t *testing.T, request *http.Request, filename, content string) {
 	assert.Nil(t, err)
 	assert.Equal(t,string(bytes), content)
 }
-
 
 // createTestServerController creates a ControllerInterface backed on to a test server
 // that has sufficient knowledge of versions and users to be able to create a
@@ -888,22 +876,6 @@ func createTestServerController(t *testing.T) (*client.SimpleTestServer, *contro
 	return server, controller
 }
 
-func setUpTest() {
-	server := client.NewSimpleServer()
-	server.AddGetResponse("/api/2.0/boot-resources/", http.StatusOK, bootResourcesResponse)
-	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
-	server.AddGetResponse("/api/2.0/fabrics/", http.StatusOK, fabricResponse)
-	server.AddGetResponse("/api/2.0/files/", http.StatusOK, filesResponse)
-	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, machinesResponse)
-	server.AddGetResponse("/api/2.0/machines/?Hostname=untasted-markita", http.StatusOK, "["+machineResponse+"]")
-	server.AddGetResponse("/api/2.0/spaces/", http.StatusOK, spacesResponse)
-	server.AddGetResponse("/api/2.0/static-routes/", http.StatusOK, staticRoutesResponse)
-	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
-	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
-	server.AddGetResponse("/api/2.0/zones/", http.StatusOK, zoneResponse)
-	server.Start()
-}
-
 func getController() *controller {
 	controller, _ := NewController(ControllerArgs{
 		BaseURL: server.URL,
@@ -911,7 +883,6 @@ func getController() *controller {
 	})
 	return controller
 }
-
 
 func addAllocateResponse(t *testing.T, status int, interfaceMatches, storageMatches constraintMatchInfo) {
 	constraints := make(map[string]interface{})

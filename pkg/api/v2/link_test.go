@@ -6,40 +6,33 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
-
-
-func TestNilSubnet(t *testing.T) {
-	var empty link
-	c.Check(empty.Subnet == nil, jc.IsTrue)
-}
 
 func TestReadLinksBadSchema(t *testing.T) {
 	var l link
 	err = json.Unmarshal([]byte("wat?"), &l)
-	c.Check(err, jc.Satisfies, util.IsDeserializationError)
-	c.Assert(err.Error(), gc.Equals, `link base schema check failed: expected list, got string("wat?")`)
+	assert.True(t, util.IsDeserializationError(err))
+	assert.Equal(t, err.Error(), `link base schema check failed: expected list, got string("wat?")`)
 }
 
 func TestReadLinks(t *testing.T) {
 	var links []link
 	err = json.Unmarshal([]byte(linksResponse), &links)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(links, gc.HasLen, 2)
+	assert.Nil(t, err)
+	assert.Len(t, links,2)
 	link := links[0]
-	c.Assert(link.ID, gc.Equals, 69)
-	c.Assert(link.Mode, gc.Equals, "auto")
-	c.Assert(link.IPAddress, gc.Equals, "192.168.100.5")
+	assert.Equal(t, link.ID, 69)
+	assert.Equal(t, link.Mode, "auto")
+	assert.Equal(t, link.IPAddress,"192.168.100.5")
 	subnet := link.Subnet
-	c.Assert(subnet, gc.NotNil)
-	c.Assert(subnet.Name, gc.Equals, "192.168.100.0/24")
+	assert.NotNil(t, subnet)
+	assert.Equal(t, subnet.Name, "192.168.100.0/24")
 	// Second link has missing ip_address
-	c.Assert(links[1].IPAddress, gc.Equals, "")
+	assert.Equal(t, links[1].IPAddress, "")
 }
 
 const linksResponse = `

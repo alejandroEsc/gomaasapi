@@ -25,56 +25,56 @@ func TestReadFiles(t *testing.T) {
 	var files []File
 	err = json.Unmarshal([]byte(filesResponse), &files)
 	assert.Nil(t, err)
-	c.Assert(files, gc.HasLen, 2)
+	assert.Len(t, files, 2)
 	file := files[0]
-	c.Assert(file.Filename, gc.Equals, "test")
+	assert.Equal(t, file.Filename,"test")
 }
 
 func TestReadAllFromGetFile(t *testing.T) {
 	// When get File is used, the response includes the body of the File
 	// base64 encoded, so ReadAll just decodes it.
-	server, controller := createTestServerController(c, s)
+	server, controller := createTestServerController(t)
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
 	file, err := controller.GetFile("testing")
 	assert.Nil(t, err)
 	content, err := file.ReadAll()
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(string(content), gc.Equals, "this is a test\n")
+	assert.Nil(t, err)
+	assert.Equal(t, string(content), "this is a test\n")
 }
 
 func TestReadAllFromFiles(t *testing.T) {
 	// When get File is used, the response includes the body of the File
 	// base64 encoded, so ReadAll just decodes it.
-	server, controller := createTestServerController(c, s)
+	server, controller := createTestServerController(t)
 	server.AddGetResponse("/api/2.0/files/", http.StatusOK, filesResponse)
 	server.AddGetResponse("/api/2.0/files/?Filename=test&op=get", http.StatusOK, "some Content\n")
 	files, err := controller.Files("")
 	assert.Nil(t, err)
 	file := files[0]
 	content, err := file.ReadAll()
-	c.Assert(err, jc.ErrorIsNil)
-	c.Assert(string(content), gc.Equals, "some Content\n")
+	assert.Nil(t, err)
+	assert.Equal(t, string(content), "some Content\n")
 }
 
 func TestDeleteMissing(t *testing.T) {
 	// If we get a File, but someone else deletes it first, we get a ...
-	server, controller := createTestServerController(c, s)
+	server, controller := createTestServerController(t)
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
 	file, err := controller.GetFile("testing")
 	assert.Nil(t, err)
 	err = file.Delete()
-	c.Assert(err, jc.Satisfies, util.IsNoMatchError)
+	assert.True(t, util.IsNoMatchError(err))
 }
 
 func TestDelete(t *testing.T) {
 	// If we get a File, but someone else deletes it first, we get a ...
-	server, controller := createTestServerController(c, s)
+	server, controller := createTestServerController(t)
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
 	server.AddDeleteResponse("/api/2.0/files/testing/", http.StatusOK, "")
 	file, err := controller.GetFile("testing")
 	assert.Nil(t, err)
 	err = file.Delete()
-	c.Assert(err, jc.Satisfies, util.IsNoMatchError)
+	assert.True(t, util.IsNoMatchError(err))
 }
 
 const (

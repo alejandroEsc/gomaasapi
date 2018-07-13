@@ -6,13 +6,12 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	jc "github.com/juju/testing/checkers"
-	gc "gopkg.in/check.v1"
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
-func  TestParse2_0(t *testing.T) {
+func TestParse2_0(t *testing.T) {
 	source := map[string]interface{}{
 		"Type":        "ext4",
 		"mount_point": "/",
@@ -21,19 +20,19 @@ func  TestParse2_0(t *testing.T) {
 	}
 
 	j, err := json.Marshal(source)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	var fs filesystem
 	err = json.Unmarshal(j, &fs)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(fs.Type, gc.Equals, "ext4")
-	c.Check(fs.MountPoint, gc.Equals, "/")
-	c.Check(fs.Label, gc.Equals, "root")
-	c.Check(fs.UUID, gc.Equals, "fake-UUID")
+	assert.Nil(t, err)
+	assert.Equal(t, fs.Type,"ext4")
+	assert.Equal(t, fs.MountPoint, "/")
+	assert.Equal(t, fs.Label, "root")
+	assert.Equal(t, fs.UUID,"fake-UUID")
 }
 
-func  TestParse2_Defaults(t *testing.T) {
+func TestParse2_Defaults(t *testing.T) {
 	source := map[string]interface{}{
 		"Type":        "ext4",
 		"mount_point": nil,
@@ -41,16 +40,16 @@ func  TestParse2_Defaults(t *testing.T) {
 		"UUID":        "fake-UUID",
 	}
 	j, err := json.Marshal(source)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	var fs filesystem
 	err = json.Unmarshal(j, &fs)
 
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(fs.Type, gc.Equals, "ext4")
-	c.Check(fs.MountPoint, gc.Equals, "")
-	c.Check(fs.Label, gc.Equals, "")
-	c.Check(fs.UUID, gc.Equals, "fake-UUID")
+	assert.Nil(t, err)
+	assert.Equal(t, fs.Type, "ext4")
+	assert.Equal(t, fs.MountPoint, "")
+	assert.Equal(t, fs.Label, "")
+	assert.Equal(t, fs.UUID,"fake-UUID")
 }
 
 func  TestParse2_0BadSchema(t *testing.T) {
@@ -60,10 +59,10 @@ func  TestParse2_0BadSchema(t *testing.T) {
 		"UUID":        "fake-UUID",
 	}
 	j, err := json.Marshal(source)
-	c.Assert(err, jc.ErrorIsNil)
+	assert.Nil(t, err)
 
 	var fs filesystem
 	err = json.Unmarshal(j, &fs)
 
-	c.Assert(err, jc.Satisfies, util.IsDeserializationError)
+	assert.True(t, util.IsDeserializationError(err))
 }
