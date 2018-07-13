@@ -4,10 +4,10 @@
 package util
 
 import (
-	"strings"
 	"encoding/json"
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"strings"
+	"testing"
 )
 
 // JoinURLs joins a base URL and a subpath together.
@@ -28,7 +28,6 @@ func EnsureTrailingSlash(URL string) string {
 	}
 	return URL + "/"
 }
-
 
 // ParseJSON parses a string source a map to be used in testing
 func ParseJSON(t *testing.T, source string) interface{} {

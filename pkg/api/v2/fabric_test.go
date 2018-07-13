@@ -6,9 +6,8 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	"testing"
 	"github.com/stretchr/testify/assert"
-
+	"testing"
 )
 
 func TestReadFabricsBadSchema(t *testing.T) {
@@ -24,11 +23,11 @@ func TestReadFabrics(t *testing.T) {
 	assert.Len(t, fabrics, 2)
 
 	fabric := fabrics[0]
-	assert.Equal(t, fabric.ID,0)
+	assert.Equal(t, fabric.ID, 0)
 	assert.Equal(t, fabric.Name, "Fabric-0")
-	assert.Equal(t, fabric.ClassType,  "")
+	assert.Equal(t, fabric.ClassType, "")
 	vlans := fabric.VLANs
-	assert.Len(t, vlans,1)
+	assert.Len(t, vlans, 1)
 	assert.Equal(t, vlans[0].Name, "untagged")
 }
 

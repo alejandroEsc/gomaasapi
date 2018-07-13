@@ -7,11 +7,9 @@ import (
 	"encoding/json"
 
 	"github.com/juju/utils/set"
-	"testing"
 	"github.com/stretchr/testify/assert"
-
+	"testing"
 )
-
 
 func TestReadBootResourcesBadSchema(t *testing.T) {
 	var b bootResource
@@ -29,13 +27,12 @@ func TestReadBootResources(t *testing.T) {
 
 	subarches := set.NewStrings("generic", "hwe-p", "hwe-q", "hwe-r", "hwe-s", "hwe-t")
 
-
-	assert.Equal(t,trusty.ID,  5)
-	assert.Equal(t,trusty.Name, "ubuntu/trusty")
-	assert.Equal(t,trusty.Type,  "Synced")
-	assert.Equal(t,trusty.Architecture, "amd64/hwe-t")
+	assert.Equal(t, trusty.ID, 5)
+	assert.Equal(t, trusty.Name, "ubuntu/trusty")
+	assert.Equal(t, trusty.Type, "Synced")
+	assert.Equal(t, trusty.Architecture, "amd64/hwe-t")
 	assert.ObjectsAreEqual(trusty.SubArchitectures, subarches)
-	assert.Equal(t,trusty.KernelFlavor, "generic")
+	assert.Equal(t, trusty.KernelFlavor, "generic")
 }
 
 const bootResourcesResponse = `

@@ -6,8 +6,8 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestReadSpacesBadSchema(t *testing.T) {
@@ -20,14 +20,14 @@ func TestReadSpaces(t *testing.T) {
 	var spaces []space
 	err = json.Unmarshal([]byte(spacesResponse), &spaces)
 	assert.Nil(t, err)
-	assert.Len(t, spaces,  1)
+	assert.Len(t, spaces, 1)
 
 	space := spaces[0]
-	assert.Equal(t, space.ID,  0)
-	assert.Equal(t, space.Name,  "space-0")
+	assert.Equal(t, space.ID, 0)
+	assert.Equal(t, space.Name, "space-0")
 	subnets := space.Subnets
 	assert.Len(t, subnets, 2)
-	assert.Equal(t, subnets[0].ID,  34)
+	assert.Equal(t, subnets[0].ID, 34)
 }
 
 const spacesResponse = `

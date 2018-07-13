@@ -5,10 +5,9 @@ package maasapiv2
 
 import (
 	"encoding/json"
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
-
 
 var err error
 
@@ -35,16 +34,15 @@ func TestReadBlockDevices(t *testing.T) {
 
 	assert.Equal(t, blockdevice.Tags, []string{"rotary"})
 	assert.Equal(t, blockdevice.BlockSize, uint64(4096))
-	assert.Equal(t, blockdevice.UsedSize,uint64(8586788864))
+	assert.Equal(t, blockdevice.UsedSize, uint64(8586788864))
 	assert.Equal(t, blockdevice.Size, uint64(8589934592))
-
 
 	partitions := blockdevice.Partitions
 	assert.Len(t, partitions, 1)
 	partition := partitions[0]
 
-	assert.Equal(t,partition.ID, 1)
-	assert.Equal(t,partition.UsedFor, "ext4 formatted filesystem mounted at /")
+	assert.Equal(t, partition.ID, 1)
+	assert.Equal(t, partition.UsedFor, "ext4 formatted filesystem mounted at /")
 }
 
 func TestReadBlockDevicesWithNulls(t *testing.T) {
@@ -55,8 +53,8 @@ func TestReadBlockDevicesWithNulls(t *testing.T) {
 	assert.Len(t, blockdevices, 1)
 	blockdevice := blockdevices[0]
 
-	assert.Equal(t, blockdevice.Model,"")
-	assert.Equal(t, blockdevice.IDPath,"")
+	assert.Equal(t, blockdevice.Model, "")
+	assert.Equal(t, blockdevice.IDPath, "")
 }
 
 const (

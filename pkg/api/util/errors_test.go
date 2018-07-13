@@ -11,7 +11,6 @@ import (
 	"testing"
 )
 
-
 func TestNoMatchError(t *testing.T) {
 	err := NewNoMatchError("foo")
 	assert.NotNil(t, err)
@@ -23,7 +22,7 @@ func TestUnexpectedError(t *testing.T) {
 	err = NewUnexpectedError(err)
 	assert.NotNil(t, err)
 	assert.True(t, IsUnexpectedError(err))
-	assert.Equal(t, err.Error(),  "unexpected: wat")
+	assert.Equal(t, err.Error(), "unexpected: wat")
 }
 
 func TestUnsupportedVersionError(t *testing.T) {
@@ -63,7 +62,7 @@ func TestBadRequestError(t *testing.T) {
 	err := NewBadRequestError("omg")
 	assert.NotNil(t, err)
 	assert.True(t, IsBadRequestError(err))
-	assert.Equal(t,err.Error(), "omg")
+	assert.Equal(t, err.Error(), "omg")
 }
 
 func TestPermissionError(t *testing.T) {
@@ -77,5 +76,5 @@ func TestCannotCompleteError(t *testing.T) {
 	err := NewCannotCompleteError("server says no")
 	assert.NotNil(t, err)
 	assert.True(t, IsCannotCompleteError(err))
-	assert.Equal(t, err.Error(),"server says no")
+	assert.Equal(t, err.Error(), "server says no")
 }

@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 
 	"github.com/juju/gomaasapi/pkg/api/util"
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestParse2_0(t *testing.T) {
@@ -26,10 +26,10 @@ func TestParse2_0(t *testing.T) {
 	err = json.Unmarshal(j, &fs)
 
 	assert.Nil(t, err)
-	assert.Equal(t, fs.Type,"ext4")
+	assert.Equal(t, fs.Type, "ext4")
 	assert.Equal(t, fs.MountPoint, "/")
 	assert.Equal(t, fs.Label, "root")
-	assert.Equal(t, fs.UUID,"fake-UUID")
+	assert.Equal(t, fs.UUID, "fake-UUID")
 }
 
 func TestParse2_Defaults(t *testing.T) {
@@ -49,10 +49,10 @@ func TestParse2_Defaults(t *testing.T) {
 	assert.Equal(t, fs.Type, "ext4")
 	assert.Equal(t, fs.MountPoint, "")
 	assert.Equal(t, fs.Label, "")
-	assert.Equal(t, fs.UUID,"fake-UUID")
+	assert.Equal(t, fs.UUID, "fake-UUID")
 }
 
-func  TestParse2_0BadSchema(t *testing.T) {
+func TestParse2_0BadSchema(t *testing.T) {
 	source := map[string]interface{}{
 		"mount_point": "/",
 		"Label":       "root",

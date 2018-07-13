@@ -15,9 +15,8 @@ import (
 
 	"encoding/json"
 
-	"github.com/juju/gomaasapi/pkg/api/v2"
 	"github.com/juju/gomaasapi/pkg/api/client"
-
+	"github.com/juju/gomaasapi/pkg/api/v2"
 )
 
 var apiKey string
@@ -144,7 +143,7 @@ func ManipulateMachines(maas *client.MAASObject) {
 
 	// Create a node.
 	fmt.Println("Creating a new node...")
-	params := url.Values{"architecture": {"amd64/generic"}, "mac_addresses": {"AA:BB:CC:DD:EE:FF"}, "power_type": {"manual"},}
+	params := url.Values{"architecture": {"amd64/generic"}, "mac_addresses": {"AA:BB:CC:DD:EE:FF"}, "power_type": {"manual"}}
 	newNodeObj, err := machinesRequestObj.CallPost("", params)
 	checkError(err)
 

@@ -9,8 +9,8 @@ import (
 	"math/rand"
 	"net/url"
 
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func makeFakeResourceURI() string {
@@ -114,7 +114,6 @@ func TestGetField(t *testing.T) {
 	value := obj.GetField(fieldName)
 	assert.Equal(t, value, fieldValue)
 }
-
 
 func TestNewMAASUsesBaseURLFromClient(t *testing.T) {
 	baseURLString := "https://server.com:888/"

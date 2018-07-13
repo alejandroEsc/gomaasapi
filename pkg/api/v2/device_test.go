@@ -9,20 +9,19 @@ import (
 	"encoding/json"
 
 	"github.com/juju/errors"
-	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/juju/gomaasapi/pkg/api/client"
-	"testing"
+	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-
-func  TestReadDevicesBadSchema(t *testing.T) {
+func TestReadDevicesBadSchema(t *testing.T) {
 	var d device
 	err = json.Unmarshal([]byte("wat?"), &d)
 	assert.Error(t, err)
 }
 
-func  TestReadDevices(t *testing.T) {
+func TestReadDevices(t *testing.T) {
 	var devices []device
 	err = json.Unmarshal([]byte(devicesResponse), &devices)
 	assert.Nil(t, err)
@@ -30,9 +29,9 @@ func  TestReadDevices(t *testing.T) {
 	assert.Len(t, devices, 1)
 
 	device := devices[0]
-	assert.Equal(t, device.SystemID,  "4y3haf")
-	assert.Equal(t, device.Hostname,  "furnacelike-brittney")
-	assert.Equal(t, device.FQDN,  "furnacelike-brittney.maas")
+	assert.Equal(t, device.SystemID, "4y3haf")
+	assert.Equal(t, device.Hostname, "furnacelike-brittney")
+	assert.Equal(t, device.FQDN, "furnacelike-brittney.maas")
 	assert.EqualValues(t, device.IPAddresses, []string{"192.168.100.11"})
 	zone := device.Zone
 	assert.NotNil(t, zone)
@@ -92,9 +91,9 @@ func TestCreateInterface(t *testing.T) {
 
 	request := server.LastRequest()
 	form := request.PostForm
-	assert.Equal(t, form.Get("Name"),  "eth43")
+	assert.Equal(t, form.Get("Name"), "eth43")
 	assert.Equal(t, form.Get("mac_address"), "some-mac-address")
-	assert.Equal(t, form.Get("VLAN"),  "33")
+	assert.Equal(t, form.Get("VLAN"), "33")
 	assert.Equal(t, form.Get("Tags"), "foo,bar")
 }
 
@@ -111,7 +110,7 @@ func TestCreateInterfaceNotFound(t *testing.T) {
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusNotFound, "can't find device")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsBadRequestError(err))
-	assert.Equal(t, err.Error(),  "can't find device")
+	assert.Equal(t, err.Error(), "can't find device")
 }
 
 func TestCreateInterfaceConflict(t *testing.T) {
@@ -119,7 +118,7 @@ func TestCreateInterfaceConflict(t *testing.T) {
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusConflict, "device not allocated")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsBadRequestError(err))
-	assert.Equal(t,err.Error(),  "device not allocated")
+	assert.Equal(t, err.Error(), "device not allocated")
 }
 
 func TestCreateInterfaceForbidden(t *testing.T) {
@@ -143,7 +142,7 @@ func TestDeviceCreateInterfaceUnknown(t *testing.T) {
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusMethodNotAllowed, "wat?")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsUnexpectedError(err))
-	assert.Equal(t,err.Error(),"unexpected: ServerError: 405 Method Not Allowed (wat?)")
+	assert.Equal(t, err.Error(), "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
 
 func getServerAndDevice(t *testing.T) (*client.SimpleTestServer, *device) {
@@ -152,7 +151,7 @@ func getServerAndDevice(t *testing.T) (*client.SimpleTestServer, *device) {
 
 	devices, err := controller.Devices(DevicesArgs{})
 	assert.Nil(t, err)
-	assert.Len(t, devices,1)
+	assert.Len(t, devices, 1)
 	return server, &devices[0]
 }
 

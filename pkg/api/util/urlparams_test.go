@@ -4,10 +4,9 @@
 package util
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
-
 
 func TestNewParamsNonNilValues(t *testing.T) {
 	params := NewURLParams()
@@ -29,7 +28,7 @@ func TestNewMaybeAddWithValue(t *testing.T) {
 func TestNewMaybeAddIntZero(t *testing.T) {
 	params := NewURLParams()
 	params.MaybeAddInt("foo", 0)
-	assert.Equal(t, params.Values.Encode(),  "")
+	assert.Equal(t, params.Values.Encode(), "")
 }
 
 func TestNewMaybeAddIntWithValue(t *testing.T) {

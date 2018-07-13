@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/tidwall/gjson"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	"github.com/tidwall/gjson"
 )
 
 const (

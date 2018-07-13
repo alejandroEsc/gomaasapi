@@ -6,8 +6,8 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestReadStaticRoutesBadSchema(t *testing.T) {
@@ -23,17 +23,17 @@ func TestReadStaticRoutes(t *testing.T) {
 	assert.Len(t, staticRoutes, 1)
 
 	sr := staticRoutes[0]
-	assert.Equal(t, sr.ID,  2)
-	assert.Equal(t, sr.Metric,  int(0))
-	assert.Equal(t, sr.GatewayIP,  "192.168.0.1")
+	assert.Equal(t, sr.ID, 2)
+	assert.Equal(t, sr.Metric, int(0))
+	assert.Equal(t, sr.GatewayIP, "192.168.0.1")
 	source := sr.Source
 	assert.NotNil(t, source)
-	assert.Equal(t,source.Name,  "192.168.0.0/24")
-	assert.Equal(t,source.CIDR,  "192.168.0.0/24")
+	assert.Equal(t, source.Name, "192.168.0.0/24")
+	assert.Equal(t, source.CIDR, "192.168.0.0/24")
 	destination := sr.Destination
 	assert.NotNil(t, destination)
-	assert.Equal(t,destination.Name,  "Local-192")
-	assert.Equal(t,destination.CIDR,  "192.168.0.0/16")
+	assert.Equal(t, destination.Name, "Local-192")
+	assert.Equal(t, destination.CIDR, "192.168.0.0/16")
 }
 
 const staticRoutesResponse = `

@@ -13,9 +13,9 @@ package maasapiv2
 type fabric struct {
 	// Add the ControllerInterface in when we need to do things with the Fabric.
 	// ControllerInterface ControllerInterface
-	ResourceURI string `json:"resource_uri,omitempty"`
-	ID        int    `json:"ID,omitempty"`
-	Name      string `json:"Name,omitempty"`
-	ClassType string `json:"class_type,omitempty"`
-	VLANs []*vlan `json:"VLANs,omitempty"`
+	ResourceURI string  `json:"resource_uri,omitempty"`
+	ID          int     `json:"ID,omitempty"`
+	Name        string  `json:"Name,omitempty"`
+	ClassType   string  `json:"class_type,omitempty"`
+	VLANs       []*vlan `json:"VLANs,omitempty"`
 }

@@ -15,14 +15,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
-func  TestReadAndCloseReturnsEmptyStringForNil(t *testing.T) {
+func TestReadAndCloseReturnsEmptyStringForNil(t *testing.T) {
 	data, err := readAndClose(nil)
 	assert.Nil(t, err)
 	assert.Equal(t, string(data), "")
 }
 
-func  TestReadAndCloseReturnsContents(t *testing.T) {
+func TestReadAndCloseReturnsContents(t *testing.T) {
 	content := "Stream contents."
 	stream := ioutil.NopCloser(strings.NewReader(content))
 
@@ -49,7 +48,7 @@ func TestClientdispatchRequestReturnsServerError(t *testing.T) {
 	svrError, ok := GetServerError(err)
 	assert.True(t, ok)
 	assert.Equal(t, svrError.StatusCode, 400)
-	assert.Equal(t,string(result), expectedResult)
+	assert.Equal(t, string(result), expectedResult)
 }
 
 func TestClientdispatchRequestRetries503(t *testing.T) {
@@ -101,7 +100,7 @@ func TestClientdispatchRequestRetriesIsLimited(t *testing.T) {
 	assert.Equal(t, *server.nbRequests, NumberOfRetries+1)
 	svrError, ok := GetServerError(err)
 	assert.True(t, ok)
-	assert.Equal(t, svrError.StatusCode,  503)
+	assert.Equal(t, svrError.StatusCode, 503)
 }
 
 func TestClientDispatchRequestReturnsNonServerError(t *testing.T) {
@@ -191,7 +190,7 @@ func TestClientPostSendsRequestWithParams(t *testing.T) {
 	assert.Nil(t, err)
 	expectedPostedValues, err := url.ParseQuery("test=123")
 	assert.Nil(t, err)
-	assert.EqualValues(t,postedValues, expectedPostedValues)
+	assert.EqualValues(t, postedValues, expectedPostedValues)
 }
 
 // extractFileContent extracts from the request built using 'requestContent',
@@ -249,8 +248,8 @@ func TestClientPutSendsRequest(t *testing.T) {
 	result, err := client.Put(URI, params)
 
 	assert.Nil(t, err)
-	assert.Equal(t,string(result), expectedResult)
-	assert.Equal(t,*server.requestContent, "test=123")
+	assert.Equal(t, string(result), expectedResult)
+	assert.Equal(t, *server.requestContent, "test=123")
 }
 
 func TestClientDeleteSendsRequest(t *testing.T) {
@@ -295,9 +294,9 @@ func TestNewAuthenticatedClientParsesApiKey(t *testing.T) {
 
 	assert.Nil(t, err)
 	signer := client.Signer.(*plainTextOAuthSigner)
-	assert.Equal(t,signer.token.ConsumerKey,  consumerKey)
-	assert.Equal(t,signer.token.TokenKey,  tokenKey)
-	assert.Equal(t,signer.token.TokenSecret, tokenSecret)
+	assert.Equal(t, signer.token.ConsumerKey, consumerKey)
+	assert.Equal(t, signer.token.TokenKey, tokenKey)
+	assert.Equal(t, signer.token.TokenSecret, tokenSecret)
 }
 
 func TestNewAuthenticatedClientFailsIfInvalidKey(t *testing.T) {
@@ -309,16 +308,16 @@ func TestNewAuthenticatedClientFailsIfInvalidKey(t *testing.T) {
 
 func TestAddAPIVersionToURL(t *testing.T) {
 	addVersion := AddAPIVersionToURL
-	assert.Equal(t, addVersion("http://cmd.com/MAAS", "1.0"),  "http://cmd.com/MAAS/api/1.0/")
+	assert.Equal(t, addVersion("http://cmd.com/MAAS", "1.0"), "http://cmd.com/MAAS/api/1.0/")
 	assert.Equal(t, addVersion("http://cmd.com/MAAS/", "2.0"), "http://cmd.com/MAAS/api/2.0/")
 }
 
 func TestSplitVersionedURL(t *testing.T) {
 	check := func(url, expectedBase, expectedVersion string, expectedResult bool) {
 		base, version, ok := SplitVersionedURL(url)
-		assert.Equal(t,ok, expectedResult)
-		assert.Equal(t,base, expectedBase)
-		assert.Equal(t,version, expectedVersion)
+		assert.Equal(t, ok, expectedResult)
+		assert.Equal(t, base, expectedBase)
+		assert.Equal(t, version, expectedVersion)
 	}
 	check("http://maas.server/MAAS", "http://maas.server/MAAS", "", false)
 	check("http://maas.server/MAAS/api/3.0", "http://maas.server/MAAS/", "3.0", true)

@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 
 	"github.com/juju/gomaasapi/pkg/api/util"
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestReadLinksBadSchema(t *testing.T) {
@@ -23,11 +23,11 @@ func TestReadLinks(t *testing.T) {
 	err = json.Unmarshal([]byte(linksResponse), &links)
 
 	assert.Nil(t, err)
-	assert.Len(t, links,2)
+	assert.Len(t, links, 2)
 	link := links[0]
 	assert.Equal(t, link.ID, 69)
 	assert.Equal(t, link.Mode, "auto")
-	assert.Equal(t, link.IPAddress,"192.168.100.5")
+	assert.Equal(t, link.IPAddress, "192.168.100.5")
 	subnet := link.Subnet
 	assert.NotNil(t, subnet)
 	assert.Equal(t, subnet.Name, "192.168.100.0/24")

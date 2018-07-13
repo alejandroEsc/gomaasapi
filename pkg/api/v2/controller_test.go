@@ -10,21 +10,19 @@ import (
 	"testing"
 
 	"github.com/juju/errors"
-	"github.com/juju/utils/set"
-	"github.com/juju/version"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	"github.com/juju/utils/set"
+	"github.com/juju/version"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	server *client.SimpleTestServer
+	server          *client.SimpleTestServer
 	versionResponse = `{"version": "unknown", "subversion": "", "Capabilities": ["networks-management", "static-ipaddresses", "ipv6-deployment-ubuntu", "devices-management", "storage-deployment-ubuntu", "network-deployment-ubuntu"]}`
-
 )
 
 type constraintMatchInfo map[string][]int
-
 
 func TestSupportedVersions(t *testing.T) {
 	for _, apiVersion := range supportedAPIVersions {
@@ -243,14 +241,14 @@ func TestCreateControllerDevice(t *testing.T) {
 		MACAddresses: []string{"a-mac-address"},
 	})
 	assert.Nil(t, err)
-	assert.Equal(t, device.SystemID,"4y3haf")
+	assert.Equal(t, device.SystemID, "4y3haf")
 }
 
 func TestCreateDeviceMissingAddress(t *testing.T) {
 	controller := getController()
 	_, err := controller.CreateDevice(CreateDeviceArgs{})
 	assert.True(t, util.IsBadRequestError(err))
-	assert.Equal(t, err.Error(),  "at least one MAC address must be specified")
+	assert.Equal(t, err.Error(), "at least one MAC address must be specified")
 }
 
 func TestCreateDeviceBadRequest(t *testing.T) {
@@ -323,7 +321,7 @@ func TestMachinesFilter(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.Len(t, machines, 1)
-	assert.Equal(t, machines[0].Hostname,"untasted-markita")
+	assert.Equal(t, machines[0].Hostname, "untasted-markita")
 }
 
 func TestMachinesFilterWithOwnerData(t *testing.T) {
@@ -348,7 +346,7 @@ func TestMachinesFilterWithOwnerData_MultipleMatches(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Len(t, machines, 2)
 	assert.Equal(t, machines[0].Hostname, "lowlier-glady")
-	assert.Equal(t, machines[1].Hostname,  "icier-nina")
+	assert.Equal(t, machines[1].Hostname, "icier-nina")
 }
 
 func TestMachinesFilterWithOwnerData_RequiresAllMatch(t *testing.T) {
@@ -360,7 +358,7 @@ func TestMachinesFilterWithOwnerData_RequiresAllMatch(t *testing.T) {
 		},
 	})
 	assert.Nil(t, err)
-	assert.Len(t, machines,1)
+	assert.Len(t, machines, 1)
 	assert.Equal(t, machines[0].Hostname, "lowlier-glady")
 }
 
@@ -415,7 +413,7 @@ func TestStorageSpec(t *testing.T) {
 			assert.Equal(t, test.spec.String(), test.repr)
 		} else {
 			assert.True(t, errors.IsNotValid(err))
-			assert.Equal(t,err.Error(),  test.err)
+			assert.Equal(t, err.Error(), test.err)
 		}
 	}
 }
@@ -438,10 +436,10 @@ func TestInterfaceSpec(t *testing.T) {
 		err := test.spec.Validate()
 		if test.err == "" {
 			assert.Nil(t, err)
-			assert.Equal(t,test.spec.String(),  test.repr)
+			assert.Equal(t, test.spec.String(), test.repr)
 		} else {
 			assert.True(t, errors.IsNotValid(err))
-			assert.Equal(t,err.Error(),  test.err)
+			assert.Equal(t, err.Error(), test.err)
 		}
 	}
 }
@@ -513,23 +511,22 @@ func TestAllocateMachineArgs(t *testing.T) {
 		err := test.args.Validate()
 		if test.err == "" {
 			assert.Nil(t, err)
-			assert.Equal(t,test.args.storage(),  test.storage)
-			assert.Equal(t,test.args.interfaces(),test.interfaces)
-			assert.EqualValues(t,test.args.notSubnets(),  test.notSubnets)
+			assert.Equal(t, test.args.storage(), test.storage)
+			assert.Equal(t, test.args.interfaces(), test.interfaces)
+			assert.EqualValues(t, test.args.notSubnets(), test.notSubnets)
 		} else {
 			assert.True(t, errors.IsNotValid(err))
-			assert.Equal(t,err.Error(),  test.err)
+			assert.Equal(t, err.Error(), test.err)
 		}
 	}
 }
-
 
 func TestAllocateMachine(t *testing.T) {
 	addAllocateResponse(t, http.StatusOK, nil, nil)
 	controller := getController()
 	machine, _, err := controller.AllocateMachine(AllocateMachineArgs{})
 	assert.Nil(t, err)
-	assert.Equal(t, machine.SystemID,"4y3ha3")
+	assert.Equal(t, machine.SystemID, "4y3ha3")
 }
 
 func TestAllocateMachineInterfacesMatch(t *testing.T) {
@@ -545,10 +542,10 @@ func TestAllocateMachineInterfacesMatch(t *testing.T) {
 		}},
 	})
 	assert.Nil(t, err)
-	assert.Len(t, match.Interfaces,  1)
+	assert.Len(t, match.Interfaces, 1)
 	ifaces := match.Interfaces["database"]
-	assert.Len(t, ifaces,  2)
-	assert.Equal(t, ifaces[0].ID,35)
+	assert.Len(t, ifaces, 2)
+	assert.Equal(t, ifaces[0].ID, 35)
 	assert.Equal(t, ifaces[1].ID, 99)
 }
 
@@ -581,11 +578,11 @@ func TestAllocateMachineStorageMatches(t *testing.T) {
 		}},
 	})
 	assert.Nil(t, err)
-	assert.Len(t, match.Storage,  1)
+	assert.Len(t, match.Storage, 1)
 	storages := match.Storage["root"]
-	assert.Len(t, storages,  2)
-	assert.Equal(t, storages[0].ID,  34)
-	assert.Equal(t, storages[1].ID,  98)
+	assert.Len(t, storages, 2)
+	assert.Equal(t, storages[0].ID, 34)
+	assert.Equal(t, storages[1].ID, 98)
 }
 
 func TestAllocateMachineStorageLogicalMatches(t *testing.T) {
@@ -651,7 +648,7 @@ func TestAllocateMachineArgsForm(t *testing.T) {
 	// Positive space check.
 	assert.Equal(t, form.Get("interfaces"), "default:space=magic")
 	// Negative space check.
-	assert.Equal(t, form.Get("not_subnets"),  "space:special")
+	assert.Equal(t, form.Get("not_subnets"), "space:special")
 }
 
 func TestAllocateMachineNoMatch(t *testing.T) {
@@ -700,7 +697,7 @@ func TestReleaseMachinesForbidden(t *testing.T) {
 		SystemIDs: []string{"this", "that"},
 	})
 	assert.True(t, util.IsPermissionError(err))
-	assert.Equal(t, err.Error(),  "bzzt denied")
+	assert.Equal(t, err.Error(), "bzzt denied")
 }
 
 func TestReleaseMachinesConflict(t *testing.T) {
@@ -720,7 +717,7 @@ func TestReleaseMachinesUnexpected(t *testing.T) {
 		SystemIDs: []string{"this", "that"},
 	})
 	assert.True(t, util.IsUnexpectedError(err))
-	assert.Equal(t, err.Error(),"unexpected: ServerError: 502 Bad Gateway (wat)")
+	assert.Equal(t, err.Error(), "unexpected: ServerError: 502 Bad Gateway (wat)")
 }
 
 func TestFiles(t *testing.T) {
@@ -732,8 +729,8 @@ func TestFiles(t *testing.T) {
 	file := files[0]
 	assert.Equal(t, file.Filename, "test")
 
-	assert.Equal(t, file.AnonymousURI.Scheme,  "http")
-	assert.Equal(t, file.AnonymousURI.RequestURI(),  "/MAAS/api/2.0/files/?op=get_by_key&key=3afba564-fb7d-11e5-932f-52540051bf22")
+	assert.Equal(t, file.AnonymousURI.Scheme, "http")
+	assert.Equal(t, file.AnonymousURI.RequestURI(), "/MAAS/api/2.0/files/?op=get_by_key&key=3afba564-fb7d-11e5-932f-52540051bf22")
 }
 
 func TestGetFile(t *testing.T) {
@@ -742,11 +739,11 @@ func TestGetFile(t *testing.T) {
 	file, err := controller.GetFile("testing")
 	assert.Nil(t, err)
 
-	assert.Equal(t, file.Filename,  "testing")
+	assert.Equal(t, file.Filename, "testing")
 
 	assert.Nil(t, err)
-	assert.Equal(t, file.AnonymousURI.Scheme,  "http")
-	assert.Equal(t, file.AnonymousURI.RequestURI(),  "/MAAS/api/2.0/files/?op=get_by_key&key=88e64b76-fb82-11e5-932f-52540051bf22")
+	assert.Equal(t, file.AnonymousURI.Scheme, "http")
+	assert.Equal(t, file.AnonymousURI.RequestURI(), "/MAAS/api/2.0/files/?op=get_by_key&key=88e64b76-fb82-11e5-932f-52540051bf22")
 }
 
 func TestGetFileMissing(t *testing.T) {
@@ -807,7 +804,7 @@ func TestAddFileArgsValidate(t *testing.T) {
 		if test.errText == "" {
 			assert.Nil(t, err)
 		} else {
-			assert.True(t,  errors.IsNotValid(err))
+			assert.True(t, errors.IsNotValid(err))
 			assert.EqualError(t, err, test.errText)
 		}
 	}
@@ -856,7 +853,7 @@ func assertFile(t *testing.T, request *http.Request, filename, content string) {
 	assert.Nil(t, err)
 	bytes, err := ioutil.ReadAll(f)
 	assert.Nil(t, err)
-	assert.Equal(t,string(bytes), content)
+	assert.Equal(t, string(bytes), content)
 }
 
 // createTestServerController creates a ControllerInterface backed on to a test server

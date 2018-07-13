@@ -10,8 +10,8 @@ import (
 	"encoding/json"
 
 	"github.com/juju/errors"
-	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/juju/gomaasapi/pkg/api/client"
+	"github.com/juju/gomaasapi/pkg/api/util"
 )
 
 // MachineNetworkInterface represents a physical or virtual network interface on a MachineInterface.
@@ -231,7 +231,7 @@ func (i *MachineNetworkInterface) UnlinkSubnet(s *subnet) error {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {
 			case http.StatusNotFound, http.StatusBadRequest:
-				return errors.Wrap(err,util. NewBadRequestError(svrErr.BodyMessage))
+				return errors.Wrap(err, util.NewBadRequestError(svrErr.BodyMessage))
 			case http.StatusForbidden:
 				return errors.Wrap(err, util.NewPermissionError(svrErr.BodyMessage))
 			}

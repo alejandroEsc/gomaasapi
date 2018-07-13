@@ -6,10 +6,9 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
-
 
 func TestReadSubnetsBadSchema(t *testing.T) {
 	var s subnet
@@ -24,14 +23,14 @@ func TestReadSubnets(t *testing.T) {
 	assert.Len(t, subnets, 2)
 
 	subnet := subnets[0]
-	assert.Equal(t, subnet.ID,  1)
-	assert.Equal(t,subnet.Name,  "192.168.100.0/24")
-	assert.Equal(t,subnet.Space,  "space-0")
-	assert.Equal(t,subnet.Gateway,  "192.168.100.1")
-	assert.Equal(t,subnet.CIDR,  "192.168.100.0/24")
+	assert.Equal(t, subnet.ID, 1)
+	assert.Equal(t, subnet.Name, "192.168.100.0/24")
+	assert.Equal(t, subnet.Space, "space-0")
+	assert.Equal(t, subnet.Gateway, "192.168.100.1")
+	assert.Equal(t, subnet.CIDR, "192.168.100.0/24")
 	vlan := subnet.VLAN
 	assert.NotNil(t, vlan)
-	assert.Equal(t, vlan.Name,  "untagged")
+	assert.Equal(t, vlan.Name, "untagged")
 	assert.EqualValues(t, subnet.DNSServers, []string{"8.8.8.8", "8.8.4.4"})
 }
 

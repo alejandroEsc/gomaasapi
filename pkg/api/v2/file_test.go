@@ -11,9 +11,7 @@ import (
 
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/stretchr/testify/assert"
-
 )
-
 
 func TestReadFilesBadSchema(t *testing.T) {
 	var f File
@@ -27,7 +25,7 @@ func TestReadFiles(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Len(t, files, 2)
 	file := files[0]
-	assert.Equal(t, file.Filename,"test")
+	assert.Equal(t, file.Filename, "test")
 }
 
 func TestReadAllFromGetFile(t *testing.T) {

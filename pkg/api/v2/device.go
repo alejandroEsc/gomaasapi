@@ -11,8 +11,8 @@ import (
 	"encoding/json"
 
 	"github.com/juju/errors"
-	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/juju/gomaasapi/pkg/api/client"
+	"github.com/juju/gomaasapi/pkg/api/util"
 )
 
 // Device represents some form of device in MAAS.

@@ -15,14 +15,13 @@ import (
 	"sync/atomic"
 
 	"github.com/juju/errors"
+	"github.com/juju/gomaasapi/pkg/api/client"
+	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/juju/loggo"
 	"github.com/juju/schema"
 	"github.com/juju/utils/set"
 	"github.com/juju/version"
-	"github.com/juju/gomaasapi/pkg/api/util"
-	"github.com/juju/gomaasapi/pkg/api/client"
 )
-
 
 var (
 	logger = loggo.GetLogger("maas")

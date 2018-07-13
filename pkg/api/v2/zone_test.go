@@ -5,8 +5,8 @@ package maasapiv2
 
 import (
 	"encoding/json"
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestReadZonesBadSchema(t *testing.T) {
@@ -21,9 +21,9 @@ func TestReadZones(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Len(t, zones, 2)
-	assert.Equal(t, zones[0].Name,  "default")
-	assert.Equal(t, zones[0].Description,  "default Description")
-	assert.Equal(t, zones[1].Name,  "special")
+	assert.Equal(t, zones[0].Name, "default")
+	assert.Equal(t, zones[0].Description, "default Description")
+	assert.Equal(t, zones[1].Name, "special")
 	assert.Equal(t, zones[1].Description, "special Description")
 }
 

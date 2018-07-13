@@ -5,11 +5,10 @@ package maasapiv2
 
 import (
 	"encoding/json"
-	"testing"
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
-
 
 func TestReadPartitionsBadSchema(t *testing.T) {
 	var p partition
@@ -21,8 +20,8 @@ func TestReadPartitions(t *testing.T) {
 	var partitions []partition
 	err = json.Unmarshal([]byte(partitionsResponse), &partitions)
 	assert.Nil(t, err)
-	
-	assert.Len(t, partitions,  1)
+
+	assert.Len(t, partitions, 1)
 	partition := partitions[0]
 
 	assert.Equal(t, partition.ID, 1)

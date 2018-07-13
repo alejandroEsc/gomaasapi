@@ -4,14 +4,14 @@
 package maasapiv2
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"encoding/json"
 	"testing"
 
 	"github.com/juju/errors"
-	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/juju/gomaasapi/pkg/api/client"
+	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,13 +25,13 @@ func TestReadMachines(t *testing.T) {
 	var machines []Machine
 	err = json.Unmarshal([]byte(machineResponse), &machines)
 	assert.Nil(t, err)
-	assert.Len(t, machines,  3)
+	assert.Len(t, machines, 3)
 
 	machine := machines[0]
 
-	assert.Equal(t, machine.SystemID,  "4y3ha3")
-	assert.Equal(t, machine.Hostname,  "untasted-markita")
-	assert.Equal(t, machine.FQDN,  "untasted-markita.maas")
+	assert.Equal(t, machine.SystemID, "4y3ha3")
+	assert.Equal(t, machine.Hostname, "untasted-markita")
+	assert.Equal(t, machine.FQDN, "untasted-markita.maas")
 	assert.Contains(t, machine.Tags, []string{"virtual", "magic"})
 	assert.EqualValues(t, machine.OwnerData, map[string]string{
 		"fez":            "phil fish",
@@ -39,34 +39,34 @@ func TestReadMachines(t *testing.T) {
 	})
 
 	assert.Contains(t, machine.IPAddresses, []string{"192.168.100.4"})
-	assert.Equal(t, machine.Memory,  1024)
+	assert.Equal(t, machine.Memory, 1024)
 	assert.Equal(t, machine.CPUCount, 1)
-	assert.Equal(t, machine.PowerState,  "on")
-	assert.Equal(t, machine.Zone.Name,  "default")
-	assert.Equal(t, machine.OperatingSystem,"ubuntu")
-	assert.Equal(t, machine.DistroSeries,  "trusty")
-	assert.Equal(t, machine.Architecture,  "amd64/generic")
+	assert.Equal(t, machine.PowerState, "on")
+	assert.Equal(t, machine.Zone.Name, "default")
+	assert.Equal(t, machine.OperatingSystem, "ubuntu")
+	assert.Equal(t, machine.DistroSeries, "trusty")
+	assert.Equal(t, machine.Architecture, "amd64/generic")
 	assert.Equal(t, machine.StatusName, "Deployed")
-	assert.Equal(t, machine.StatusMessage,  "From 'Deploying' to 'Deployed'")
+	assert.Equal(t, machine.StatusMessage, "From 'Deploying' to 'Deployed'")
 
 	bootInterface := machine.BootInterface
 	assert.NotNil(t, bootInterface)
 	assert.Equal(t, bootInterface.Name, "eth0")
 
 	interfaceSet := machine.InterfaceSet
-	assert.Len(t,interfaceSet,  2)
+	assert.Len(t, interfaceSet, 2)
 	id := interfaceSet[0].ID
 	assert.EqualValues(t, machine.Interface(id), interfaceSet[0])
 	assert.Nil(t, machine.Interface(id+5))
 
 	blockDevices := machine.BlockDevices
-	assert.Len(t, blockDevices,  3)
-	assert.Equal(t, blockDevices[0].Name,  "sda")
+	assert.Len(t, blockDevices, 3)
+	assert.Equal(t, blockDevices[0].Name, "sda")
 	assert.Equal(t, blockDevices[1].Name, "sdb")
 	assert.Equal(t, blockDevices[2].Name, "md0")
 
 	blockDevices = machine.PhysicalBlockDevices
-	assert.Len(t, blockDevices,  2)
+	assert.Len(t, blockDevices, 2)
 	assert.Equal(t, blockDevices[0].Name, "sda")
 	assert.Equal(t, blockDevices[1].Name, "sdb")
 
@@ -88,26 +88,26 @@ func TestReadMachinesNilValues(t *testing.T) {
 	var machines []Machine
 	err = json.Unmarshal(jr, &machines)
 	assert.Nil(t, err)
-	assert.Len(t, machines,  3)
+	assert.Len(t, machines, 3)
 	machine := machines[0]
-	assert.Equal(t, machine.Architecture,  "")
+	assert.Equal(t, machine.Architecture, "")
 	assert.Equal(t, machine.StatusMessage, "")
 	assert.Nil(t, machine.BootInterface)
 }
 
-func  getServerAndMachine(t *testing.T) (*client.SimpleTestServer, *Machine) {
+func getServerAndMachine(t *testing.T) (*client.SimpleTestServer, *Machine) {
 	server, controller := createTestServerController(t)
 	// Just have machines return one MachineInterface
 	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, "["+machineResponse+"]")
 	machines, err := controller.Machines(MachinesArgs{})
 	assert.Nil(t, err)
-	assert.Len(t, machines,  1)
+	assert.Len(t, machines, 1)
 	machine := machines[0]
 	server.ResetRequests()
 	return server, &machine
 }
 
-func  TestStart(t *testing.T) {
+func TestStart(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	response := util.UpdateJSONMap(t, machineResponse, map[string]interface{}{
 		"status_name":    "Deploying",
@@ -123,19 +123,19 @@ func  TestStart(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.Equal(t, machine.StatusName, "Deploying")
-	assert.Equal(t, machine.StatusMessage,  "for testing")
+	assert.Equal(t, machine.StatusMessage, "for testing")
 
 	request := server.LastRequest()
 	// There should be one entry in the form Values for each of the args.
 	form := request.PostForm
 	assert.Len(t, form, 4)
-	assert.Equal(t, form.Get("user_data"),  "userdata")
-	assert.Equal(t, form.Get("distro_series"),  "trusty")
-	assert.Equal(t, form.Get("hwe_kernel"),  "kernel")
+	assert.Equal(t, form.Get("user_data"), "userdata")
+	assert.Equal(t, form.Get("distro_series"), "trusty")
+	assert.Equal(t, form.Get("hwe_kernel"), "kernel")
 	assert.Equal(t, form.Get("comment"), "a comment")
 }
 
-func  TestStartMachineNotFound(t *testing.T) {
+func TestStartMachineNotFound(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusNotFound, "can't find MachineInterface")
 	err := machine.Start(StartArgs{})
@@ -143,7 +143,7 @@ func  TestStartMachineNotFound(t *testing.T) {
 	assert.Equal(t, err.Error(), "can't find MachineInterface")
 }
 
-func  TestStartMachineConflict(t *testing.T) {
+func TestStartMachineConflict(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusConflict, "MachineInterface not allocated")
 	err := machine.Start(StartArgs{})
@@ -151,15 +151,15 @@ func  TestStartMachineConflict(t *testing.T) {
 	assert.Equal(t, err.Error(), "MachineInterface not allocated")
 }
 
-func  TestStartMachineForbidden(t *testing.T) {
+func TestStartMachineForbidden(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusForbidden, "MachineInterface not yours")
 	err := machine.Start(StartArgs{})
 	assert.True(t, util.IsPermissionError(err))
-	assert.Equal(t, err.Error(),  "MachineInterface not yours")
+	assert.Equal(t, err.Error(), "MachineInterface not yours")
 }
 
-func  TestStartMachineServiceUnavailable(t *testing.T) {
+func TestStartMachineServiceUnavailable(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusServiceUnavailable, "no ip addresses available")
 	err := machine.Start(StartArgs{})
@@ -167,7 +167,7 @@ func  TestStartMachineServiceUnavailable(t *testing.T) {
 	assert.Equal(t, err.Error(), "no ip addresses available")
 }
 
-func  TestStartMachineUnknown(t *testing.T) {
+func TestStartMachineUnknown(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusMethodNotAllowed, "wat?")
 	err := machine.Start(StartArgs{})
@@ -175,7 +175,7 @@ func  TestStartMachineUnknown(t *testing.T) {
 	assert.Equal(t, err.Error(), "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
 
-func  TestDevices(t *testing.T) {
+func TestDevices(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
 	devices, err := machine.Devices(DevicesArgs{})
@@ -184,7 +184,7 @@ func  TestDevices(t *testing.T) {
 	assert.Equal(t, devices[0].Parent, machine.SystemID)
 }
 
-func  TestDevicesNone(t *testing.T) {
+func TestDevicesNone(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	response := util.UpdateJSONMap(t, deviceResponse, map[string]interface{}{
 		"Parent": "other",
@@ -192,10 +192,10 @@ func  TestDevicesNone(t *testing.T) {
 	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, "["+response+"]")
 	devices, err := machine.Devices(DevicesArgs{})
 	assert.Nil(t, err)
-	assert.Len(t, devices,0)
+	assert.Len(t, devices, 0)
 }
 
-func  TestCreateMachineDeviceArgsValidate(t *testing.T) {
+func TestCreateMachineDeviceArgsValidate(t *testing.T) {
 	for _, test := range []struct {
 		args    CreateMachineDeviceArgs
 		errText string
@@ -245,19 +245,19 @@ func  TestCreateMachineDeviceArgsValidate(t *testing.T) {
 			assert.Nil(t, err)
 		} else {
 			assert.True(t, errors.IsNotValid(err))
-			assert.Equal(t, err.Error(),  test.errText)
+			assert.Equal(t, err.Error(), test.errText)
 		}
 	}
 }
 
-func  TestCreateDeviceValidates(t *testing.T) {
+func TestCreateDeviceValidates(t *testing.T) {
 	_, machine := getServerAndMachine(t)
 	_, err := machine.CreateDevice(CreateMachineDeviceArgs{})
 	assert.True(t, errors.IsNotValid(err))
 	assert.Equal(t, err.Error(), "missing InterfaceName not valid")
 }
 
-func  TestCreateDevice(t *testing.T) {
+func TestCreateDevice(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
@@ -284,7 +284,7 @@ func  TestCreateDevice(t *testing.T) {
 	assert.Equal(t, device.InterfaceSet[0].VLAN.ID, subnet.VLAN.ID)
 }
 
-func  TestCreateDeviceWithoutSubnetOrVLAN(t *testing.T) {
+func TestCreateDeviceWithoutSubnetOrVLAN(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
@@ -303,11 +303,11 @@ func  TestCreateDeviceWithoutSubnetOrVLAN(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, device.InterfaceSet[0].Name, "eth4")
 	// No specifc Subnet or VLAN should be set.
-	assert.Equal(t, device.InterfaceSet[0].VLAN.ID,  1) // set in interfaceResponse
-	assert.Len(t, device.InterfaceSet[0].Links, 0)   // set above
+	assert.Equal(t, device.InterfaceSet[0].VLAN.ID, 1) // set in interfaceResponse
+	assert.Len(t, device.InterfaceSet[0].Links, 0)     // set above
 }
 
-func  TestCreateDeviceWithVLANOnly(t *testing.T) {
+func TestCreateDeviceWithVLANOnly(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
@@ -337,7 +337,7 @@ func  TestCreateDeviceWithVLANOnly(t *testing.T) {
 	assert.Equal(t, device.InterfaceSet[0].VLAN.ID, 42)
 }
 
-func  TestCreateDeviceTriesToDeleteDeviceOnError(t *testing.T) {
+func TestCreateDeviceTriesToDeleteDeviceOnError(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	// The createDeviceResponse returns a single interface with the Name "eth0".
 	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, createDeviceResponse)
@@ -358,18 +358,18 @@ func  TestCreateDeviceTriesToDeleteDeviceOnError(t *testing.T) {
 	assert.True(t, util.IsCannotCompleteError(err))
 
 	request := server.LastRequest()
-	assert.Equal(t, request.Method,"DELETE")
+	assert.Equal(t, request.Method, "DELETE")
 	assert.Equal(t, request.RequestURI, "/MAAS/api/2.0/devices/4y3haf/")
 }
 
-func  TestOwnerDataCopies(t *testing.T) {
+func TestOwnerDataCopies(t *testing.T) {
 	machine := Machine{OwnerData: make(map[string]string)}
 	ownerData := machine.OwnerData
 	ownerData["sad"] = "Children"
 	assert.Contains(t, machine.OwnerData, map[string]string{})
 }
 
-func  TestSetOwnerData(t *testing.T) {
+func TestSetOwnerData(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	server.AddPostResponse(machine.ResourceURI+"?op=set_owner_data", 200, machineWithOwnerData(`{"returned": "data"}`))
 	err := machine.SetOwnerData(map[string]string{

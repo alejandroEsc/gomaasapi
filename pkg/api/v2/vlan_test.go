@@ -6,8 +6,8 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestReadVLANsBadSchema(t *testing.T) {
