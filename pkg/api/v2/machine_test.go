@@ -178,7 +178,7 @@ func TestStartMachineUnknown(t *testing.T) {
 func TestDevices(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
-	devices, err := machine.Devices(DevicesArgs{})
+	devices, err := machine.Devices(NodesArgs{})
 	assert.Nil(t, err)
 	assert.Len(t, devices, 1)
 	assert.Equal(t, devices[0].Parent, machine.SystemID)
@@ -190,7 +190,7 @@ func TestDevicesNone(t *testing.T) {
 		"Parent": "other",
 	})
 	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, "["+response+"]")
-	devices, err := machine.Devices(DevicesArgs{})
+	devices, err := machine.Devices(NodesArgs{})
 	assert.Nil(t, err)
 	assert.Len(t, devices, 0)
 }
@@ -843,7 +843,7 @@ const (
 		"ttl": null,
 		"ID": 0
 	},
-	"node_type_name": "DeviceInterface",
+	"node_type_name": "NodeInterface",
 	"address_ttl": null,
 	"Hostname": "furnacelike-brittney",
 	"node_type": 1,

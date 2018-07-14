@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var server *client.SimpleTestServer
 
-var	server *client.SimpleTestServer
 const versionResponse = `{"version": "unknown", "subversion": "", "Capabilities": ["networks-management", "static-ipaddresses", "ipv6-deployment-ubuntu", "devices-management", "storage-deployment-ubuntu", "network-deployment-ubuntu"]}`
 
 type constraintMatchInfo map[string][]int
@@ -235,24 +235,23 @@ func TestBootResources(t *testing.T) {
 	assert.Len(t, resources, 5)
 }
 
-func TestControllerDevices(t *testing.T) {
+func TestControllerNodes(t *testing.T) {
 	server = client.NewSimpleServer()
-	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
+	server.AddGetResponse("/api/2.0/nodes/", http.StatusOK, devicesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
 	server.Start()
 	defer server.Close()
 
-
 	controller := getController(t)
-	devices, err := controller.Devices(DevicesArgs{})
+	devices, err := controller.Nodes(NodesArgs{})
 	assert.Nil(t, err)
 	assert.Len(t, devices, 1)
 }
 
 func TestDevicesArgs(t *testing.T) {
 	server = client.NewSimpleServer()
-	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
+	server.AddGetResponse("/api/2.0/nodes/", http.StatusOK, devicesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
 	server.Start()
@@ -262,7 +261,7 @@ func TestDevicesArgs(t *testing.T) {
 	// This will fail with a 404 due to the test server not having something  at
 	// that address, but we don't care, all we want to do is capture the request
 	// and make sure that all the Values were set.
-	controller.Devices(DevicesArgs{
+	controller.Nodes(NodesArgs{
 		Hostname:     []string{"untasted-markita"},
 		MACAddresses: []string{"something"},
 		SystemIDs:    []string{"something-else"},
@@ -277,15 +276,15 @@ func TestDevicesArgs(t *testing.T) {
 
 func TestCreateControllerDevice(t *testing.T) {
 	server = client.NewSimpleServer()
-	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
+	server.AddGetResponse("/api/2.0/nodes/", http.StatusOK, devicesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
-	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, deviceResponse)
+	server.AddPostResponse("/api/2.0/nodes/?op=", http.StatusOK, deviceResponse)
 	server.Start()
 	defer server.Close()
 
 	controller := getController(t)
-	device, err := controller.CreateDevice(CreateDeviceArgs{
+	device, err := controller.CreateNode(CreateNodeArgs{
 		MACAddresses: []string{"a-mac-address"},
 	})
 	assert.Nil(t, err)
@@ -294,28 +293,28 @@ func TestCreateControllerDevice(t *testing.T) {
 
 func TestCreateDeviceMissingAddress(t *testing.T) {
 	server = client.NewSimpleServer()
-	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
+	server.AddGetResponse("/api/2.0/nodes/", http.StatusOK, devicesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
 	server.Start()
 	defer server.Close()
 
 	controller := getController(t)
-	_, err := controller.CreateDevice(CreateDeviceArgs{})
+	_, err := controller.CreateNode(CreateNodeArgs{})
 	assert.True(t, util.IsBadRequestError(err))
 	assert.Equal(t, err.Error(), "at least one MAC address must be specified")
 }
 
 func TestCreateDeviceBadRequest(t *testing.T) {
 	server = client.NewSimpleServer()
-	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusBadRequest, "some error")
+	server.AddPostResponse("/api/2.0/nodes/?op=", http.StatusBadRequest, "some error")
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
 	server.Start()
 	defer server.Close()
 
 	controller := getController(t)
-	_, err := controller.CreateDevice(CreateDeviceArgs{
+	_, err := controller.CreateNode(CreateNodeArgs{
 		MACAddresses: []string{"a-mac-address"},
 	})
 	assert.True(t, util.IsBadRequestError(err))
@@ -324,7 +323,7 @@ func TestCreateDeviceBadRequest(t *testing.T) {
 
 func TestCreateDeviceArgs(t *testing.T) {
 	server = client.NewSimpleServer()
-	server.AddPostResponse("/api/2.0/devices/?op=", http.StatusOK, deviceResponse)
+	server.AddPostResponse("/api/2.0/nodes/?op=", http.StatusOK, deviceResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
 	server.Start()
@@ -332,13 +331,13 @@ func TestCreateDeviceArgs(t *testing.T) {
 
 	controller := getController(t)
 	// Create an arg structure that sets all the Values.
-	args := CreateDeviceArgs{
+	args := CreateNodeArgs{
 		Hostname:     "foobar",
 		MACAddresses: []string{"an-address"},
 		Domain:       "a domain",
 		Parent:       "Parent",
 	}
-	_, err := controller.CreateDevice(args)
+	_, err := controller.CreateNode(args)
 	assert.Nil(t, err)
 
 	request := server.LastRequest()
@@ -418,7 +417,7 @@ func TestMachines(t *testing.T) {
 
 func TestMachinesFilter(t *testing.T) {
 	hostName := "untasted-markita"
-	response := "["+machineResponse+"]"
+	response := "[" + machineResponse + "]"
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/machines/?Hostname="+hostName, http.StatusOK, response)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -766,7 +765,7 @@ func TestAllocateMachineStorageLogicalMatches(t *testing.T) {
 	assert.Nil(t, err)
 	var virtualDeviceID = 23
 
-	//matches storage must contain the "raid0" virtual block device
+	//matches storage must contain the "raid0" virtual block node
 	assert.EqualValues(t, matches.Storage["0"][0], *machine.BlockDevice(virtualDeviceID))
 }
 

@@ -6,7 +6,6 @@ package maasapiv2
 import (
 	"encoding/json"
 
-	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -50,19 +49,4 @@ func TestParse2_Defaults(t *testing.T) {
 	assert.Equal(t, fs.MountPoint, "")
 	assert.Equal(t, fs.Label, "")
 	assert.Equal(t, fs.UUID, "fake-UUID")
-}
-
-func TestParse2_0BadSchema(t *testing.T) {
-	source := map[string]interface{}{
-		"mount_point": "/",
-		"Label":       "root",
-		"UUID":        "fake-UUID",
-	}
-	j, err := json.Marshal(source)
-	assert.Nil(t, err)
-
-	var fs filesystem
-	err = json.Unmarshal(j, &fs)
-
-	assert.True(t, util.IsDeserializationError(err))
 }

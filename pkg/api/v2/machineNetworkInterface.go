@@ -16,19 +16,19 @@ import (
 
 // MachineNetworkInterface represents a physical or virtual network interface on a MachineInterface.
 type MachineNetworkInterface struct {
-	Controller   *controller
-	ResourceURI  string   `json:"resource_uri,omitempty"`
-	ID           int      `json:"ID,omitempty"`
-	Name         string   `json:"Name,omitempty"`
-	Type         string   `json:"type,omitempty"`
-	Enabled      bool     `json:"Enabled,omitempty"`
-	Tags         []string `json:"Tags,omitempty"`
-	VLAN         *vlan    `json:"VLAN,omitempty"`
-	Links        []*link  `json:"Links,omitempty"`
-	MACAddress   string   `json:"mac_address,omitempty"`
-	EffectiveMTU int      `json:"effective_mtu,omitempty"`
-	Parents      []string `json:"Parents,omitempty"`
-	Children     []string `json:"Children,omitempty"`
+	Controller   *controller `json:"-"`
+	ResourceURI  string      `json:"resource_uri,omitempty"`
+	ID           int         `json:"ID,omitempty"`
+	Name         string      `json:"Name,omitempty"`
+	Type         string      `json:"type,omitempty"`
+	Enabled      bool        `json:"Enabled,omitempty"`
+	Tags         []string    `json:"Tags,omitempty"`
+	VLAN         *vlan       `json:"VLAN,omitempty"`
+	Links        []*link     `json:"Links,omitempty"`
+	MACAddress   string      `json:"mac_address,omitempty"`
+	EffectiveMTU int         `json:"effective_mtu,omitempty"`
+	Parents      []string    `json:"Parents,omitempty"`
+	Children     []string    `json:"Children,omitempty"`
 }
 
 func (i *MachineNetworkInterface) updateFrom(other *MachineNetworkInterface) {
@@ -142,7 +142,7 @@ type LinkSubnetArgs struct {
 	// Subnet will be auto selected.
 	IPAddress string
 	// DefaultGateway will set the gateway IP address for the Subnet as the
-	// default gateway for the Machine or device the interface belongs to.
+	// default gateway for the Machine or node the interface belongs to.
 	// Option can only be used with Mode LinkModeStatic.
 	DefaultGateway bool
 }

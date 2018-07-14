@@ -1,6 +1,3 @@
-test: ##run tests.
-	go test ./pkg/api/v2
-
 clean: ## clean build output
 	rm -rf bin/*
 
@@ -27,9 +24,9 @@ ifndef GOLINT_CMD
 endif
 
 test: ## run go test (must be maintained)
-	go test ./pkg/api/client
-	go test ./pkg/api/util
-	go test ./pkg/api/v2
+	go test -v ./pkg/api/client
+	go test -v ./pkg/api/util
+	go test -v ./pkg/api/v2
 
 .PHONY: help
 help:  ## Show help messages for make targets

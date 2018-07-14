@@ -6,7 +6,6 @@ package maasapiv2
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -21,6 +20,7 @@ import (
 	"github.com/juju/schema"
 	"github.com/juju/utils/set"
 	"github.com/juju/version"
+	"io"
 )
 
 var (
@@ -141,7 +141,7 @@ type controller struct {
 
 // BootResources implements ControllerInterface.
 func (c *controller) BootResources() ([]*bootResource, error) {
-	source, err := c.get("boot-resources")
+	source, err := c.get("boot-resources", "", nil)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
@@ -157,7 +157,7 @@ func (c *controller) BootResources() ([]*bootResource, error) {
 
 // Fabrics returns the list of Fabrics defined in the MAAS ControllerInterface.
 func (c *controller) Fabrics() ([]fabric, error) {
-	source, err := c.get("fabrics")
+	source, err := c.get("fabrics", "", nil)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
@@ -173,7 +173,7 @@ func (c *controller) Fabrics() ([]fabric, error) {
 
 // Spaces returns the list of Spaces defined in the MAAS ControllerInterface.
 func (c *controller) Spaces() ([]space, error) {
-	source, err := c.get("spaces")
+	source, err := c.get("spaces", "", nil)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
@@ -189,7 +189,7 @@ func (c *controller) Spaces() ([]space, error) {
 
 // StaticRoutes returns the list of StaticRoutes defined in the MAAS ControllerInterface.
 func (c *controller) StaticRoutes() ([]staticRoute, error) {
-	source, err := c.get("static-routes")
+	source, err := c.get("static-routes", "", nil)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
@@ -204,7 +204,7 @@ func (c *controller) StaticRoutes() ([]staticRoute, error) {
 
 // Zones lists all the zones known to the MAAS ControllerInterface.
 func (c *controller) Zones() ([]zone, error) {
-	source, err := c.get("zones")
+	source, err := c.get("zones", "", nil)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
@@ -216,32 +216,15 @@ func (c *controller) Zones() ([]zone, error) {
 	return zones, nil
 }
 
-// DevicesArgs is a argument struct for selecting Devices.
-// Only devices that match the specified criteria are returned.
-type DevicesArgs struct {
-	Hostname     []string
-	MACAddresses []string
-	SystemIDs    []string
-	Domain       string
-	Zone         string
-	AgentName    string
-}
-
-// Devices returns a list of devices that match the params.
-func (c *controller) Devices(args DevicesArgs) ([]device, error) {
-	params := util.NewURLParams()
-	params.MaybeAddMany("Hostname", args.Hostname)
-	params.MaybeAddMany("mac_address", args.MACAddresses)
-	params.MaybeAddMany("ID", args.SystemIDs)
-	params.MaybeAdd("domain", args.Domain)
-	params.MaybeAdd("Zone", args.Zone)
-	params.MaybeAdd("agent_name", args.AgentName)
-	source, err := c.getQuery("devices", params.Values)
+// Nodes returns a list of devices that match the params.
+func (c *controller) Nodes(args NodesArgs) ([]node, error) {
+	params := nodesParams(args)
+	source, err := c.get("nodes", "", params.Values)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
 
-	var devices []device
+	var devices []node
 	err = json.Unmarshal(source, &devices)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -252,26 +235,14 @@ func (c *controller) Devices(args DevicesArgs) ([]device, error) {
 	return devices, nil
 }
 
-// CreateDeviceArgs is a argument struct for passing information into CreateDevice.
-type CreateDeviceArgs struct {
-	Hostname     string
-	MACAddresses []string
-	Domain       string
-	Parent       string
-}
-
-// CreateDevice creates and returns a new DeviceInterface.
-func (c *controller) CreateDevice(args CreateDeviceArgs) (*device, error) {
+// CreateNode creates and returns a new NodeInterface.
+func (c *controller) CreateNode(args CreateNodeArgs) (*node, error) {
 	// There must be at least one mac address.
 	if len(args.MACAddresses) == 0 {
 		return nil, util.NewBadRequestError("at least one MAC address must be specified")
 	}
-	params := util.NewURLParams()
-	params.MaybeAdd("Hostname", args.Hostname)
-	params.MaybeAdd("domain", args.Domain)
-	params.MaybeAddMany("mac_addresses", args.MACAddresses)
-	params.MaybeAdd("Parent", args.Parent)
-	result, err := c.post("devices", "", params.Values)
+	params := createNodesParams(args)
+	result, err := c.post("nodes", "", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			if svrErr.StatusCode == http.StatusBadRequest {
@@ -282,7 +253,7 @@ func (c *controller) CreateDevice(args CreateDeviceArgs) (*device, error) {
 		return nil, util.NewUnexpectedError(err)
 	}
 
-	var d device
+	var d node
 	err = json.Unmarshal(result, &d)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -291,30 +262,12 @@ func (c *controller) CreateDevice(args CreateDeviceArgs) (*device, error) {
 	return &d, nil
 }
 
-// MachinesArgs is a argument struct for selecting Machines.
-// Only machines that match the specified criteria are returned.
-type MachinesArgs struct {
-	Hostnames    []string
-	MACAddresses []string
-	SystemIDs    []string
-	Domain       string
-	Zone         string
-	AgentName    string
-	OwnerData    map[string]string
-}
-
 // Machines returns a list of machines that match the params.
 func (c *controller) Machines(args MachinesArgs) ([]Machine, error) {
-	params := util.NewURLParams()
-	params.MaybeAddMany("Hostname", args.Hostnames)
-	params.MaybeAddMany("mac_address", args.MACAddresses)
-	params.MaybeAddMany("ID", args.SystemIDs)
-	params.MaybeAdd("domain", args.Domain)
-	params.MaybeAdd("Zone", args.Zone)
-	params.MaybeAdd("agent_name", args.AgentName)
+	params := machinesParams(args)
 	// At the moment the MAAS API doesn't support filtering by Owner
 	// data so we do that ourselves below.
-	source, err := c.getQuery("machines", params.Values)
+	source, err := c.get("machines", "", params.Values)
 	if err != nil {
 		//return nil, util.NewUnexpectedError(err)
 		return nil, err
@@ -421,89 +374,6 @@ func (a *InterfaceSpec) String() string {
 	return fmt.Sprintf("%s:space=%s", a.Label, a.Space)
 }
 
-// AllocateMachineArgs is an argument struct for passing args into MachineInterface.Allocate.
-type AllocateMachineArgs struct {
-	Hostname     string
-	SystemId     string
-	Architecture string
-	MinCPUCount  int
-	// MinMemory represented in MB.
-	MinMemory int
-	Tags      []string
-	NotTags   []string
-	Zone      string
-	NotInZone []string
-	// Storage represents the required disks on the MachineInterface. If any are specified
-	// the first value is used for the root disk.
-	Storage []StorageSpec
-	// Interfaces represents a number of required interfaces on the MachineInterface.
-	// Each InterfaceSpec relates to an individual network interface.
-	Interfaces []InterfaceSpec
-	// NotSpace is a MachineInterface level constraint, and applies to the entire MachineInterface
-	// rather than specific interfaces.
-	NotSpace  []string
-	AgentName string
-	Comment   string
-	DryRun    bool
-}
-
-// Validate makes sure that any labels specifed in Storage or Interfaces
-// are unique, and that the required specifications are valid.
-func (a *AllocateMachineArgs) Validate() error {
-	storageLabels := set.NewStrings()
-	for _, spec := range a.Storage {
-		if err := spec.Validate(); err != nil {
-			return errors.Annotate(err, "Storage")
-		}
-		if spec.Label != "" {
-			if storageLabels.Contains(spec.Label) {
-				return errors.NotValidf("reusing storage Label %q", spec.Label)
-			}
-			storageLabels.Add(spec.Label)
-		}
-	}
-	interfaceLabels := set.NewStrings()
-	for _, spec := range a.Interfaces {
-		if err := spec.Validate(); err != nil {
-			return errors.Annotate(err, "Interfaces")
-		}
-		if interfaceLabels.Contains(spec.Label) {
-			return errors.NotValidf("reusing interface Label %q", spec.Label)
-		}
-		interfaceLabels.Add(spec.Label)
-	}
-	for _, v := range a.NotSpace {
-		if v == "" {
-			return errors.NotValidf("empty NotSpace constraint")
-		}
-	}
-	return nil
-}
-
-func (a *AllocateMachineArgs) storage() string {
-	var values []string
-	for _, spec := range a.Storage {
-		values = append(values, spec.String())
-	}
-	return strings.Join(values, ",")
-}
-
-func (a *AllocateMachineArgs) interfaces() string {
-	var values []string
-	for _, spec := range a.Interfaces {
-		values = append(values, spec.String())
-	}
-	return strings.Join(values, ";")
-}
-
-func (a *AllocateMachineArgs) notSubnets() []string {
-	var values []string
-	for _, v := range a.NotSpace {
-		values = append(values, "space:"+v)
-	}
-	return values
-}
-
 // ConstraintMatches provides a way for the caller of AllocateMachine to determine
 //.how the allocated MachineInterface matched the storage and interfaces constraints specified.
 // The labels that were used in the constraints are the keys in the maps.
@@ -523,22 +393,7 @@ type ConstraintMatches struct {
 // constraints cannot be met.
 func (c *controller) AllocateMachine(args AllocateMachineArgs) (*Machine, ConstraintMatches, error) {
 	var matches ConstraintMatches
-	params := util.NewURLParams()
-	params.MaybeAdd("Name", args.Hostname)
-	params.MaybeAdd("system_id", args.SystemId)
-	params.MaybeAdd("arch", args.Architecture)
-	params.MaybeAddInt("cpu_count", args.MinCPUCount)
-	params.MaybeAddInt("mem", args.MinMemory)
-	params.MaybeAddMany("Tags", args.Tags)
-	params.MaybeAddMany("not_tags", args.NotTags)
-	params.MaybeAdd("storage", args.storage())
-	params.MaybeAdd("interfaces", args.interfaces())
-	params.MaybeAddMany("not_subnets", args.notSubnets())
-	params.MaybeAdd("Zone", args.Zone)
-	params.MaybeAddMany("not_in_zone", args.NotInZone)
-	params.MaybeAdd("agent_name", args.AgentName)
-	params.MaybeAdd("comment", args.Comment)
-	params.MaybeAddBool("dry_run", args.DryRun)
+	params := allocateMachinesParams(args)
 	result, err := c.post("machines", "allocate", params.Values)
 	if err != nil {
 		// A 409 Status code is "No Matching Machines"
@@ -573,13 +428,6 @@ func (c *controller) AllocateMachine(args AllocateMachineArgs) (*Machine, Constr
 	return machine, matches, nil
 }
 
-// ReleaseMachinesArgs is an argument struct for passing the MachineInterface system IDs
-// and an optional comment into the ReleaseMachines method.
-type ReleaseMachinesArgs struct {
-	SystemIDs []string
-	Comment   string
-}
-
 // ReleaseMachines will stop the specified machines, and release them
 // from the user making them available to be allocated again.
 // Release multiple machines at once. Returns
@@ -587,9 +435,7 @@ type ReleaseMachinesArgs struct {
 //  - PermissionError if the user does not have permission to release any of the machines
 //  - CannotCompleteError if any of the machines could not be released due to their current state
 func (c *controller) ReleaseMachines(args ReleaseMachinesArgs) error {
-	params := util.NewURLParams()
-	params.MaybeAddMany("machines", args.SystemIDs)
-	params.MaybeAdd("comment", args.Comment)
+	params := releaseMachinesParams(args)
 	_, err := c.post("machines", "release", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
@@ -612,7 +458,7 @@ func (c *controller) ReleaseMachines(args ReleaseMachinesArgs) error {
 func (c *controller) Files(prefix string) ([]File, error) {
 	params := util.NewURLParams()
 	params.MaybeAdd("prefix", prefix)
-	source, err := c.getQuery("files", params.Values)
+	source, err := c.get("files", "", params.Values)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
@@ -621,6 +467,10 @@ func (c *controller) Files(prefix string) ([]File, error) {
 	err = json.Unmarshal(source, &files)
 	if err != nil {
 		return nil, err
+	}
+
+	if c == nil {
+		return nil, fmt.Errorf("controller is nil, why?")
 	}
 
 	for _, f := range files {
@@ -635,7 +485,7 @@ func (c *controller) GetFile(filename string) (*File, error) {
 	if filename == "" {
 		return nil, errors.NotValidf("missing Filename")
 	}
-	source, err := c.get("files/" + filename)
+	source, err := c.get("files/"+filename, "", nil)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			if svrErr.StatusCode == http.StatusNotFound {
@@ -651,15 +501,6 @@ func (c *controller) GetFile(filename string) (*File, error) {
 	}
 	file.Controller = c
 	return &file, nil
-}
-
-// AddFileArgs is a argument struct for passing information into AddFile.
-// One of Content or (Reader, Length) must be specified.
-type AddFileArgs struct {
-	Filename string
-	Content  []byte
-	Reader   io.Reader
-	Length   int64
 }
 
 // Validate checks to make sure the Filename has no slashes, and that one of
@@ -720,7 +561,7 @@ func (c *controller) AddFile(args AddFileArgs) error {
 }
 
 func (c *controller) checkCreds() error {
-	if _, err := c.getOp("users", "whoami"); err != nil {
+	if _, err := c.get("users", "whoami", nil); err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			if svrErr.StatusCode == http.StatusUnauthorized {
 				return errors.Wrap(err, util.NewPermissionError(svrErr.BodyMessage))
@@ -745,7 +586,7 @@ func (c *controller) put(path string, params url.Values) ([]byte, error) {
 }
 
 func (c *controller) post(path, op string, params url.Values) ([]byte, error) {
-	bytes, err := c._postRaw(path, op, params, nil)
+	bytes, err := c.postRaw(path, op, params, nil)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -755,11 +596,12 @@ func (c *controller) post(path, op string, params url.Values) ([]byte, error) {
 func (c *controller) postFile(path, op string, params url.Values, fileContent []byte) ([]byte, error) {
 	// Only one File is ever sent at a time.
 	files := map[string][]byte{"File": fileContent}
-	return c._postRaw(path, op, params, files)
+	return c.postRaw(path, op, params, files)
 }
 
-func (c *controller) _postRaw(path, op string, params url.Values, files map[string][]byte) ([]byte, error) {
+func (c *controller) postRaw(path, op string, params url.Values, files map[string][]byte) ([]byte, error) {
 	path = util.EnsureTrailingSlash(path)
+	url := &url.URL{Path: path}
 	requestID := nextRequestID()
 	if logger.IsTraceEnabled() {
 		opArg := ""
@@ -768,11 +610,12 @@ func (c *controller) _postRaw(path, op string, params url.Values, files map[stri
 		}
 		logger.Tracef("request %x: POST %s%s%s, params=%s", requestID, c.Client.APIURL, path, opArg, params.Encode())
 	}
-	bytes, err := c.Client.Post(&url.URL{Path: path}, op, params, files)
+	bytes, err := c.Client.Post(url, op, params, files)
 	if err != nil {
 		logger.Tracef("response %x: error: %q", requestID, err.Error())
 		logger.Tracef("error detail: %#v", err)
-		return nil, errors.Trace(err)
+		//return nil, errors.Trace(err)
+		return nil, err
 	}
 	logger.Tracef("response %x: %s", requestID, string(bytes))
 	return bytes, nil
@@ -780,9 +623,10 @@ func (c *controller) _postRaw(path, op string, params url.Values, files map[stri
 
 func (c *controller) delete(path string) error {
 	path = util.EnsureTrailingSlash(path)
+	url := &url.URL{Path: path}
 	requestID := nextRequestID()
 	logger.Tracef("request %x: DELETE %s%s", requestID, c.Client.APIURL, path)
-	err := c.Client.Delete(&url.URL{Path: path})
+	err := c.Client.Delete(url)
 	if err != nil {
 		logger.Tracef("response %x: error: %q", requestID, err.Error())
 		logger.Tracef("error detail: %#v", err)
@@ -792,29 +636,7 @@ func (c *controller) delete(path string) error {
 	return nil
 }
 
-func (c *controller) getQuery(path string, params url.Values) ([]byte, error) {
-	return c._get(path, "", params)
-}
-
-func (c *controller) get(path string) ([]byte, error) {
-	return c._get(path, "", nil)
-}
-
-func (c *controller) getOp(path, op string) ([]byte, error) {
-	return c._get(path, op, nil)
-}
-
-func (c *controller) _get(path, op string, params url.Values) ([]byte, error) {
-	bytes, err := c._getRaw(path, op, params)
-	if err != nil {
-		//return nil, errors.Trace(err)
-		return nil, err
-	}
-
-	return bytes, nil
-}
-
-func (c *controller) _getRaw(path, op string, params url.Values) ([]byte, error) {
+func (c *controller) get(path, op string, params url.Values) ([]byte, error) {
 	path = util.EnsureTrailingSlash(path)
 	url := &url.URL{Path: path}
 	requestID := nextRequestID()
@@ -826,7 +648,17 @@ func (c *controller) _getRaw(path, op string, params url.Values) ([]byte, error)
 		logger.Tracef("request %x: GET %s%s%s", requestID, c.Client.APIURL, path, query)
 	}
 
-	bytes, err := c.Client.Get(url, op, params)
+	if c == nil {
+		//return nil, errors.Trace(fmt.Errorf("control has a nil client"))
+		return nil, fmt.Errorf("control has a nil client")
+	}
+
+	cl := c.Client
+	//if cl == nil {
+	//	return nil, errors.Trace(fmt.Errorf("control has a nil client"))
+	//}
+
+	bytes, err := cl.Get(url, op, params)
 	if err != nil {
 		logger.Tracef("response %x: error: %q", requestID, err.Error())
 		logger.Tracef("error detail: %#v", err)
@@ -861,7 +693,7 @@ func indicatesUnsupportedVersion(err error) bool {
 
 func (c *controller) readAPIVersionInfo() (set.Strings, error) {
 	var parsed map[string]interface{}
-	parsedBytes, err := c.get("version")
+	parsedBytes, err := c.get("version", "", nil)
 	if indicatesUnsupportedVersion(err) {
 		return nil, util.WrapWithUnsupportedVersionError(err)
 	} else if err != nil {
@@ -943,7 +775,7 @@ func parseAllocateConstraintsResponse(source interface{}, machine *Machine) (Con
 			for index, id := range ids {
 				blockDevice := machine.BlockDevice(id)
 				if blockDevice == nil {
-					return empty, util.NewDeserializationError("constraint match storage %q: %d does not match a block device for the MachineInterface", label, id)
+					return empty, util.NewDeserializationError("constraint match storage %q: %d does not match a block node for the MachineInterface", label, id)
 				}
 				blockDevices[index] = *blockDevice
 			}

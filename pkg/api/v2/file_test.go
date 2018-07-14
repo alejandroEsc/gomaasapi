@@ -33,6 +33,8 @@ func TestReadAllFromGetFile(t *testing.T) {
 	// base64 encoded, so ReadAll just decodes it.
 	server, controller := createTestServerController(t)
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
+	defer server.Close()
+
 	file, err := controller.GetFile("testing")
 	assert.Nil(t, err)
 	content, err := file.ReadAll()
@@ -44,20 +46,25 @@ func TestReadAllFromFiles(t *testing.T) {
 	// When get File is used, the response includes the body of the File
 	// base64 encoded, so ReadAll just decodes it.
 	server, controller := createTestServerController(t)
+	defer server.Close()
 	server.AddGetResponse("/api/2.0/files/", http.StatusOK, filesResponse)
 	server.AddGetResponse("/api/2.0/files/?Filename=test&op=get", http.StatusOK, "some Content\n")
+
 	files, err := controller.Files("")
 	assert.Nil(t, err)
 	file := files[0]
 	content, err := file.ReadAll()
 	assert.Nil(t, err)
-	assert.Equal(t, string(content), "some Content\n")
+	assert.Equal(t, "some Content\n"+string(content), string(content))
 }
 
 func TestDeleteMissing(t *testing.T) {
 	// If we get a File, but someone else deletes it first, we get a ...
 	server, controller := createTestServerController(t)
+	defer server.Close()
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
+	server.AddDeleteResponse("/api/2.0/files/testing/", http.StatusNotFound, "")
+
 	file, err := controller.GetFile("testing")
 	assert.Nil(t, err)
 	err = file.Delete()
@@ -67,8 +74,10 @@ func TestDeleteMissing(t *testing.T) {
 func TestDelete(t *testing.T) {
 	// If we get a File, but someone else deletes it first, we get a ...
 	server, controller := createTestServerController(t)
+	defer server.Close()
 	server.AddGetResponse("/api/2.0/files/testing/", http.StatusOK, fileResponse)
 	server.AddDeleteResponse("/api/2.0/files/testing/", http.StatusOK, "")
+
 	file, err := controller.GetFile("testing")
 	assert.Nil(t, err)
 	err = file.Delete()

@@ -16,13 +16,13 @@ import (
 )
 
 func TestReadDevicesBadSchema(t *testing.T) {
-	var d device
+	var d node
 	err = json.Unmarshal([]byte("wat?"), &d)
 	assert.Error(t, err)
 }
 
 func TestReadDevices(t *testing.T) {
-	var devices []device
+	var devices []node
 	err = json.Unmarshal([]byte(devicesResponse), &devices)
 	assert.Nil(t, err)
 
@@ -38,14 +38,14 @@ func TestReadDevices(t *testing.T) {
 	assert.Equal(t, zone.Name, "default")
 }
 
-func TestInterfaceSet(t *testing.T) {
+func TestDeviceInterfaceSet(t *testing.T) {
 	server, device := getServerAndDevice(t)
 	server.AddGetResponse(device.interfacesURI(), http.StatusOK, interfacesResponse)
 	ifaces := device.InterfaceSet
 	assert.Len(t, ifaces, 2)
 }
 
-func TestCreateInterfaceArgsValidate(t *testing.T) {
+func TestDeviceCreateInterfaceArgsValidate(t *testing.T) {
 	for _, test := range []struct {
 		args    CreateInterfaceArgs
 		errText string
@@ -70,22 +70,25 @@ func TestCreateInterfaceArgsValidate(t *testing.T) {
 	}
 }
 
-func TestCreateInterfaceValidates(t *testing.T) {
+func TestDeviceCreateInterfaceValidates(t *testing.T) {
 	_, device := getServerAndDevice(t)
 	_, err := device.CreateInterface(CreateInterfaceArgs{})
 	assert.True(t, errors.IsNotValid(err))
 }
 
-func TestCreateInterface(t *testing.T) {
+func TestDeviceCreateInterface(t *testing.T) {
 	server, device := getServerAndDevice(t)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusOK, interfaceResponse)
+	defer server.Close()
 
-	iface, err := device.CreateInterface(CreateInterfaceArgs{
+	args := CreateInterfaceArgs{
 		Name:       "eth43",
 		MACAddress: "some-mac-address",
 		VLAN:       &vlan{ID: 33},
 		Tags:       []string{"foo", "bar"},
-	})
+	}
+
+	iface, err := device.CreateInterface(args)
 	assert.Nil(t, err)
 	assert.NotNil(t, iface)
 
@@ -105,28 +108,28 @@ func minimalCreateInterfaceArgs() CreateInterfaceArgs {
 	}
 }
 
-func TestCreateInterfaceNotFound(t *testing.T) {
+func TestDeviceCreateInterfaceNotFound(t *testing.T) {
 	server, device := getServerAndDevice(t)
-	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusNotFound, "can't find device")
+	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusNotFound, "can't find node")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsBadRequestError(err))
-	assert.Equal(t, err.Error(), "can't find device")
+	assert.Equal(t, err.Error(), "can't find node")
 }
 
 func TestCreateInterfaceConflict(t *testing.T) {
 	server, device := getServerAndDevice(t)
-	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusConflict, "device not allocated")
+	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusConflict, "node not allocated")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsBadRequestError(err))
-	assert.Equal(t, err.Error(), "device not allocated")
+	assert.Equal(t, err.Error(), "node not allocated")
 }
 
 func TestCreateInterfaceForbidden(t *testing.T) {
 	server, device := getServerAndDevice(t)
-	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusForbidden, "device not yours")
+	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusForbidden, "node not yours")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsPermissionError(err))
-	assert.Equal(t, err.Error(), "device not yours")
+	assert.Equal(t, err.Error(), "node not yours")
 }
 
 func TestCreateInterfaceServiceUnavailable(t *testing.T) {
@@ -143,16 +146,6 @@ func TestDeviceCreateInterfaceUnknown(t *testing.T) {
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsUnexpectedError(err))
 	assert.Equal(t, err.Error(), "unexpected: ServerError: 405 Method Not Allowed (wat?)")
-}
-
-func getServerAndDevice(t *testing.T) (*client.SimpleTestServer, *device) {
-	server, controller := createTestServerController(t)
-	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
-
-	devices, err := controller.Devices(DevicesArgs{})
-	assert.Nil(t, err)
-	assert.Len(t, devices, 1)
-	return server, &devices[0]
 }
 
 func TestDeviceDelete(t *testing.T) {
@@ -184,6 +177,16 @@ func TestDeviceDeleteUnknown(t *testing.T) {
 	assert.True(t, util.IsUnexpectedError(err))
 }
 
+func getServerAndDevice(t *testing.T) (*client.SimpleTestServer, *node) {
+	server, controller := createTestServerController(t)
+	server.AddGetResponse("/api/2.0/nodes/", http.StatusOK, devicesResponse)
+
+	devices, err := controller.Nodes(NodesArgs{})
+	assert.Nil(t, err)
+	assert.Len(t, devices, 1)
+	return server, &devices[0]
+}
+
 const (
 	deviceResponse = `
     {
@@ -200,11 +203,11 @@ const (
             "ttl": null,
             "ID": 0
         },
-        "node_type_name": "DeviceInterface",
+        "node_type_name": "NodeInterface",
         "address_ttl": null,
         "Hostname": "furnacelike-brittney",
         "node_type": 1,
-        "resource_uri": "/MAAS/api/2.0/devices/4y3haf/",
+        "resource_uri": "/MAAS/api/2.0/nodes/4y3haf/",
         "ip_addresses": ["192.168.100.11"],
         "Owner": "thumper",
         "tag_names": [],

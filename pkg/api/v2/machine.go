@@ -17,7 +17,7 @@ import (
 
 // MachineInterface represents a physical MachineInterface.
 type Machine struct {
-	Controller *controller
+	Controller *controller `json:"-"`
 
 	ResourceURI string   `json:"resource_uri,omitempty"`
 	SystemID    string   `json:"system_id,omitempty"`
@@ -44,7 +44,7 @@ type Machine struct {
 	Zone         *zone                      `json:"Zone,omitempty"`
 	// Don't really know the difference between these two lists:
 
-	// PhysicalBlockDevice returns the physical block device for the MachineInterface
+	// PhysicalBlockDevice returns the physical block node for the MachineInterface
 	// that matches the ID specified. If there is no match, nil is returned.
 	PhysicalBlockDevices []*BlockDevice `json:"physicalblockdevice_set,omitempty"`
 	// BlockDevices returns all the physical and virtual block devices on the MachineInterface.
@@ -70,7 +70,7 @@ func (m *Machine) updateFrom(other *Machine) {
 	m.OwnerData = other.OwnerData
 }
 
-// CreatemachineDeviceArgs is an argument structure for Machine.CreateDevice.
+// CreatemachineDeviceArgs is an argument structure for Machine.CreateNode.
 // Only InterfaceName and MACAddress fields are required, the others are only
 // used if set. If Subnet and VLAN are both set, Subnet.VLAN() must match the
 // given VLAN. On failure, returns an error satisfying errors.IsNotValid().
@@ -113,15 +113,15 @@ func (m *Machine) BlockDevice(id int) *BlockDevice {
 	return nil
 }
 
-// Devices implements Machine.
-func (m *Machine) Devices(args DevicesArgs) ([]device, error) {
+// Nodes implements Machine.
+func (m *Machine) Devices(args NodesArgs) ([]node, error) {
 	// Perhaps in the future, MAAS will give us a way to query just for the
 	// devices for a particular Parent.
-	devices, err := m.Controller.Devices(args)
+	devices, err := m.Controller.Nodes(args)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []device
+	var result []node
 	for _, d := range devices {
 		if d.Parent == m.SystemID {
 			result = append(result, d)
@@ -193,12 +193,12 @@ func (a *CreateMachineDeviceArgs) Validate() error {
 	return nil
 }
 
-// CreateDevice implements Machine
-func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*device, error) {
+// CreateNode implements Machine
+func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*node, error) {
 	if err := args.Validate(); err != nil {
 		return nil, errors.Trace(err)
 	}
-	d, err := m.Controller.CreateDevice(CreateDeviceArgs{
+	d, err := m.Controller.CreateNode(CreateNodeArgs{
 		Hostname:     args.Hostname,
 		MACAddresses: []string{args.MACAddress},
 		Parent:       m.SystemID,
@@ -208,10 +208,10 @@ func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*device, error) {
 	}
 
 	defer func(err *error) {
-		// If there is an error return, at least try to delete the device we just created.
+		// If there is an error return, at least try to delete the node we just created.
 		if *err != nil {
 			if innerErr := d.Delete(); innerErr != nil {
-				logger.Warningf("could not delete device %q", d.SystemID)
+				logger.Warningf("could not delete node %q", d.SystemID)
 			}
 		}
 	}(&err)
@@ -226,7 +226,7 @@ func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*device, error) {
 	// only specified one, there should just be one response.
 	interfaces := d.InterfaceSet
 	if count := len(interfaces); count != 1 {
-		err := errors.Errorf("unexpected interface count for device: %d", count)
+		err := errors.Errorf("unexpected interface count for node: %d", count)
 		return nil, util.NewUnexpectedError(err)
 	}
 	iface := interfaces[0]
@@ -257,7 +257,7 @@ func (m *Machine) updateDeviceInterface(iface MachineNetworkInterface, nameToUse
 	}
 
 	if err := iface.Update(updateArgs); err != nil {
-		return errors.Annotatef(err, "updating device interface %q failed", iface.Name)
+		return errors.Annotatef(err, "updating node interface %q failed", iface.Name)
 	}
 
 	return nil
@@ -270,7 +270,7 @@ func (m *Machine) linkDeviceInterfaceToSubnet(iface MachineNetworkInterface, sub
 	})
 	if err != nil {
 		return errors.Annotatef(
-			err, "linking device interface %q to Subnet %q failed",
+			err, "linking node interface %q to Subnet %q failed",
 			iface.Name, subnetToUse.CIDR)
 	}
 
@@ -305,24 +305,24 @@ func (m *Machine) SetOwnerData(ownerData map[string]string) error {
 type MachineInterface interface {
 	OwnerDataHolderInterface
 
-	// Devices returns a list of devices that match the params and have
+	// Nodes returns a list of devices that match the params and have
 	// this MachineInterface as the Parent.
-	Devices(DevicesArgs) ([]DeviceInterface, error)
+	Devices(NodesArgs) ([]NodeInterface, error)
 
 	InterfaceSet() []*MachineNetworkInterface
 	// MachineNetworkInterface returns the interface for the MachineInterface that matches the ID
 	// specified. If there is no match, nil is returned.
 	Interface(id int) *MachineNetworkInterface
-	// BlockDevice returns the block device for the MachineInterface that matches the
+	// BlockDevice returns the block node for the MachineInterface that matches the
 	// ID specified. If there is no match, nil is returned.
 	BlockDevice(id int) BlockDevice
 
 	// Start the MachineInterface and install the operating system specified in the args.
 	Start(StartArgs) error
 
-	// CreateDevice creates a new DeviceInterface with this MachineInterface as the Parent.
-	// The device will have one interface that is linked to the specified Subnet.
-	CreateDevice(CreateMachineDeviceArgs) (DeviceInterface, error)
+	// CreateNode creates a new NodeInterface with this MachineInterface as the Parent.
+	// The node will have one interface that is linked to the specified Subnet.
+	CreateDevice(CreateMachineDeviceArgs) (NodeInterface, error)
 }
 
 // OwnerDataHolderInterface represents any MAAS object that can store key/value

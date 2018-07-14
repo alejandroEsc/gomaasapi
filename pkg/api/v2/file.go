@@ -8,19 +8,20 @@ import (
 	"net/http"
 	"net/url"
 
+	"encoding/json"
+	"fmt"
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
-	"encoding/json"
 	"strings"
 )
 
 type File struct {
-	Controller  *controller
-	ResourceURI string `json:"resource_uri,string,omitempty"`
+	Controller  *controller `json:"-"`
+	ResourceURI string      `json:"resource_uri,string,omitempty"`
 	// Filename is the Name of the File. No Path, just the Filename.
 	Filename string `json:"Filename,string,omitempty"`
-	// AnonymousURI is a URL that can be used to retrieve the conents of the
+	// AnonymousURI is a URL that can be used to retrieve the contents of the
 	// File without credentials.
 	AnonymousURI *url.URL `json:"anon_resource_uri,string,omitempty"`
 	Content      string   `json:"Content,string,omitempty"`
@@ -50,7 +51,8 @@ func (f *File) ReadAll() ([]byte, error) {
 	}
 	bytes, err := base64.StdEncoding.DecodeString(f.Content)
 	if err != nil {
-		return nil, util.NewUnexpectedError(err)
+		//return nil, util.NewUnexpectedError(fmt.Errorf("content is %s.",f.Content))
+		return nil, fmt.Errorf("err: %s, content is %s.", err.Error(), f.Content)
 	}
 	return bytes, nil
 }
@@ -59,7 +61,7 @@ func (f *File) readFromServer() ([]byte, error) {
 	// If the Content is available, it is base64 encoded, so
 	args := make(url.Values)
 	args.Add("Filename", f.Filename)
-	bytes, err := f.Controller._getRaw("files", "get", args)
+	bytes, err := f.Controller.get("files", "get", args)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {
@@ -69,7 +71,8 @@ func (f *File) readFromServer() ([]byte, error) {
 				return nil, errors.Wrap(err, util.NewPermissionError(svrErr.BodyMessage))
 			}
 		}
-		return nil, util.NewUnexpectedError(err)
+		return nil, err
+		//return nil, util.NewUnexpectedError(err)
 	}
 	return bytes, nil
 }

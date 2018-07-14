@@ -15,21 +15,22 @@ import (
 	"github.com/juju/gomaasapi/pkg/api/util"
 )
 
-// Device represents some form of device in MAAS.
-type device struct {
+// Nodes are now known as nodes...? should reconsider this struct.
+// Device represents some form of node in MAAS.
+type node struct {
 	// TODO: add domain
-	Controller  *controller
-	ResourceURI string `json:"resource_uri,omitempty"`
-	SystemID    string `json:"system_id,omitempty"`
-	Hostname    string `json:"Hostname,omitempty"`
-	FQDN        string `json:"FQDN,omitempty"`
+	Controller  *controller `json:"-"`
+	ResourceURI string      `json:"resource_uri,omitempty"`
+	SystemID    string      `json:"system_id,omitempty"`
+	Hostname    string      `json:"Hostname,omitempty"`
+	FQDN        string      `json:"FQDN,omitempty"`
 	// Parent returns the SystemID of the Parent. Most often this will be a
 	// MachineInterface.
 	Parent string `json:"Parent,omitempty"`
-	// Owner is the username of the user that created the device.
+	// Owner is the username of the user that created the node.
 	Owner       string   `json:"Owner,omitempty"`
 	IPAddresses []string `json:"ip_addresses,omitempty"`
-	// InterfaceSet returns all the interfaces for the DeviceInterface.
+	// InterfaceSet returns all the interfaces for the NodeInterface.
 	InterfaceSet []*MachineNetworkInterface `json:"interface_set,omitempty"`
 	Zone         *zone                      `json:"Zone,omitempty"`
 }
@@ -67,16 +68,17 @@ func (a *CreateInterfaceArgs) Validate() error {
 	return nil
 }
 
-// interfacesURI used to add interfaces for this device. The operations
+// interfacesURI used to add interfaces for this node. The operations
 // are on the nodes endpoint, not devices.
-func (d *device) interfacesURI() string {
+func (d *node) interfacesURI() string {
 	return strings.Replace(d.ResourceURI, "devices", "nodes", 1) + "interfaces/"
 }
 
-// CreateInterface implements DeviceInterface.
-func (d *device) CreateInterface(args CreateInterfaceArgs) (*MachineNetworkInterface, error) {
+// CreateInterface implements NodeInterface.
+func (d *node) CreateInterface(args CreateInterfaceArgs) (*MachineNetworkInterface, error) {
 	if err := args.Validate(); err != nil {
-		return nil, errors.Trace(err)
+		//return nil, errors.Trace(err)
+		return nil, err
 	}
 	params := util.NewURLParams()
 	params.Values.Add("Name", args.Name)
@@ -86,7 +88,10 @@ func (d *device) CreateInterface(args CreateInterfaceArgs) (*MachineNetworkInter
 	params.MaybeAddInt("MTU", args.MTU)
 	params.MaybeAddBool("accept_ra", args.AcceptRA)
 	params.MaybeAddBool("autoconf", args.Autoconf)
-	result, err := d.Controller.post(d.interfacesURI(), "create_physical", params.Values)
+
+	uri := d.interfacesURI()
+	fmt.Println(params.Values, uri)
+	result, err := d.Controller.post(uri, "create_physical", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {
@@ -104,17 +109,18 @@ func (d *device) CreateInterface(args CreateInterfaceArgs) (*MachineNetworkInter
 	var iface MachineNetworkInterface
 	err = json.Unmarshal(result, &iface)
 	if err != nil {
-		return nil, errors.Trace(err)
+		//return nil, errors.Trace(err)
+		return nil, err
 	}
 	iface.Controller = d.Controller
 
-	// TODO: add to the interfaces for the device when the interfaces are returned.
+	// TODO: add to the interfaces for the node when the interfaces are returned.
 	// lp:bug 1567213.
 	return &iface, nil
 }
 
-// Delete implements DeviceInterface.
-func (d *device) Delete() error {
+// Delete implements NodeInterface.
+func (d *node) Delete() error {
 	err := d.Controller.delete(d.ResourceURI)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
@@ -130,9 +136,9 @@ func (d *device) Delete() error {
 	return nil
 }
 
-type DeviceInterface interface {
+type NodeInterface interface {
 	// CreateInterface will create a physical interface for this MachineInterface.
 	CreateInterface(CreateInterfaceArgs) (*MachineNetworkInterface, error)
-	// Delete will remove this DeviceInterface.
+	// Delete will remove this NodeInterface.
 	Delete() error
 }
