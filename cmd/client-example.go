@@ -46,6 +46,7 @@ func getParams() {
 
 func checkError(err error) {
 	if err != nil {
+		fmt.Println(err)
 		panic(err)
 	}
 }
@@ -53,18 +54,8 @@ func checkError(err error) {
 func main() {
 	getParams()
 
-	// Create API server endpoint.
-	//authClient, err := client.NewAuthenticatedMAASClient(
-	//	client.AddAPIVersionToURL(apiURL, apiVersion), apiKey)
-	//checkError(err)
-	//maas := client.NewMAASObj(*authClient)
-
 	m, err := api.NewMASS(apiURL, apiVersion, apiKey)
 	checkError(err)
-
-	//// Exercise the API.
-	//ManipulateMachines(maas)
-	//ManipulateFiles(maas)
 
 	machines(m)
 	fmt.Println("All done.")
@@ -76,9 +67,10 @@ func machines(maas *api.MAAS) {
 	rawMachines, err := maas.GET("machines", "", params.Values)
 	checkError(err)
 
-	result := make([]maasapiv2.Machine, 0)
+	fmt.Printf("%s\n", string(rawMachines))
+
 	var machines []maasapiv2.Machine
-	err = json.Unmarshal(rawMachines, &result)
+	err = json.Unmarshal(rawMachines, &machines)
 	checkError(err)
 
 	fmt.Printf("Got list of %v nodes\n", len(machines))

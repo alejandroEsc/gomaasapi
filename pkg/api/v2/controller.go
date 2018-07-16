@@ -19,6 +19,7 @@ import (
 	"github.com/juju/schema"
 	"github.com/juju/utils/set"
 	"github.com/juju/version"
+	"fmt"
 )
 
 var (
@@ -99,7 +100,8 @@ func NewControllerWithVersion(baseURL, apiVersion, apiKey string) (*Controller, 
 	controller := &Controller{Client: client, APIVersion: controllerVersion}
 	controller.Capabilities, err = controller.readAPIVersionInfo()
 	if err != nil {
-		logger.Debugf("read version failed: %#v", err)
+		logger.Debugf("nread version failed: %#v", err)
+		fmt.Printf("\n%s error\n", err)
 		return nil, err
 	}
 
@@ -568,36 +570,22 @@ func indicatesUnsupportedVersion(err error) bool {
 }
 
 func (c *Controller) readAPIVersionInfo() (set.Strings, error) {
-	var parsed map[string]interface{}
 	parsedBytes, err := c.Get("version", "", nil)
 	if indicatesUnsupportedVersion(err) {
 		return nil, util.WrapWithUnsupportedVersionError(err)
 	} else if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(parsedBytes, &parsed)
+
+	var version Version
+	err = json.Unmarshal(parsedBytes, &version)
 	if err != nil {
 		return nil, util.WrapWithDeserializationError(err, "unmarshal error")
 	}
-	// As we care about other fields, add them.
-	fields := schema.Fields{
-		"Capabilities": schema.List(schema.String()),
-	}
-	checker := schema.FieldMap(fields, nil) // no defaults
-	coerced, err := checker.Coerce(parsed, nil)
-	if err != nil {
-		return nil, util.WrapWithDeserializationError(err, "version response")
-	}
-	// For now, we don't append any subversion, but as it becomes used, we
-	// should parse and check.
 
-	valid := coerced.(map[string]interface{})
-	// From here we know that the map returned from the schema coercion
-	// contains fields of the right type.
 	capabilities := set.NewStrings()
-	capabilityValues := valid["Capabilities"].([]interface{})
-	for _, value := range capabilityValues {
-		capabilities.Add(value.(string))
+	for _, value := range version.Capabilities {
+		capabilities.Add(value)
 	}
 
 	return capabilities, nil

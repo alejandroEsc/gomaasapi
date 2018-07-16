@@ -30,6 +30,7 @@ func NewMASS(baseURL string, apiVersion string, apiKey string) (*MAAS, error) {
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("returning new controller with version")
 		return &MAAS{controller: c, major: major}, nil
 
 	default:
