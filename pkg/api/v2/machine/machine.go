@@ -1,7 +1,7 @@
 // Copyright 2016 Canonical Ltd.
 // Licensed under the LGPLv3, see LICENCE File for details.
 
-package maasapiv2
+package machine
 
 import (
 	"net/http"
@@ -12,11 +12,19 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	. "github.com/juju/gomaasapi/pkg/api/v2"
+	. "github.com/juju/gomaasapi/pkg/api/v2/node"
+	. "github.com/juju/gomaasapi/pkg/api/v2/controller"
+	"github.com/juju/loggo"
+)
+
+var (
+	logger = loggo.GetLogger("maas")
 )
 
 // MachineInterface represents a physical MachineInterface.
 type Machine struct {
-	Controller *controller `json:"-"`
+	Controller *Controller `json:"-"`
 
 	ResourceURI string   `json:"resource_uri,omitempty"`
 	SystemID    string   `json:"system_id,omitempty"`
@@ -40,7 +48,7 @@ type Machine struct {
 	BootInterface *NetworkInterface `json:"boot_interface,omitempty"`
 	// InterfaceSet returns all the interfaces for the MachineInterface.
 	InterfaceSet []*NetworkInterface `json:"interface_set,omitempty"`
-	Zone         *zone               `json:"Zone,omitempty"`
+	Zone         *Zone               `json:"Zone,omitempty"`
 	// Don't really know the difference between these two lists:
 
 	// PhysicalBlockDevice returns the physical block node for the MachineInterface
@@ -101,7 +109,7 @@ func (m *Machine) BlockDevice(id int) *BlockDevice {
 }
 
 // Nodes implements Machine.
-func (m *Machine) Nodes(args NodesArgs) ([]node, error) {
+func (m *Machine) Nodes(args NodesArgs) ([]Node, error) {
 	// Perhaps in the future, MAAS will give us a way to query just for the
 	// nodes for a particular Parent.
 	nodes, err := m.Controller.Nodes(args)
@@ -109,7 +117,7 @@ func (m *Machine) Nodes(args NodesArgs) ([]node, error) {
 		return nil, errors.Trace(err)
 	}
 
-	result := make([]node, 0)
+	result := make([]Node, 0)
 	for _, n := range nodes {
 		if n.Parent == m.SystemID {
 			result = append(result, n)
@@ -120,8 +128,8 @@ func (m *Machine) Nodes(args NodesArgs) ([]node, error) {
 
 // Deploy implements Machine.
 func (m *Machine) Deploy(args DeployMachineArgs) error {
-	params := startMachineParams(args)
-	result, err := m.Controller.post(m.ResourceURI, "deploy", params.Values)
+	params := DeploytMachineParams(args)
+	result, err := m.Controller.Post(m.ResourceURI, "deploy", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {
@@ -149,7 +157,7 @@ func (m *Machine) Deploy(args DeployMachineArgs) error {
 }
 
 // CreateNode implements Machine
-func (m *Machine) CreateNode(args CreateMachineNodeArgs) (*node, error) {
+func (m *Machine) CreateNode(args CreateMachineNodeArgs) (*Node, error) {
 	if err := args.Validate(); err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -162,7 +170,7 @@ func (m *Machine) CreateNode(args CreateMachineNodeArgs) (*node, error) {
 		return nil, err
 	}
 
-	defer func(err *error) {
+	defer func(err error) {
 		// If there is an error return, at least try to delete the node we just created.
 		if err != nil {
 			if innerErr := d.Delete(); innerErr != nil {
@@ -200,7 +208,7 @@ func (m *Machine) CreateNode(args CreateMachineNodeArgs) (*node, error) {
 	return d, nil
 }
 
-func (m *Machine) updateDeviceInterface(interfaces []*NetworkInterface, nameToUse string, vlanToUse *vlan) error {
+func (m *Machine) updateDeviceInterface(interfaces []*NetworkInterface, nameToUse string, vlanToUse *VLAN) error {
 	iface := interfaces[0]
 
 	updateArgs := UpdateInterfaceArgs{}
@@ -217,7 +225,7 @@ func (m *Machine) updateDeviceInterface(interfaces []*NetworkInterface, nameToUs
 	return nil
 }
 
-func (m *Machine) linkDeviceInterfaceToSubnet(interfaces []*NetworkInterface, subnetToUse *subnet) error {
+func (m *Machine) linkDeviceInterfaceToSubnet(interfaces []*NetworkInterface, subnetToUse *Subnet) error {
 	iface := interfaces[0]
 
 	err := iface.LinkSubnet(LinkSubnetArgs{
@@ -243,7 +251,7 @@ func (m *Machine) SetOwnerData(ownerData map[string]string) error {
 	for key, value := range ownerData {
 		params.Add(key, value)
 	}
-	result, err := m.Controller.post(m.ResourceURI, "set_owner_data", params)
+	result, err := m.Controller.Post(m.ResourceURI, "set_owner_data", params)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -263,7 +271,7 @@ type MachineInterface interface {
 
 	// Nodes returns a list of devices that match the params and have
 	// this MachineInterface as the Parent.
-	Devices(NodesArgs) ([]NodeInterface, error)
+	Nodes(NodesArgs) ([]NodeInterface, error)
 
 	// NetworkInterface returns the interface for the MachineInterface that matches the ID
 	// specified. If there is no match, nil is returned.

@@ -18,5 +18,5 @@ type BlockDevice struct {
 	UsedSize  uint64 `json:"used_size,omitempty"`
 	Size      uint64 `json:"Size,omitempty"`
 
-	Partitions []*partition `json:"Partitions,omitempty"`
+	Partitions []*Partition `json:"Partitions,omitempty"`
 }

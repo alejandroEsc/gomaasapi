@@ -1,7 +1,7 @@
 // Copyright 2016 Canonical Ltd.
 // Licensed under the LGPLv3, see LICENCE File for details.
 
-package maasapiv2
+package node
 
 import (
 	"net/http"
@@ -17,13 +17,13 @@ import (
 )
 
 func TestReadNodesBadSchema(t *testing.T) {
-	var d node
+	var d Node
 	err = json.Unmarshal([]byte("wat?"), &d)
 	assert.Error(t, err)
 }
 
 func TestReadNodes(t *testing.T) {
-	var devices []node
+	var devices []Node
 	err = json.Unmarshal([]byte(devicesResponse), &devices)
 	assert.Nil(t, err)
 
@@ -111,26 +111,26 @@ func minimalCreateInterfaceArgs() CreateInterfaceArgs {
 
 func TestNodeCreateInterfaceNotFound(t *testing.T) {
 	server, device := getServerAndNode(t)
-	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusNotFound, "can't find node")
+	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusNotFound, "can't find Node")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsBadRequestError(err))
-	assert.Equal(t, err.Error(), "can't find node")
+	assert.Equal(t, err.Error(), "can't find Node")
 }
 
 func TestCreateInterfaceConflict(t *testing.T) {
 	server, device := getServerAndNode(t)
-	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusConflict, "node not allocated")
+	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusConflict, "Node not allocated")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsBadRequestError(err))
-	assert.Equal(t, err.Error(), "node not allocated")
+	assert.Equal(t, err.Error(), "Node not allocated")
 }
 
 func TestCreateInterfaceForbidden(t *testing.T) {
 	server, device := getServerAndNode(t)
-	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusForbidden, "node not yours")
+	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusForbidden, "Node not yours")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsPermissionError(err))
-	assert.Equal(t, err.Error(), "node not yours")
+	assert.Equal(t, err.Error(), "Node not yours")
 }
 
 func TestCreateInterfaceServiceUnavailable(t *testing.T) {
@@ -178,7 +178,7 @@ func TestNodeDeleteUnknown(t *testing.T) {
 	assert.True(t, util.IsUnexpectedError(err))
 }
 
-func getServerAndNode(t *testing.T) (*client.SimpleTestServer, *node) {
+func getServerAndNode(t *testing.T) (*client.SimpleTestServer, *Node) {
 	server, controller := createTestServerController(t)
 	server.AddGetResponse("/api/2.0/nodes/", http.StatusOK, devicesResponse)
 

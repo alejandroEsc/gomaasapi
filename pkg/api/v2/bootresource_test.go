@@ -13,13 +13,13 @@ import (
 )
 
 func TestReadBootResourcesBadSchema(t *testing.T) {
-	var b bootResource
+	var b BootResource
 	err := json.Unmarshal([]byte("wat?"), &b)
 	assert.Error(t, err)
 }
 
 func TestReadBootResources(t *testing.T) {
-	var bootResources []bootResource
+	var bootResources []BootResource
 	err = json.Unmarshal([]byte(bootResourcesResponse), &bootResources)
 	assert.Nil(t, err)
 

@@ -16,15 +16,15 @@ import (
 
 // NetworkInterface represents a physical or virtual network interface on a MachineInterface.
 type NetworkInterface struct {
-	Controller   *controller `json:"-"`
+	Controller   *Controller `json:"-"`
 	ResourceURI  string      `json:"resource_uri,omitempty"`
 	ID           int         `json:"ID,omitempty"`
 	Name         string      `json:"Name,omitempty"`
 	Type         string      `json:"type,omitempty"`
 	Enabled      bool        `json:"Enabled,omitempty"`
 	Tags         []string    `json:"Tags,omitempty"`
-	VLAN         *vlan       `json:"VLAN,omitempty"`
-	Links        []*link     `json:"Links,omitempty"`
+	VLAN         *VLAN       `json:"VLAN,omitempty"`
+	Links        []*Link     `json:"Links,omitempty"`
 	MACAddress   string      `json:"mac_address,omitempty"`
 	EffectiveMTU int         `json:"effective_mtu,omitempty"`
 	Parents      []string    `json:"Parents,omitempty"`
@@ -50,7 +50,7 @@ func (i *NetworkInterface) updateFrom(other *NetworkInterface) {
 type UpdateInterfaceArgs struct {
 	Name       string
 	MACAddress string
-	VLAN       *vlan
+	VLAN       *VLAN
 }
 
 func (a *UpdateInterfaceArgs) vlanID() int {
@@ -73,7 +73,7 @@ func (i *NetworkInterface) Update(args UpdateInterfaceArgs) error {
 	params.MaybeAdd("mac_address", args.MACAddress)
 	params.MaybeAddInt("VLAN", args.vlanID())
 
-	source, err := i.Controller.put(i.ResourceURI, params.Values)
+	source, err := i.Controller.Put(i.ResourceURI, params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {
@@ -97,7 +97,7 @@ func (i *NetworkInterface) Update(args UpdateInterfaceArgs) error {
 
 // Delete this interface.
 func (i *NetworkInterface) Delete() error {
-	err := i.Controller.delete(i.ResourceURI)
+	err := i.Controller.Delete(i.ResourceURI)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {
@@ -112,7 +112,7 @@ func (i *NetworkInterface) Delete() error {
 	return nil
 }
 
-// InterfaceLinkMode is the type of the various link Mode constants used for
+// InterfaceLinkMode is the type of the various Link Mode constants used for
 // LinkSubnetArgs.
 type InterfaceLinkMode string
 
@@ -127,7 +127,7 @@ func (i *NetworkInterface) LinkSubnet(args LinkSubnetArgs) error {
 	params.Values.Add("Subnet", fmt.Sprint(args.Subnet.ID))
 	params.MaybeAdd("ip_address", args.IPAddress)
 	params.MaybeAddBool("default_gateway", args.DefaultGateway)
-	source, err := i.Controller.post(i.ResourceURI, "link_subnet", params.Values)
+	source, err := i.Controller.Post(i.ResourceURI, "link_subnet", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {
@@ -152,7 +152,7 @@ func (i *NetworkInterface) LinkSubnet(args LinkSubnetArgs) error {
 	return nil
 }
 
-func (i *NetworkInterface) linkForSubnet(st *subnet) *link {
+func (i *NetworkInterface) linkForSubnet(st *Subnet) *Link {
 	for _, link := range i.Links {
 		if s := link.Subnet; s != nil && s.ID == st.ID {
 			return link
@@ -163,7 +163,7 @@ func (i *NetworkInterface) linkForSubnet(st *subnet) *link {
 
 // UnlinkSubnet will remove the Link to the Subnet, and release the IP
 // address associated if there is one.
-func (i *NetworkInterface) UnlinkSubnet(s *subnet) error {
+func (i *NetworkInterface) UnlinkSubnet(s *Subnet) error {
 	if s == nil {
 		return errors.NotValidf("missing Subnet")
 	}
@@ -173,7 +173,7 @@ func (i *NetworkInterface) UnlinkSubnet(s *subnet) error {
 	}
 	params := util.NewURLParams()
 	params.Values.Add("ID", fmt.Sprint(link.ID))
-	source, err := i.Controller.post(i.ResourceURI, "unlink_subnet", params.Values)
+	source, err := i.Controller.Post(i.ResourceURI, "unlink_subnet", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {

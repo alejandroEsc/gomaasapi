@@ -12,18 +12,18 @@ import (
 )
 
 func TestReadVLANsBadSchema(t *testing.T) {
-	var v vlan
+	var v VLAN
 	err = json.Unmarshal([]byte("wat?"), &v)
 	assert.Error(t, err)
 }
 
 func TestReadVLANsWithName(t *testing.T) {
-	var vlans []vlan
+	var vlans []VLAN
 	err = json.Unmarshal([]byte(vlanResponseWithName), &vlans)
 	assert.Nil(t, err)
 	assert.Len(t, vlans, 1)
 	readVLAN := vlans[0]
-	expectedVLAN := &vlan{
+	expectedVLAN := &VLAN{
 		ResourceURI:   "/MAAS/api/2.0/VLANs/1/",
 		ID:            1,
 		Name:          "untagged",
@@ -37,7 +37,7 @@ func TestReadVLANsWithName(t *testing.T) {
 	assertVLAN(t, expectedVLAN, &readVLAN)
 }
 
-func assertVLAN(t *testing.T, givenVLAN, expectedVLAN *vlan) {
+func assertVLAN(t *testing.T, givenVLAN, expectedVLAN *VLAN) {
 	assert.EqualValues(t, expectedVLAN, givenVLAN)
 	//c.Check(givenVLAN.ID, gc.Equals, expectedVLAN.ID)
 	//c.Check(givenVLAN.Name, gc.Equals, expectedVLAN.Name)
@@ -50,12 +50,12 @@ func assertVLAN(t *testing.T, givenVLAN, expectedVLAN *vlan) {
 }
 
 func TestReadVLANsWithoutName(t *testing.T) {
-	var vlans []vlan
+	var vlans []VLAN
 	err = json.Unmarshal([]byte(vlanResponseWithoutName), &vlans)
 	assert.Nil(t, err)
 	assert.Len(t, vlans, 1)
 	readVLAN := vlans[0]
-	expectedVLAN := &vlan{
+	expectedVLAN := &VLAN{
 		ResourceURI:   "/MAAS/api/2.0/VLANs/5006/",
 		ID:            5006,
 		Name:          "",

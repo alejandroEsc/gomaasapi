@@ -1,7 +1,7 @@
 // Copyright 2016 Canonical Ltd.
 // Licensed under the LGPLv3, see LICENCE File for details.
 
-package maasapiv2
+package controller
 
 import (
 	"encoding/json"
@@ -16,6 +16,9 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	. "github.com/juju/gomaasapi/pkg/api/v2"
+	. "github.com/juju/gomaasapi/pkg/api/v2/Node"
+	. "github.com/juju/gomaasapi/pkg/api/v2/Machine"
 	"github.com/juju/loggo"
 	"github.com/juju/schema"
 	"github.com/juju/utils/set"
@@ -34,7 +37,7 @@ var (
 // Controller represents an API connection to a MAAS ControllerInterface. Since the API
 // is restful, there is no long held connection to the API server, but instead
 // HTTP calls are made and JSON response structures parsed.
-type controller struct {
+type Controller struct {
 	Client     *client.MAASClient
 	APIVersion version.Number
 	// Capabilities returns a set of Capabilities as defined by the string
@@ -57,7 +60,7 @@ type ControllerArgs struct {
 //
 // If the APIKey is not valid, a NotValid error is returned.
 // If the credentials are incorrect, a PermissionError is returned.
-func NewController(args ControllerArgs) (*controller, error) {
+func NewController(args ControllerArgs) (*Controller, error) {
 	base, apiVersion, includesVersion := client.SplitVersionedURL(args.BaseURL)
 	if includesVersion {
 		if !supportedVersion(apiVersion) {
@@ -77,9 +80,9 @@ func supportedVersion(value string) bool {
 	return false
 }
 
-func newControllerWithVersion(baseURL, apiVersion, apiKey string) (*controller, error) {
+func newControllerWithVersion(baseURL, apiVersion, apiKey string) (*Controller, error) {
 	major, minor, err := version.ParseMajorMinor(apiVersion)
-	// We should not get an error here. See the test.
+	// We should not Get an error here. See the test.
 	if err != nil {
 		return nil, errors.Errorf("bad version defined in supported versions: %q", apiVersion)
 	}
@@ -97,7 +100,7 @@ func newControllerWithVersion(baseURL, apiVersion, apiKey string) (*controller, 
 		Major: major,
 		Minor: minor,
 	}
-	controller := &controller{Client: client, APIVersion: controllerVersion}
+	controller := &Controller{Client: client, APIVersion: controllerVersion}
 	controller.Capabilities, err = controller.readAPIVersionInfo()
 	if err != nil {
 		logger.Debugf("read version failed: %#v", err)
@@ -110,7 +113,7 @@ func newControllerWithVersion(baseURL, apiVersion, apiKey string) (*controller, 
 	return controller, nil
 }
 
-func newControllerUnknownVersion(args ControllerArgs) (*controller, error) {
+func newControllerUnknownVersion(args ControllerArgs) (*Controller, error) {
 	// For now we don't need to test multiple versions. It is expected that at
 	// some time in the future, we will try the most up to date version and then
 	// work our way backwards.
@@ -131,13 +134,13 @@ func newControllerUnknownVersion(args ControllerArgs) (*controller, error) {
 }
 
 // BootResources implements ControllerInterface.
-func (c *controller) BootResources() ([]*bootResource, error) {
-	source, err := c.get("boot-resources", "", nil)
+func (c *Controller) BootResources() ([]*BootResource, error) {
+	source, err := c.Get("boot-resources", "", nil)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
 
-	var resources []*bootResource
+	var resources []*BootResource
 	err = json.Unmarshal(source, &resources)
 	if err != nil {
 		return nil, err
@@ -147,13 +150,13 @@ func (c *controller) BootResources() ([]*bootResource, error) {
 }
 
 // Fabrics returns the list of Fabrics defined in the MAAS ControllerInterface.
-func (c *controller) Fabrics() ([]fabric, error) {
-	source, err := c.get("fabrics", "", nil)
+func (c *Controller) Fabrics() ([]Fabric, error) {
+	source, err := c.Get("fabrics", "", nil)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
 
-	var fabrics []fabric
+	var fabrics []Fabric
 	err = json.Unmarshal(source, &fabrics)
 	if err != nil {
 		return nil, err
@@ -163,13 +166,13 @@ func (c *controller) Fabrics() ([]fabric, error) {
 }
 
 // Spaces returns the list of Spaces defined in the MAAS ControllerInterface.
-func (c *controller) Spaces() ([]space, error) {
-	source, err := c.get("spaces", "", nil)
+func (c *Controller) Spaces() ([]Space, error) {
+	source, err := c.Get("spaces", "", nil)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
 
-	var spaces []space
+	var spaces []Space
 	err = json.Unmarshal(source, &spaces)
 	if err != nil {
 		return nil, err
@@ -179,12 +182,12 @@ func (c *controller) Spaces() ([]space, error) {
 }
 
 // StaticRoutes returns the list of StaticRoutes defined in the MAAS ControllerInterface.
-func (c *controller) StaticRoutes() ([]staticRoute, error) {
-	source, err := c.get("static-routes", "", nil)
+func (c *Controller) StaticRoutes() ([]StaticRoute, error) {
+	source, err := c.Get("static-routes", "", nil)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
-	var staticRoutes []staticRoute
+	var staticRoutes []StaticRoute
 	err = json.Unmarshal(source, &staticRoutes)
 	if err != nil {
 		return nil, err
@@ -194,12 +197,12 @@ func (c *controller) StaticRoutes() ([]staticRoute, error) {
 }
 
 // Zones lists all the zones known to the MAAS ControllerInterface.
-func (c *controller) Zones() ([]zone, error) {
-	source, err := c.get("zones", "", nil)
+func (c *Controller) Zones() ([]Zone, error) {
+	source, err := c.Get("zones", "", nil)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
-	var zones []zone
+	var zones []Zone
 	err = json.Unmarshal(source, &zones)
 	if err != nil {
 		return nil, err
@@ -208,15 +211,15 @@ func (c *controller) Zones() ([]zone, error) {
 }
 
 // Nodes returns a list of devices that match the params.
-func (c *controller) Nodes(args NodesArgs) ([]node, error) {
-	params := nodesParams(args)
-	source, err := c.get("nodes", "", params.Values)
+func (c *Controller) Nodes(args NodesArgs) ([]Node, error) {
+	params := NodesParams(args)
+	source, err := c.Get("nodes", "", params.Values)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
 
-	results := make([]node, 0)
-	var nodes []node
+	results := make([]Node, 0)
+	var nodes []Node
 	err = json.Unmarshal(source, &nodes)
 	if err != nil {
 		return nil, err
@@ -229,13 +232,13 @@ func (c *controller) Nodes(args NodesArgs) ([]node, error) {
 }
 
 // CreateNode creates and returns a new NodeInterface.
-func (c *controller) CreateNode(args CreateNodeArgs) (*node, error) {
+func (c *Controller) CreateNode(args CreateNodeArgs) (*Node, error) {
 	// There must be at least one mac address.
 	if len(args.MACAddresses) == 0 {
 		return nil, util.NewBadRequestError("at least one MAC address must be specified")
 	}
-	params := createNodesParams(args)
-	result, err := c.post("nodes", "", params.Values)
+	params := CreateNodesParams(args)
+	result, err := c.Post("nodes", "", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			if svrErr.StatusCode == http.StatusBadRequest {
@@ -246,7 +249,7 @@ func (c *controller) CreateNode(args CreateNodeArgs) (*node, error) {
 		return nil, util.NewUnexpectedError(err)
 	}
 
-	var d node
+	var d Node
 
 	iSet := make([]*NetworkInterface, 0)
 	err = json.Unmarshal(result, &d)
@@ -266,11 +269,11 @@ func (c *controller) CreateNode(args CreateNodeArgs) (*node, error) {
 }
 
 // Machines returns a list of machines that match the params.
-func (c *controller) Machines(args MachinesArgs) ([]Machine, error) {
-	params := machinesParams(args)
+func (c *Controller) Machines(args MachinesArgs) ([]Machine, error) {
+	params := MachinesParams(args)
 	// At the moment the MAAS API doesn't support filtering by Owner
 	// data so we do that ourselves below.
-	source, err := c.get("machines", "", params.Values)
+	source, err := c.Get("machines", "", params.Values)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
@@ -312,10 +315,10 @@ func ownerDataMatches(ownerData, filter map[string]string) bool {
 // If successful, the allocated MachineInterface is returned.
 // Returns an error that satisfies IsNoMatchError if the requested
 // constraints cannot be met.
-func (c *controller) AllocateMachine(args AllocateMachineArgs) (*Machine, ConstraintMatches, error) {
+func (c *Controller) AllocateMachine(args AllocateMachineArgs) (*Machine, ConstraintMatches, error) {
 	var matches ConstraintMatches
-	params := allocateMachinesParams(args)
-	result, err := c.post("machines", "allocate", params.Values)
+	params := AllocateMachinesParams(args)
+	result, err := c.Post("machines", "allocate", params.Values)
 	if err != nil {
 		// A 409 Status code is "No Matching Machines"
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
@@ -355,9 +358,9 @@ func (c *controller) AllocateMachine(args AllocateMachineArgs) (*Machine, Constr
 //  - BadRequestError if any of the machines cannot be found
 //  - PermissionError if the user does not have permission to release any of the machines
 //  - CannotCompleteError if any of the machines could not be released due to their current state
-func (c *controller) ReleaseMachines(args ReleaseMachinesArgs) error {
-	params := releaseMachinesParams(args)
-	_, err := c.post("machines", "release", params.Values)
+func (c *Controller) ReleaseMachines(args ReleaseMachinesArgs) error {
+	params := ReleaseMachinesParams(args)
+	_, err := c.Post("machines", "release", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {
@@ -376,10 +379,10 @@ func (c *controller) ReleaseMachines(args ReleaseMachinesArgs) error {
 }
 
 // getFiles returns all the files that match the specified prefix.
-func (c *controller) getFiles(prefix string) ([]File, error) {
+func (c *Controller) getFiles(prefix string) ([]File, error) {
 	params := util.NewURLParams()
 	params.MaybeAdd("prefix", prefix)
-	source, err := c.get("files", "", params.Values)
+	source, err := c.Get("files", "", params.Values)
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
@@ -399,11 +402,11 @@ func (c *controller) getFiles(prefix string) ([]File, error) {
 }
 
 // GetFile returns a single File by its Filename.
-func (c *controller) GetFile(filename string) (*File, error) {
+func (c *Controller) GetFile(filename string) (*File, error) {
 	if filename == "" {
 		return nil, errors.NotValidf("missing Filename")
 	}
-	source, err := c.get("files/"+filename, "", nil)
+	source, err := c.Get("files/"+filename, "", nil)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			if svrErr.StatusCode == http.StatusNotFound {
@@ -425,7 +428,7 @@ func (c *controller) GetFile(filename string) (*File, error) {
 // If or when the MAAS api is able to return metadata about a single
 // File without sending the Content of the File, we can return a FileInterface
 // instance here too.
-func (c *controller) AddFile(args AddFileArgs) error {
+func (c *Controller) AddFile(args AddFileArgs) error {
 	if err := args.Validate(); err != nil {
 		return err
 	}
@@ -438,7 +441,7 @@ func (c *controller) AddFile(args AddFileArgs) error {
 		fileContent = content
 	}
 	params := url.Values{"Filename": {args.Filename}}
-	_, err := c.postFile("files", "", params, fileContent)
+	_, err := c.PostFile("files", "", params, fileContent)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			if svrErr.StatusCode == http.StatusBadRequest {
@@ -450,8 +453,8 @@ func (c *controller) AddFile(args AddFileArgs) error {
 	return nil
 }
 
-func (c *controller) checkCreds() error {
-	if _, err := c.get("users", "whoami", nil); err != nil {
+func (c *Controller) checkCreds() error {
+	if _, err := c.Get("users", "whoami", nil); err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			if svrErr.StatusCode == http.StatusUnauthorized {
 				return errors.Wrap(err, util.NewPermissionError(svrErr.BodyMessage))
@@ -462,7 +465,7 @@ func (c *controller) checkCreds() error {
 	return nil
 }
 
-func (c *controller) put(path string, params url.Values) ([]byte, error) {
+func (c *Controller) Put(path string, params url.Values) ([]byte, error) {
 	path = util.EnsureTrailingSlash(path)
 	requestID := nextRequestID()
 
@@ -479,7 +482,7 @@ func (c *controller) put(path string, params url.Values) ([]byte, error) {
 	return bytes, nil
 }
 
-func (c *controller) post(path, op string, params url.Values) ([]byte, error) {
+func (c *Controller) Post(path, op string, params url.Values) ([]byte, error) {
 	bytes, err := c.postRaw(path, op, params, nil)
 	if err != nil {
 		return nil, err
@@ -487,13 +490,13 @@ func (c *controller) post(path, op string, params url.Values) ([]byte, error) {
 	return bytes, nil
 }
 
-func (c *controller) postFile(path, op string, params url.Values, fileContent []byte) ([]byte, error) {
+func (c *Controller) PostFile(path, op string, params url.Values, fileContent []byte) ([]byte, error) {
 	// Only one File is ever sent at a time.
 	files := map[string][]byte{"File": fileContent}
 	return c.postRaw(path, op, params, files)
 }
 
-func (c *controller) postRaw(path, op string, params url.Values, files map[string][]byte) ([]byte, error) {
+func (c *Controller) postRaw(path, op string, params url.Values, files map[string][]byte) ([]byte, error) {
 	path = util.EnsureTrailingSlash(path)
 	url := &url.URL{Path: path}
 	requestID := nextRequestID()
@@ -514,7 +517,7 @@ func (c *controller) postRaw(path, op string, params url.Values, files map[strin
 	return bytes, nil
 }
 
-func (c *controller) delete(path string) error {
+func (c *Controller) Delete(path string) error {
 	path = util.EnsureTrailingSlash(path)
 	url := &url.URL{Path: path}
 	requestID := nextRequestID()
@@ -529,7 +532,7 @@ func (c *controller) delete(path string) error {
 	return nil
 }
 
-func (c *controller) get(path, op string, params url.Values) ([]byte, error) {
+func (c *Controller) Get(path, op string, params url.Values) ([]byte, error) {
 	path = util.EnsureTrailingSlash(path)
 	url := &url.URL{Path: path}
 	requestID := nextRequestID()
@@ -562,7 +565,7 @@ func indicatesUnsupportedVersion(err error) bool {
 		code := serverErr.StatusCode
 		return code == http.StatusNotFound || code == http.StatusGone
 	}
-	// Workaround for bug in MAAS 1.9.4 - instead of a 404 we get a
+	// Workaround for bug in MAAS 1.9.4 - instead of a 404 we Get a
 	// redirect to the HTML login page, which doesn't parse as JSON.
 	// https://bugs.launchpad.net/maas/+bug/1583715
 	if syntaxErr, ok := errors.Cause(err).(*json.SyntaxError); ok {
@@ -572,9 +575,9 @@ func indicatesUnsupportedVersion(err error) bool {
 	return false
 }
 
-func (c *controller) readAPIVersionInfo() (set.Strings, error) {
+func (c *Controller) readAPIVersionInfo() (set.Strings, error) {
 	var parsed map[string]interface{}
-	parsedBytes, err := c.get("version", "", nil)
+	parsedBytes, err := c.Get("version", "", nil)
 	if indicatesUnsupportedVersion(err) {
 		return nil, util.WrapWithUnsupportedVersionError(err)
 	} else if err != nil {

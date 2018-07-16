@@ -12,13 +12,13 @@ import (
 )
 
 func TestReadFabricsBadSchema(t *testing.T) {
-	var f fabric
+	var f Fabric
 	err = json.Unmarshal([]byte("wat?"), &f)
 	assert.Error(t, err)
 }
 
 func TestReadFabrics(t *testing.T) {
-	var fabrics []fabric
+	var fabrics []Fabric
 	err = json.Unmarshal([]byte(fabricResponse), &fabrics)
 	assert.Nil(t, err)
 	assert.Len(t, fabrics, 2)

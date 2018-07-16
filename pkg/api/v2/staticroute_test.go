@@ -12,13 +12,13 @@ import (
 )
 
 func TestReadStaticRoutesBadSchema(t *testing.T) {
-	var s staticRoute
+	var s StaticRoute
 	err = json.Unmarshal([]byte("wat?"), &s)
 	assert.Error(t, err)
 }
 
 func TestReadStaticRoutes(t *testing.T) {
-	var staticRoutes []staticRoute
+	var staticRoutes []StaticRoute
 	err = json.Unmarshal([]byte(staticRoutesResponse), &staticRoutes)
 	assert.Nil(t, err)
 	assert.Len(t, staticRoutes, 1)
@@ -51,7 +51,7 @@ const staticRoutesResponse = `
             ],
             "Name": "Local-192",
             "cidr": "192.168.0.0/16",
-            "space": "space-0",
+            "Space": "Space-0",
             "VLAN": {
                 "Fabric": "Fabric-1",
                 "ID": 5002,
@@ -76,7 +76,7 @@ const staticRoutesResponse = `
             "dns_servers": [],
             "Name": "192.168.0.0/24",
             "cidr": "192.168.0.0/24",
-            "space": "space-0",
+            "Space": "Space-0",
             "VLAN": {
                 "Fabric": "Fabric-0",
                 "ID": 5001,

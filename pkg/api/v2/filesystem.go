@@ -3,9 +3,9 @@
 
 package maasapiv2
 
-type filesystem struct {
+type Filesystem struct {
 	// There is no need for ControllerInterface based parsing of filesystems until we need it.
-	// Currently the filesystem reading is only called by the Partition parsing.
+	// Currently the Filesystem reading is only called by the Partition parsing.
 	Type       string `json:"Type,omitempty"`
 	MountPoint string `json:"mount_point,omitempty"`
 	Label      string `json:"Label,omitempty"`

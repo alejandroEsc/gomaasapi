@@ -9,8 +9,8 @@ import (
 	"github.com/juju/utils/set"
 )
 
-type bootResource struct {
-	// Add the ControllerInterface in when we need to do things with the bootResource.
+type BootResource struct {
+	// Add the ControllerInterface in when we need to do things with the BootResource.
 	// ControllerInterface ControllerInterface
 	ResourceURI  string `json:"resource_uri,omitempty"`
 	ID           int    `json:"ID,omitempty"`
@@ -22,6 +22,6 @@ type bootResource struct {
 }
 
 // SubArchitectures implements BootResource.
-func (b *bootResource) SubArchitectures() set.Strings {
+func (b *BootResource) SubArchitectures() set.Strings {
 	return set.NewStrings(strings.Split(b.SubArches, ",")...)
 }

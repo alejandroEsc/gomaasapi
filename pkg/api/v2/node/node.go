@@ -1,7 +1,7 @@
 // Copyright 2016 Canonical Ltd.
 // Licensed under the LGPLv3, see LICENCE File for details.
 
-package maasapiv2
+package node
 
 import (
 	"fmt"
@@ -13,13 +13,15 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	. "github.com/juju/gomaasapi/pkg/api/v2"
+	. "github.com/juju/gomaasapi/pkg/api/v2/controller"
 )
 
 // Nodes are now known as nodes...? should reconsider this struct.
-// Device represents some form of node in MAAS.
-type node struct {
+// Device represents some form of Node in MAAS.
+type Node struct {
 	// TODO: add domain
-	Controller  *controller `json:"-"`
+	Controller  *Controller `json:"-"`
 	ResourceURI string      `json:"resource_uri,omitempty"`
 	SystemID    string      `json:"system_id,omitempty"`
 	Hostname    string      `json:"Hostname,omitempty"`
@@ -27,12 +29,12 @@ type node struct {
 	// Parent returns the SystemID of the Parent. Most often this will be a
 	// MachineInterface.
 	Parent string `json:"Parent,omitempty"`
-	// Owner is the username of the user that created the node.
+	// Owner is the username of the user that created the Node.
 	Owner       string   `json:"Owner,omitempty"`
 	IPAddresses []string `json:"ip_addresses,omitempty"`
 	// InterfaceSet returns all the interfaces for the NodeInterface.
 	InterfaceSet []*NetworkInterface `json:"interface_set,omitempty"`
-	Zone         *zone               `json:"Zone,omitempty"`
+	Zone         *Zone               `json:"Zone,omitempty"`
 }
 
 // CreateInterfaceArgs is an argument struct for passing parameters to
@@ -43,7 +45,7 @@ type CreateInterfaceArgs struct {
 	// MACAddress is the MAC address of the interface (required).
 	MACAddress string
 	// VLAN is the untagged VLAN the interface is connected to (required).
-	VLAN *vlan
+	VLAN *VLAN
 	// Tags to attach to the interface (optional).
 	Tags []string
 	// MTU - Maximum transmission unit. (optional)
@@ -68,14 +70,14 @@ func (a *CreateInterfaceArgs) Validate() error {
 	return nil
 }
 
-// interfacesURI used to add interfaces for this node. The operations
+// interfacesURI used to add interfaces for this Node. The operations
 // are on the nodes endpoint, not devices.
-func (d *node) interfacesURI() string {
+func (d *Node) interfacesURI() string {
 	return strings.Replace(d.ResourceURI, "devices", "nodes", 1) + "interfaces/"
 }
 
 // CreateInterface implements NodeInterface.
-func (d *node) CreateInterface(args CreateInterfaceArgs) (*NetworkInterface, error) {
+func (d *Node) CreateInterface(args CreateInterfaceArgs) (*NetworkInterface, error) {
 	if err := args.Validate(); err != nil {
 		return nil, err
 	}
@@ -89,7 +91,7 @@ func (d *node) CreateInterface(args CreateInterfaceArgs) (*NetworkInterface, err
 	params.MaybeAddBool("autoconf", args.Autoconf)
 
 	uri := d.interfacesURI()
-	result, err := d.Controller.post(uri, "create_physical", params.Values)
+	result, err := d.Controller.Post(uri, "create_physical", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {
@@ -115,8 +117,8 @@ func (d *node) CreateInterface(args CreateInterfaceArgs) (*NetworkInterface, err
 }
 
 // Delete implements NodeInterface.
-func (d *node) Delete() error {
-	err := d.Controller.delete(d.ResourceURI)
+func (d *Node) Delete() error {
+	err := d.Controller.Delete(d.ResourceURI)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {

@@ -12,13 +12,13 @@ import (
 )
 
 func TestReadLinksBadSchema(t *testing.T) {
-	var l link
+	var l Link
 	err = json.Unmarshal([]byte("wat?"), &l)
 	assert.Error(t, err)
 }
 
 func TestReadLinks(t *testing.T) {
-	var links []link
+	var links []Link
 	err = json.Unmarshal([]byte(linksResponse), &links)
 
 	assert.Nil(t, err)
@@ -30,7 +30,7 @@ func TestReadLinks(t *testing.T) {
 	subnet := link.Subnet
 	assert.NotNil(t, subnet)
 	assert.Equal(t, subnet.Name, "192.168.100.0/24")
-	// Second link has missing ip_address
+	// Second Link has missing ip_address
 	assert.Equal(t, links[1].IPAddress, "")
 }
 
@@ -56,7 +56,7 @@ const linksResponse = `
                 "VID": 0
             },
             "dns_servers": [],
-            "space": "space-0",
+            "Space": "Space-0",
             "Name": "192.168.100.0/24",
             "gateway_ip": "192.168.100.1",
             "cidr": "192.168.100.0/24"
@@ -81,7 +81,7 @@ const linksResponse = `
                 "VID": 0
             },
             "dns_servers": [],
-            "space": "space-0",
+            "Space": "Space-0",
             "Name": "192.168.100.0/24",
             "gateway_ip": "192.168.100.1",
             "cidr": "192.168.100.0/24"

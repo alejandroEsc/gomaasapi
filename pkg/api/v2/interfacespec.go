@@ -32,7 +32,7 @@ func (a *InterfaceSpec) Validate() error {
 		return errors.NotValidf("missing Label")
 	}
 	// Perhaps at some stage in the future there will be other possible specs
-	// supported (like VID, Subnet, etc), but until then, just space to check.
+	// supported (like VID, Subnet, etc), but until then, just Space to check.
 	if a.Space == "" {
 		return errors.NotValidf("empty Space constraint")
 	}
@@ -41,5 +41,5 @@ func (a *InterfaceSpec) Validate() error {
 
 // String returns the interface spec as MaaS requires it.
 func (a *InterfaceSpec) String() string {
-	return fmt.Sprintf("%s:space=%s", a.Label, a.Space)
+	return fmt.Sprintf("%s:Space=%s", a.Label, a.Space)
 }

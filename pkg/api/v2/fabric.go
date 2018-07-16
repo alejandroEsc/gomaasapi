@@ -10,12 +10,12 @@ package maasapiv2
 // For cmd, a distributed network may have a Fabric in London containing
 // VLAN 100, while a separate Fabric in San Francisco may contain a VLAN 100,
 // whose attached Subnets are completely different and unrelated.
-type fabric struct {
+type Fabric struct {
 	// Add the ControllerInterface in when we need to do things with the Fabric.
 	// ControllerInterface ControllerInterface
 	ResourceURI string  `json:"resource_uri,omitempty"`
 	ID          int     `json:"ID,omitempty"`
 	Name        string  `json:"Name,omitempty"`
 	ClassType   string  `json:"class_type,omitempty"`
-	VLANs       []*vlan `json:"VLANs,omitempty"`
+	VLANs       []*VLAN `json:"VLANs,omitempty"`
 }

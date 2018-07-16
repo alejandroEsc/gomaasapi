@@ -15,10 +15,11 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	. "github.com/juju/gomaasapi/pkg/api/v2/controller"
 )
 
 type File struct {
-	Controller  *controller `json:"-"`
+	Controller  *Controller `json:"-"`
 	ResourceURI string      `json:"resource_uri,string,omitempty"`
 	// Filename is the Name of the File. No Path, just the Filename.
 	Filename string `json:"Filename,string,omitempty"`
@@ -30,7 +31,7 @@ type File struct {
 
 // Delete implements FileInterface.
 func (f *File) Delete() error {
-	err := f.Controller.delete(f.ResourceURI)
+	err := f.Controller.Delete(f.ResourceURI)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {
@@ -59,14 +60,14 @@ func (f *File) ReadAll() ([]byte, error) {
 }
 
 func (f *File) get(path, op string, params url.Values) ([]byte, error) {
-	return f.Controller.get(path, op, params)
+	return f.Controller.Get(path, op, params)
 }
 
 func (f *File) readFromServer() ([]byte, error) {
 	// If the Content is available, it is base64 encoded, so
 	args := make(url.Values)
 	args.Add("Filename", f.Filename)
-	bytes, err := f.get("files", "get", args)
+	bytes, err := f.get("files", "Get", args)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {

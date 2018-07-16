@@ -12,13 +12,13 @@ import (
 )
 
 func TestReadSubnetsBadSchema(t *testing.T) {
-	var s subnet
+	var s Subnet
 	err = json.Unmarshal([]byte("wat?"), &s)
 	assert.Error(t, err)
 }
 
 func TestReadSubnets(t *testing.T) {
-	var subnets []subnet
+	var subnets []Subnet
 	err = json.Unmarshal([]byte(subnetResponse), &subnets)
 	assert.Nil(t, err)
 	assert.Len(t, subnets, 2)
@@ -26,7 +26,7 @@ func TestReadSubnets(t *testing.T) {
 	subnet := subnets[0]
 	assert.Equal(t, subnet.ID, 1)
 	assert.Equal(t, subnet.Name, "192.168.100.0/24")
-	assert.Equal(t, subnet.Space, "space-0")
+	assert.Equal(t, subnet.Space, "Space-0")
 	assert.Equal(t, subnet.Gateway, "192.168.100.1")
 	assert.Equal(t, subnet.CIDR, "192.168.100.0/24")
 	vlan := subnet.VLAN
@@ -51,7 +51,7 @@ const subnetResponse = `
             "ID": 1,
             "MTU": 1500
         },
-        "space": "space-0",
+        "Space": "Space-0",
         "ID": 1,
         "resource_uri": "/MAAS/api/2.0/Subnets/1/",
         "dns_servers": ["8.8.8.8", "8.8.4.4"],
@@ -72,7 +72,7 @@ const subnetResponse = `
             "ID": 5001,
             "MTU": 1500
         },
-        "space": "space-0",
+        "Space": "Space-0",
         "ID": 34,
         "resource_uri": "/MAAS/api/2.0/Subnets/34/",
         "dns_servers": null,

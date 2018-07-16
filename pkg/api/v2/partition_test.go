@@ -12,13 +12,13 @@ import (
 )
 
 func TestReadPartitionsBadSchema(t *testing.T) {
-	var p partition
+	var p Partition
 	err = json.Unmarshal([]byte("wat?"), &p)
 	assert.Error(t, err)
 }
 
 func TestReadPartitions(t *testing.T) {
-	var partitions []partition
+	var partitions []Partition
 	err = json.Unmarshal([]byte(partitionsResponse), &partitions)
 	assert.Nil(t, err)
 
@@ -28,7 +28,7 @@ func TestReadPartitions(t *testing.T) {
 	assert.Equal(t, partition.ID, 1)
 	assert.Equal(t, partition.Path, "/dev/disk/by-dname/sda-part1")
 	assert.Equal(t, partition.UUID, "6199b7c9-b66f-40f6-a238-a938a58a0adf")
-	assert.Equal(t, partition.UsedFor, "ext4 formatted filesystem mounted at /")
+	assert.Equal(t, partition.UsedFor, "ext4 formatted Filesystem mounted at /")
 	assert.Equal(t, partition.Size, uint64(8581545984))
 
 	fs := partition.FileSystem
@@ -44,7 +44,7 @@ func TestReadPartitionsNilUUID(t *testing.T) {
 	jr, err := json.Marshal(j)
 	assert.Nil(t, err)
 
-	var partitions []partition
+	var partitions []Partition
 	err = json.Unmarshal(jr, &partitions)
 
 	assert.Nil(t, err)
@@ -59,17 +59,17 @@ const partitionsResponse = `
         "bootable": false,
         "ID": 1,
         "Path": "/dev/disk/by-dname/sda-part1",
-        "filesystem": {
+        "Filesystem": {
             "Type": "ext4",
             "mount_point": "/",
             "Label": "root",
             "mount_options": null,
             "UUID": "fcd7745e-f1b5-4f5d-9575-9b0bb796b752"
         },
-        "type": "partition",
-        "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/partition/1",
+        "type": "Partition",
+        "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/Partition/1",
         "UUID": "6199b7c9-b66f-40f6-a238-a938a58a0adf",
-        "used_for": "ext4 formatted filesystem mounted at /",
+        "used_for": "ext4 formatted Filesystem mounted at /",
         "Size": 8581545984
     }
 ]

@@ -3,9 +3,9 @@
 
 package maasapiv2
 
-type link struct {
+type Link struct {
 	ID        int     `json:"ID,omitempty"`
 	Mode      string  `json:"Mode,omitempty"`
-	Subnet    *subnet `json:"Subnet,omitempty"`
+	Subnet    *Subnet `json:"Subnet,omitempty"`
 	IPAddress string  `json:"ip_address,omitempty"`
 }

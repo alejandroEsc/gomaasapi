@@ -22,7 +22,7 @@ func TestParse2_0(t *testing.T) {
 	j, err := json.Marshal(source)
 	assert.Nil(t, err)
 
-	var fs filesystem
+	var fs Filesystem
 	err = json.Unmarshal(j, &fs)
 
 	assert.Nil(t, err)
@@ -42,7 +42,7 @@ func TestParse2_Defaults(t *testing.T) {
 	j, err := json.Marshal(source)
 	assert.Nil(t, err)
 
-	var fs filesystem
+	var fs Filesystem
 	err = json.Unmarshal(j, &fs)
 
 	assert.Nil(t, err)

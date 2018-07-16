@@ -12,20 +12,20 @@ import (
 )
 
 func TestReadSpacesBadSchema(t *testing.T) {
-	var r space
+	var r Space
 	err = json.Unmarshal([]byte("wat?"), &r)
 	assert.Error(t, err)
 }
 
 func TestReadSpaces(t *testing.T) {
-	var spaces []space
+	var spaces []Space
 	err = json.Unmarshal([]byte(spacesResponse), &spaces)
 	assert.Nil(t, err)
 	assert.Len(t, spaces, 1)
 
 	space := spaces[0]
 	assert.Equal(t, space.ID, 0)
-	assert.Equal(t, space.Name, "space-0")
+	assert.Equal(t, space.Name, "Space-0")
 	subnets := space.Subnets
 	assert.Len(t, subnets, 2)
 	assert.Equal(t, subnets[0].ID, 34)
@@ -49,7 +49,7 @@ const spacesResponse = `
                     "ID": 5001,
                     "MTU": 1500
                 },
-                "space": "space-0",
+                "Space": "Space-0",
                 "ID": 34,
                 "resource_uri": "/MAAS/api/2.0/Subnets/34/",
                 "dns_servers": [],
@@ -70,7 +70,7 @@ const spacesResponse = `
                     "ID": 1,
                     "MTU": 1500
                 },
-                "space": "space-0",
+                "Space": "Space-0",
                 "ID": 1,
                 "resource_uri": "/MAAS/api/2.0/Subnets/1/",
                 "dns_servers": [],
@@ -79,7 +79,7 @@ const spacesResponse = `
             }
         ],
         "ID": 0,
-        "Name": "space-0",
+        "Name": "Space-0",
         "resource_uri": "/MAAS/api/2.0/spaces/0/"
     }
 ]

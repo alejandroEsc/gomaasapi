@@ -1,7 +1,7 @@
 // Copyright 2016 Canonical Ltd.
 // Licensed under the LGPLv3, see LICENCE File for details.
 
-package maasapiv2
+package controller
 
 import (
 	"bytes"
@@ -223,11 +223,11 @@ func TestBootResources(t *testing.T) {
 	server.Start()
 	defer server.Close()
 
-	//controller, err := NewController(ControllerArgs{
+	//Controller, err := NewController(ControllerArgs{
 	//	BaseURL: server.URL,
 	//	APIKey:  "fake:as:key",
 	//})
-	//assert.Nil(t, controller)
+	//assert.Nil(t, Controller)
 
 	controller := getController(t)
 	resources, err := controller.BootResources()
@@ -570,7 +570,7 @@ func TestInterfaceSpec(t *testing.T) {
 		err:  "empty Space constraint not valid",
 	}, {
 		spec: InterfaceSpec{Label: "foo", Space: "magic"},
-		repr: "foo:space=magic",
+		repr: "foo:Space=magic",
 	}} {
 		err := test.spec.Validate()
 		if test.err == "" {
@@ -622,7 +622,7 @@ func TestAllocateMachineArgs(t *testing.T) {
 				{Label: "bar", Space: "other"},
 			},
 		},
-		interfaces: "foo:space=magic;bar:space=other",
+		interfaces: "foo:Space=magic;bar:Space=other",
 	}, {
 		args: AllocateMachineArgs{
 			Interfaces: []InterfaceSpec{
@@ -640,12 +640,12 @@ func TestAllocateMachineArgs(t *testing.T) {
 		args: AllocateMachineArgs{
 			NotSpace: []string{"foo"},
 		},
-		notSubnets: []string{"space:foo"},
+		notSubnets: []string{"Space:foo"},
 	}, {
 		args: AllocateMachineArgs{
 			NotSpace: []string{"foo", "bar"},
 		},
-		notSubnets: []string{"space:foo", "space:bar"},
+		notSubnets: []string{"Space:foo", "Space:bar"},
 	}} {
 		err := test.args.Validate()
 		if test.err == "" {
@@ -689,7 +689,7 @@ func TestAllocateMachineInterfacesMatch(t *testing.T) {
 		// This isn't actually used, but here to show how it should be used.
 		Interfaces: []InterfaceSpec{{
 			Label: "database",
-			Space: "space-0",
+			Space: "Space-0",
 		}},
 	})
 	assert.Nil(t, err)
@@ -716,7 +716,7 @@ func TestAllocateMachineInterfacesMatchMissing(t *testing.T) {
 	_, _, err := controller.AllocateMachine(AllocateMachineArgs{
 		Interfaces: []InterfaceSpec{{
 			Label: "database",
-			Space: "space-0",
+			Space: "Space-0",
 		}},
 	})
 	assert.True(t, util.IsDeserializationError(err))
@@ -826,10 +826,10 @@ func TestAllocateMachineArgsForm(t *testing.T) {
 	// There should be one entry in the form Values for each of the args.
 	form := request.PostForm
 	assert.Len(t, form, 15)
-	// Positive space check.
-	assert.Equal(t, form.Get("interfaces"), "default:space=magic")
-	// Negative space check.
-	assert.Equal(t, form.Get("not_subnets"), "space:special")
+	// Positive Space check.
+	assert.Equal(t, form.Get("interfaces"), "default:Space=magic")
+	// Negative Space check.
+	assert.Equal(t, form.Get("not_subnets"), "Space:special")
 }
 
 func TestAllocateMachineNoMatch(t *testing.T) {
@@ -1121,7 +1121,7 @@ func assertFile(t *testing.T, request *http.Request, filename, content string) {
 // createTestServerController creates a ControllerInterface backed on to a test server
 // that has sufficient knowledge of versions and users to be able to create a
 // valid ControllerInterface.
-func createTestServerController(t *testing.T) (*client.SimpleTestServer, *controller) {
+func createTestServerController(t *testing.T) (*client.SimpleTestServer, *Controller) {
 	server := client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -1135,7 +1135,7 @@ func createTestServerController(t *testing.T) (*client.SimpleTestServer, *contro
 	return server, controller
 }
 
-func getController(t *testing.T) *controller {
+func getController(t *testing.T) *Controller {
 	controller, err := NewController(ControllerArgs{
 		BaseURL: server.URL,
 		APIKey:  "fake:as:key",

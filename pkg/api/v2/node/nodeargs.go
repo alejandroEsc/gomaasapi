@@ -1,4 +1,4 @@
-package maasapiv2
+package node
 
 import "github.com/juju/gomaasapi/pkg/api/util"
 
@@ -21,18 +21,18 @@ type NodesArgs struct {
 	AgentName    string
 }
 
-func nodesParams(args NodesArgs) *util.URLParams {
+func NodesParams(args NodesArgs) *util.URLParams {
 	params := util.NewURLParams()
-	params.MaybeAddMany("Hostname", args.Hostname)
+	params.MaybeAddMany("hostname", args.Hostname)
 	params.MaybeAddMany("mac_address", args.MACAddresses)
-	params.MaybeAddMany("ID", args.SystemIDs)
+	params.MaybeAddMany("id", args.SystemIDs)
 	params.MaybeAdd("domain", args.Domain)
-	params.MaybeAdd("Zone", args.Zone)
+	params.MaybeAdd("zone", args.Zone)
 	params.MaybeAdd("agent_name", args.AgentName)
 	return params
 }
 
-func createNodesParams(args CreateNodeArgs) *util.URLParams {
+func CreateNodesParams(args CreateNodeArgs) *util.URLParams {
 	params := util.NewURLParams()
 	params.MaybeAdd("Hostname", args.Hostname)
 	params.MaybeAdd("domain", args.Domain)

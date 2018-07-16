@@ -3,11 +3,11 @@
 
 package maasapiv2
 
-type space struct {
-	// Add the ControllerInterface in when we need to do things with the space.
+type Space struct {
+	// Add the ControllerInterface in when we need to do things with the Space.
 	// ControllerInterface ControllerInterface
 	ResourceURI string    `json:"resource_uri,omitempty"`
 	ID          int       `json:"ID,omitempty"`
 	Name        string    `json:"Name,omitempty"`
-	Subnets     []*subnet `json:"Subnets,omitempty"`
+	Subnets     []*Subnet `json:"Subnets,omitempty"`
 }

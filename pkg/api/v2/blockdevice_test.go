@@ -31,7 +31,7 @@ func TestReadBlockDevices(t *testing.T) {
 	assert.Equal(t, blockdevice.Name, "sda")
 	assert.Equal(t, blockdevice.Path, "/dev/disk/by-dname/sda")
 	assert.Equal(t, blockdevice.IDPath, "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001")
-	assert.Equal(t, blockdevice.UsedFor, "MBR partitioned with 1 partition")
+	assert.Equal(t, blockdevice.UsedFor, "MBR partitioned with 1 Partition")
 
 	assert.Equal(t, blockdevice.Tags, []string{"rotary"})
 	assert.Equal(t, blockdevice.BlockSize, uint64(4096))
@@ -43,7 +43,7 @@ func TestReadBlockDevices(t *testing.T) {
 	partition := partitions[0]
 
 	assert.Equal(t, partition.ID, 1)
-	assert.Equal(t, partition.UsedFor, "ext4 formatted filesystem mounted at /")
+	assert.Equal(t, partition.UsedFor, "ext4 formatted Filesystem mounted at /")
 }
 
 func TestReadBlockDevicesWithNulls(t *testing.T) {
@@ -64,27 +64,27 @@ const (
     {
         "Path": "/dev/disk/by-dname/sda",
         "Name": "sda",
-        "used_for": "MBR partitioned with 1 partition",
+        "used_for": "MBR partitioned with 1 Partition",
         "Partitions": [
             {
                 "bootable": false,
                 "ID": 1,
                 "Path": "/dev/disk/by-dname/sda-part1",
-                "filesystem": {
+                "Filesystem": {
                     "Type": "ext4",
                     "mount_point": "/",
                     "Label": "root",
                     "mount_options": null,
                     "UUID": "fcd7745e-f1b5-4f5d-9575-9b0bb796b752"
                 },
-                "type": "partition",
-                "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/partition/1",
+                "type": "Partition",
+                "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/Partition/1",
                 "UUID": "6199b7c9-b66f-40f6-a238-a938a58a0adf",
-                "used_for": "ext4 formatted filesystem mounted at /",
+                "used_for": "ext4 formatted Filesystem mounted at /",
                 "Size": 8581545984
             }
         ],
-        "filesystem": null,
+        "Filesystem": null,
         "id_path": "/dev/disk/by-ID/ata-QEMU_HARDDISK_QM00001",
         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/",
         "ID": 34,
@@ -108,9 +108,9 @@ const (
     {
         "Path": "/dev/disk/by-dname/sda",
         "Name": "sda",
-        "used_for": "MBR partitioned with 1 partition",
+        "used_for": "MBR partitioned with 1 Partition",
         "Partitions": [],
-        "filesystem": null,
+        "Filesystem": null,
         "id_path": null,
         "resource_uri": "/MAAS/api/2.0/nodes/4y3ha3/blockdevices/34/",
         "ID": 34,

@@ -50,7 +50,7 @@ func TestReadNeworkInterfaces(t *testing.T) {
 
 func TestNetworkInterfaceDelete(t *testing.T) {
 	server, iface := getServerAndNode(t)
-	// Successful delete is 204 - StatusNoContent - We hope, would be consistent
+	// Successful Delete is 204 - StatusNoContent - We hope, would be consistent
 	// with node deletions.
 	server.AddDeleteResponse(iface.ResourceURI, http.StatusNoContent, "")
 	defer server.Close()
@@ -94,26 +94,26 @@ func TestNetworkInterfaceLinkSubnetArgs(t *testing.T) {
 		args:    LinkSubnetArgs{Mode: InterfaceLinkMode("foo")},
 		errText: `unknown Mode value ("foo") not valid`,
 	}, {
-		args: LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &subnet{}},
+		args: LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &Subnet{}},
 	}, {
-		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &subnet{}},
+		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &Subnet{}},
 	}, {
-		args: LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &subnet{}},
+		args: LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &Subnet{}},
 	}, {
-		args:    LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &subnet{}, IPAddress: "10.10.10.10"},
+		args:    LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &Subnet{}, IPAddress: "10.10.10.10"},
 		errText: `setting IP Address when Mode is not LinkModeStatic not valid`,
 	}, {
-		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &subnet{}, IPAddress: "10.10.10.10"},
+		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &Subnet{}, IPAddress: "10.10.10.10"},
 	}, {
-		args:    LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &subnet{}, IPAddress: "10.10.10.10"},
+		args:    LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &Subnet{}, IPAddress: "10.10.10.10"},
 		errText: `setting IP Address when Mode is not LinkModeStatic not valid`,
 	}, {
-		args:    LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &subnet{}, DefaultGateway: true},
+		args:    LinkSubnetArgs{Mode: LinkModeDHCP, Subnet: &Subnet{}, DefaultGateway: true},
 		errText: `specifying DefaultGateway for Mode "DHCP" not valid`,
 	}, {
-		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &subnet{}, DefaultGateway: true},
+		args: LinkSubnetArgs{Mode: LinkModeStatic, Subnet: &Subnet{}, DefaultGateway: true},
 	}, {
-		args:    LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &subnet{}, DefaultGateway: true},
+		args:    LinkSubnetArgs{Mode: LinkModeLinkUp, Subnet: &Subnet{}, DefaultGateway: true},
 		errText: `specifying DefaultGateway for Mode "LINK_UP" not valid`,
 	}} {
 		err := test.args.Validate()
@@ -144,7 +144,7 @@ func TestNetworkInterfaceLinkSubnetGood(t *testing.T) {
 	server.AddPostResponse(iface.ResourceURI+"?op=link_subnet", http.StatusOK, response)
 	args := LinkSubnetArgs{
 		Mode:           LinkModeStatic,
-		Subnet:         &subnet{ID: 42},
+		Subnet:         &Subnet{ID: 42},
 		IPAddress:      "10.10.10.10",
 		DefaultGateway: true,
 	}
@@ -164,7 +164,7 @@ func TestNetworkInterfaceLinkSubnetMissing(t *testing.T) {
 	_, iface := getServerAndNewInterface(t)
 	args := LinkSubnetArgs{
 		Mode:   LinkModeStatic,
-		Subnet: &subnet{ID: 42},
+		Subnet: &Subnet{ID: 42},
 	}
 	err := iface.LinkSubnet(args)
 	assert.True(t, util.IsBadRequestError(err))
@@ -176,7 +176,7 @@ func TestNetworkInterfaceLinkSubnetForbidden(t *testing.T) {
 	defer server.Close()
 	args := LinkSubnetArgs{
 		Mode:   LinkModeStatic,
-		Subnet: &subnet{ID: 42},
+		Subnet: &Subnet{ID: 42},
 	}
 	err := iface.LinkSubnet(args)
 	assert.True(t, util.IsPermissionError(err))
@@ -189,7 +189,7 @@ func TestNetworkInterfaceLinkSubnetNoAddressesAvailable(t *testing.T) {
 	defer server.Close()
 	args := LinkSubnetArgs{
 		Mode:   LinkModeStatic,
-		Subnet: &subnet{ID: 42},
+		Subnet: &Subnet{ID: 42},
 	}
 	err := iface.LinkSubnet(args)
 	assert.True(t, util.IsCannotCompleteError(err))
@@ -203,7 +203,7 @@ func TestNetworkInterfaceLinkSubnetUnknown(t *testing.T) {
 
 	args := LinkSubnetArgs{
 		Mode:   LinkModeStatic,
-		Subnet: &subnet{ID: 42},
+		Subnet: &Subnet{ID: 42},
 	}
 	err := iface.LinkSubnet(args)
 	assert.True(t, util.IsUnexpectedError(err))
@@ -219,7 +219,7 @@ func TestNetworkInterfaceUnlinkSubnetValidates(t *testing.T) {
 
 func TestNetworkInterfaceUnlinkSubnetNotLinked(t *testing.T) {
 	_, iface := getServerAndNewInterface(t)
-	err := iface.UnlinkSubnet(&subnet{ID: 42})
+	err := iface.UnlinkSubnet(&Subnet{ID: 42})
 	assert.True(t, errors.IsNotValid(err))
 	assert.Equal(t, err.Error(), "unlinked Subnet not valid")
 }
@@ -232,19 +232,19 @@ func TestNetworkInterfaceUnlinkSubnetGood(t *testing.T) {
 		"Name": "eth42",
 	})
 	server.AddPostResponse(iface.ResourceURI+"?op=unlink_subnet", http.StatusOK, response)
-	err := iface.UnlinkSubnet(&subnet{ID: 1})
+	err := iface.UnlinkSubnet(&Subnet{ID: 1})
 	assert.Nil(t, err)
 	assert.Equal(t, iface.Name, "eth42")
 
 	request := server.LastRequest()
 	form := request.PostForm
-	// The link ID that contains Subnet 1 has an internal ID of 69.
+	// The Link ID that contains Subnet 1 has an internal ID of 69.
 	assert.Equal(t, form.Get("ID"), "69")
 }
 
 func TestNetworkInterfaceUnlinkSubnetMissing(t *testing.T) {
 	_, iface := getServerAndNewInterface(t)
-	err := iface.UnlinkSubnet(&subnet{ID: 1})
+	err := iface.UnlinkSubnet(&Subnet{ID: 1})
 	assert.True(t, util.IsBadRequestError(err))
 }
 
@@ -252,7 +252,7 @@ func TestNetworkInterfaceUnlinkSubnetForbidden(t *testing.T) {
 	server, iface := getServerAndNewInterface(t)
 	server.AddPostResponse(iface.ResourceURI+"?op=unlink_subnet", http.StatusForbidden, "bad user")
 	defer server.Close()
-	err := iface.UnlinkSubnet(&subnet{ID: 1})
+	err := iface.UnlinkSubnet(&Subnet{ID: 1})
 	assert.True(t, util.IsPermissionError(err))
 	assert.Equal(t, err.Error(), "bad user")
 }
@@ -261,7 +261,7 @@ func TestNetworkInterfaceUnlinkSubnetUnknown(t *testing.T) {
 	server, iface := getServerAndNewInterface(t)
 	server.AddPostResponse(iface.ResourceURI+"?op=unlink_subnet", http.StatusMethodNotAllowed, "wat?")
 	defer server.Close()
-	err := iface.UnlinkSubnet(&subnet{ID: 1})
+	err := iface.UnlinkSubnet(&Subnet{ID: 1})
 	assert.True(t, util.IsUnexpectedError(err))
 	assert.Equal(t, err.Error(), "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
@@ -311,7 +311,7 @@ func TestNetworkInterfaceUpdateGood(t *testing.T) {
 	args := UpdateInterfaceArgs{
 		Name:       "eth42",
 		MACAddress: "c3-52-51-b4-50-cd",
-		VLAN:       &vlan{ID: 13},
+		VLAN:       &VLAN{ID: 13},
 	}
 	err := iface.Update(args)
 	assert.Nil(t, err)
@@ -408,7 +408,7 @@ const (
                     "VID": 0
                 },
                 "dns_servers": [],
-                "space": "space-0",
+                "Space": "Space-0",
                 "Name": "192.168.100.0/24",
                 "gateway_ip": "192.168.100.1",
                 "cidr": "192.168.100.0/24"
@@ -452,7 +452,7 @@ const (
                     "VID": 0
                 },
                 "dns_servers": [],
-                "space": "space-0",
+                "Space": "Space-0",
                 "Name": "192.168.100.0/24",
                 "gateway_ip": "192.168.100.1",
                 "cidr": "192.168.100.0/24"

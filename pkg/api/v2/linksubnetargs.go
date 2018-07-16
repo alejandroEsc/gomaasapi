@@ -24,8 +24,8 @@ type LinkSubnetArgs struct {
 	// Mode is used to describe how the address is provided for the Link.
 	// Required field.
 	Mode InterfaceLinkMode
-	// Subnet is the Subnet to link to. Required field.
-	Subnet *subnet
+	// Subnet is the Subnet to Link to. Required field.
+	Subnet *Subnet
 	// IPAddress is only valid when the Mode is set to LinkModeStatic. If
 	// not specified with a Mode of LinkModeStatic, an IP address from the
 	// Subnet will be auto selected.

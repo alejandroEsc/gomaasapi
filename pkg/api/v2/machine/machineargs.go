@@ -1,4 +1,4 @@
-package maasapiv2
+package machine
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/util"
+	. "github.com/juju/gomaasapi/pkg/api/v2"
+
 	"github.com/juju/utils/set"
 )
 
@@ -74,8 +76,8 @@ type CreateMachineNodeArgs struct {
 	Hostname      string
 	InterfaceName string
 	MACAddress    string
-	Subnet        *subnet
-	VLAN          *vlan
+	Subnet        *Subnet
+	VLAN          *VLAN
 }
 
 // Validate ensures that all required Values are non-emtpy.
@@ -156,7 +158,7 @@ func (a *AllocateMachineArgs) notSubnets() []string {
 	return values
 }
 
-func machinesParams(args MachinesArgs) *util.URLParams {
+func MachinesParams(args MachinesArgs) *util.URLParams {
 	params := util.NewURLParams()
 	params.MaybeAddMany("Hostname", args.Hostnames)
 	params.MaybeAddMany("mac_address", args.MACAddresses)
@@ -167,7 +169,7 @@ func machinesParams(args MachinesArgs) *util.URLParams {
 	return params
 }
 
-func allocateMachinesParams(args AllocateMachineArgs) *util.URLParams {
+func AllocateMachinesParams(args AllocateMachineArgs) *util.URLParams {
 	params := util.NewURLParams()
 	params.MaybeAdd("Name", args.Hostname)
 	params.MaybeAdd("system_id", args.SystemId)
@@ -187,14 +189,14 @@ func allocateMachinesParams(args AllocateMachineArgs) *util.URLParams {
 	return params
 }
 
-func releaseMachinesParams(args ReleaseMachinesArgs) *util.URLParams {
+func ReleaseMachinesParams(args ReleaseMachinesArgs) *util.URLParams {
 	params := util.NewURLParams()
 	params.MaybeAddMany("machines", args.SystemIDs)
 	params.MaybeAdd("comment", args.Comment)
 	return params
 }
 
-func startMachineParams(args DeployMachineArgs) *util.URLParams {
+func DeploytMachineParams(args DeployMachineArgs) *util.URLParams {
 	params := util.NewURLParams()
 	params.MaybeAdd("user_data", args.UserData)
 	params.MaybeAdd("distro_series", args.DistroSeries)

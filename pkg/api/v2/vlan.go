@@ -21,7 +21,7 @@ package maasapiv2
 // A “Default VLAN” is created for every Fabric, to which every new VLAN-aware
 // object in the Fabric will be associated to by default (unless otherwise
 // specified).
-type vlan struct {
+type VLAN struct {
 	// Add the ControllerInterface in when we need to do things with the VLAN.
 	// ControllerInterface ControllerInterface
 	ResourceURI string `json:"resource_uri,omitempty"`

@@ -11,13 +11,13 @@ import (
 )
 
 func TestZoneReadBadSchema(t *testing.T) {
-	var z zone
+	var z Zone
 	err = json.Unmarshal([]byte("wat?"), &z)
 	assert.Error(t, err)
 }
 
 func TestZonesRead(t *testing.T) {
-	var zones []zone
+	var zones []Zone
 	err = json.Unmarshal([]byte(zoneResponse), &zones)
 	assert.Nil(t, err)
 
