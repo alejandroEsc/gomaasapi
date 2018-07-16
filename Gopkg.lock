@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/juju/errors"
   packages = ["."]
@@ -15,24 +21,9 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/juju/retry"
-  packages = ["."]
-  revision = "1998d01ba1c3eeb4a4728c4a50660025b2fe7c8f"
-
-[[projects]]
-  branch = "master"
   name = "github.com/juju/schema"
   packages = ["."]
   revision = "e4f08199aa80d3194008c0bd2e14ef5edc0e6be6"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/juju/testing"
-  packages = [
-    ".",
-    "checkers"
-  ]
-  revision = "72703b1e95eb8ce4737fd8a3d8496c6b0be280a6"
 
 [[projects]]
   branch = "master"
@@ -51,16 +42,34 @@
   revision = "b64dbd566305c836274f0268fa59183a52906b36"
 
 [[projects]]
-  name = "github.com/kr/pretty"
-  packages = ["."]
-  revision = "73f6ac0b30a98e433b289500d779f50c1a6f0712"
-  version = "v0.1.0"
+  branch = "master"
+  name = "github.com/lxc/lxd"
+  packages = ["shared/logger"]
+  revision = "1a0d71beb873c18ab744a2909c18658ce5203f62"
 
 [[projects]]
-  name = "github.com/kr/text"
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
+  version = "v1.2.2"
+
+[[projects]]
+  name = "github.com/tidwall/gjson"
   packages = ["."]
-  revision = "e2ffdb16a802fe2bb95e2e35ff34f0e53aeef34f"
-  version = "v0.1.0"
+  revision = "f123b340873a0084cb27267eddd8ff615115fbff"
+  version = "v1.1.2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/tidwall/match"
+  packages = ["."]
+  revision = "1731857f09b1f38450e2c12409748407822dc6be"
 
 [[projects]]
   branch = "master"
@@ -75,12 +84,6 @@
   revision = "039a4258aec0ad3c79b905677cceeab13b296a77"
 
 [[projects]]
-  branch = "v1"
-  name = "gopkg.in/check.v1"
-  packages = ["."]
-  revision = "788fd78401277ebd861206a03c884797c6ec5541"
-
-[[projects]]
   branch = "v2"
   name = "gopkg.in/juju/names.v2"
   packages = ["."]
@@ -90,11 +93,8 @@
   branch = "v2"
   name = "gopkg.in/mgo.v2"
   packages = [
-    ".",
     "bson",
-    "internal/json",
-    "internal/sasl",
-    "internal/scram"
+    "internal/json"
   ]
   revision = "9856a29383ce1c59f308dd1cf0363a79b5bef6b5"
 
@@ -107,6 +107,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6c92affbee654658e9430f9e717a1e2efdbf12e3846f42f9d98a74e6afe29c83"
+  inputs-digest = "15c20f690a378f4c5553c528266ac9eb12f61ca25c38554ed1caae0f2a7b8ae2"
   solver-name = "gps-cdcl"
   solver-version = 1

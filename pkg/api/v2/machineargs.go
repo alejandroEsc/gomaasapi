@@ -5,6 +5,7 @@ import (
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/juju/utils/set"
 	"strings"
+	"fmt"
 )
 
 // MachinesArgs is a argument struct for selecting Machines.
@@ -72,6 +73,27 @@ type CreateMachineNodeArgs struct {
 	MACAddress    string
 	Subnet        *subnet
 	VLAN          *vlan
+}
+
+// Validate ensures that all required Values are non-emtpy.
+func (a *CreateMachineNodeArgs) Validate() error {
+	if a.InterfaceName == "" {
+		return errors.NotValidf("missing InterfaceName")
+	}
+
+	if a.MACAddress == "" {
+		return errors.NotValidf("missing MACAddress")
+	}
+
+	if a.Subnet != nil && a.VLAN != nil && a.Subnet.VLAN != a.VLAN {
+		msg := fmt.Sprintf(
+			"given Subnet %q on VLAN %d does not match given VLAN %d",
+			a.Subnet.CIDR, a.Subnet.VLAN.ID, a.VLAN.ID,
+		)
+		return errors.NewNotValid(nil, msg)
+	}
+
+	return nil
 }
 
 // Validate makes sure that any labels specifed in Storage or Interfaces

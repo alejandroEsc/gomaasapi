@@ -9,8 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"path"
-	"strings"
 	"sync/atomic"
 
 	"github.com/juju/errors"
@@ -88,7 +86,6 @@ func newControllerWithVersion(baseURL, apiVersion, apiKey string) (*controller, 
 	if err != nil {
 		// If the credentials aren't valid, return now.
 		if errors.IsNotValid(err) {
-			//return nil, errors.Trace(err)
 			return nil, err
 		}
 		// Any other error attempting to create the authenticated Client
@@ -103,12 +100,10 @@ func newControllerWithVersion(baseURL, apiVersion, apiKey string) (*controller, 
 	controller.Capabilities, err = controller.readAPIVersionInfo()
 	if err != nil {
 		logger.Debugf("read version failed: %#v", err)
-		//return nil, errors.Trace(err)
 		return nil, err
 	}
 
 	if err := controller.checkCreds(); err != nil {
-		//return nil, errors.Trace(err)
 		return nil, err
 	}
 	return controller, nil
@@ -127,13 +122,14 @@ func newControllerUnknownVersion(args ControllerArgs) (*controller, error) {
 			// This will only come back from readAPIVersionInfo for 410/404.
 			continue
 		default:
-			//return nil, errors.Trace(err)
 			return nil, err
 		}
 	}
 
 	return nil, util.NewUnsupportedVersionError("ControllerInterface at %s does not support any of %s", args.BaseURL, supportedAPIVersions)
 }
+
+
 
 // BootResources implements ControllerInterface.
 func (c *controller) BootResources() ([]*bootResource, error) {
@@ -145,7 +141,7 @@ func (c *controller) BootResources() ([]*bootResource, error) {
 	var resources []*bootResource
 	err = json.Unmarshal(source, &resources)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 
 	return resources, nil
@@ -161,7 +157,7 @@ func (c *controller) Fabrics() ([]fabric, error) {
 	var fabrics []fabric
 	err = json.Unmarshal(source, &fabrics)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 
 	return fabrics, nil
@@ -177,7 +173,7 @@ func (c *controller) Spaces() ([]space, error) {
 	var spaces []space
 	err = json.Unmarshal(source, &spaces)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 
 	return spaces, nil
@@ -192,7 +188,7 @@ func (c *controller) StaticRoutes() ([]staticRoute, error) {
 	var staticRoutes []staticRoute
 	err = json.Unmarshal(source, &staticRoutes)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 
 	return staticRoutes, nil
@@ -207,7 +203,7 @@ func (c *controller) Zones() ([]zone, error) {
 	var zones []zone
 	err = json.Unmarshal(source, &zones)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 	return zones, nil
 }
@@ -224,7 +220,7 @@ func (c *controller) Nodes(args NodesArgs) ([]node, error) {
 	var nodes []node
 	err = json.Unmarshal(source, &nodes)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 	for _, d := range nodes {
 		d.Controller = c
@@ -256,7 +252,7 @@ func (c *controller) CreateNode(args CreateNodeArgs) (*node, error) {
 	iSet := make([]*MachineNetworkInterface, 0)
 	err = json.Unmarshal(result, &d)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 	d.Controller = c
 
@@ -313,96 +309,6 @@ func ownerDataMatches(ownerData, filter map[string]string) bool {
 	return true
 }
 
-// StorageSpec represents one element of storage constraints necessary
-// to be satisfied to allocate a MachineInterface.
-type StorageSpec struct {
-	// Label is optional and an arbitrary string. Labels need to be unique
-	// across the StorageSpec elements specified in the AllocateMachineArgs.
-	Label string
-	// Size is required and refers to the required minimum Size in GB.
-	Size int
-	// Zero or more Tags assocated to with the disks.
-	Tags []string
-}
-
-// Validate ensures that there is a positive Size and that there are no Empty
-// tag Values.
-func (s *StorageSpec) Validate() error {
-	if s.Size <= 0 {
-		return errors.NotValidf("Size value %d", s.Size)
-	}
-	for _, v := range s.Tags {
-		if v == "" {
-			return errors.NotValidf("empty tag")
-		}
-	}
-	return nil
-}
-
-// String returns the string representation of the storage spec.
-func (s *StorageSpec) String() string {
-	label := s.Label
-	if label != "" {
-		label += ":"
-	}
-	tags := strings.Join(s.Tags, ",")
-	if tags != "" {
-		tags = "(" + tags + ")"
-	}
-	return fmt.Sprintf("%s%d%s", label, s.Size, tags)
-}
-
-// InterfaceSpec represents one elemenet of network related constraints.
-type InterfaceSpec struct {
-	// Label is required and an arbitrary string. Labels need to be unique
-	// across the InterfaceSpec elements specified in the AllocateMachineArgs.
-	// The Label is returned in the ConstraintMatches response from
-	// AllocateMachine.
-	Label string
-	Space string
-
-	// NOTE: there are other interface spec Values that we are not exposing at
-	// this stage that can be added on an as needed basis. Other possible Values are:
-	//     'fabric_class', 'not_fabric_class',
-	//     'subnet_cidr', 'not_subnet_cidr',
-	//     'VID', 'not_vid',
-	//     'Fabric', 'not_fabric',
-	//     'Subnet', 'not_subnet',
-	//     'Mode'
-}
-
-// Validate ensures that a Label is specified and that there is at least one
-// Space or NotSpace value set.
-func (a *InterfaceSpec) Validate() error {
-	if a.Label == "" {
-		return errors.NotValidf("missing Label")
-	}
-	// Perhaps at some stage in the future there will be other possible specs
-	// supported (like VID, Subnet, etc), but until then, just space to check.
-	if a.Space == "" {
-		return errors.NotValidf("empty Space constraint")
-	}
-	return nil
-}
-
-// String returns the interface spec as MaaS requires it.
-func (a *InterfaceSpec) String() string {
-	return fmt.Sprintf("%s:space=%s", a.Label, a.Space)
-}
-
-// ConstraintMatches provides a way for the caller of AllocateMachine to determine
-//.how the allocated MachineInterface matched the storage and interfaces constraints specified.
-// The labels that were used in the constraints are the keys in the maps.
-type ConstraintMatches struct {
-	// MachineNetworkInterface is a mapping of the constraint Label specified to the Interfaces
-	// that match that constraint.
-	Interfaces map[string][]MachineNetworkInterface
-
-	// Storage is a mapping of the constraint Label specified to the BlockDevices
-	// that match that constraint.
-	Storage map[string][]BlockDevice
-}
-
 // AllocateMachine will attempt to allocate a MachineInterface to the user.
 // If successful, the allocated MachineInterface is returned.
 // Returns an error that satisfies IsNoMatchError if the requested
@@ -426,19 +332,19 @@ func (c *controller) AllocateMachine(args AllocateMachineArgs) (*Machine, Constr
 	var source map[string]interface{}
 	err = json.Unmarshal(result, &machine)
 	if err != nil {
-		return nil, matches, errors.Trace(err)
+		return nil, matches, err
 	}
 	machine.Controller = c
 
 	err = json.Unmarshal(result, &source)
 	if err != nil {
-		return nil, matches, errors.Trace(err)
+		return nil, matches, err
 	}
 
 	// Parse the constraint matches.
 	matches, err = parseAllocateConstraintsResponse(source, machine)
 	if err != nil {
-		return nil, matches, errors.Trace(err)
+		return nil, matches, err
 	}
 
 	return machine, matches, nil
@@ -510,38 +416,10 @@ func (c *controller) GetFile(filename string) (*File, error) {
 	var file File
 	err = json.Unmarshal(source, &file)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 	file.Controller = c
 	return &file, nil
-}
-
-// Validate checks to make sure the Filename has no slashes, and that one of
-// Content or (Reader, Length) is specified.
-func (a *AddFileArgs) Validate() error {
-	dir, _ := path.Split(a.Filename)
-	if dir != "" {
-		return errors.NotValidf("paths in Filename %q", a.Filename)
-	}
-	if a.Filename == "" {
-		return errors.NotValidf("missing Filename")
-	}
-	if a.Content == nil {
-		if a.Reader == nil {
-			return errors.NotValidf("missing Content or Reader")
-		}
-		if a.Length == 0 {
-			return errors.NotValidf("missing Length")
-		}
-	} else {
-		if a.Reader != nil {
-			return errors.NotValidf("specifying Content and Reader")
-		}
-		if a.Length != 0 {
-			return errors.NotValidf("specifying Length and Content")
-		}
-	}
-	return nil
 }
 
 // AddFile adds or replaces the Content of the specified Filename.
@@ -550,7 +428,7 @@ func (a *AddFileArgs) Validate() error {
 // instance here too.
 func (c *controller) AddFile(args AddFileArgs) error {
 	if err := args.Validate(); err != nil {
-		return errors.Trace(err)
+		return err
 	}
 	fileContent := args.Content
 	if fileContent == nil {
@@ -597,7 +475,7 @@ func (c *controller) put(path string, params url.Values) ([]byte, error) {
 	if err != nil {
 		logger.Tracef("response %x: error: %q", requestID, err.Error())
 		logger.Tracef("error detail: %#v", err)
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 	return bytes, nil
 }
@@ -605,7 +483,7 @@ func (c *controller) put(path string, params url.Values) ([]byte, error) {
 func (c *controller) post(path, op string, params url.Values) ([]byte, error) {
 	bytes, err := c.postRaw(path, op, params, nil)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 	return bytes, nil
 }
@@ -631,7 +509,6 @@ func (c *controller) postRaw(path, op string, params url.Values, files map[strin
 	if err != nil {
 		logger.Tracef("response %x: error: %q", requestID, err.Error())
 		logger.Tracef("error detail: %#v", err)
-		//return nil, errors.Trace(err)
 		return nil, err
 	}
 	logger.Tracef("response %x: %s", requestID, string(bytes))
@@ -647,18 +524,13 @@ func (c *controller) delete(path string) error {
 	if err != nil {
 		logger.Tracef("response %x: error: %q", requestID, err.Error())
 		logger.Tracef("error detail: %#v", err)
-		return errors.Trace(err)
+		return err
 	}
 	logger.Tracef("response %x: complete", requestID)
 	return nil
 }
 
 func (c *controller) get(path, op string, params url.Values) ([]byte, error) {
-	if c == nil {
-		//return nil, errors.Trace(fmt.Errorf("control has a nil client"))
-		return nil, fmt.Errorf("control is nil!")
-	}
-
 	path = util.EnsureTrailingSlash(path)
 	url := &url.URL{Path: path}
 	requestID := nextRequestID()
@@ -673,7 +545,6 @@ func (c *controller) get(path, op string, params url.Values) ([]byte, error) {
 	if err != nil {
 		logger.Tracef("response %x: error: %q", requestID, err.Error())
 		logger.Tracef("error detail: %#v", err)
-		//return nil, errors.Trace(err)
 		return nil, err
 	}
 	logger.Tracef("response %x: %s", requestID, string(bytes))
@@ -709,7 +580,6 @@ func (c *controller) readAPIVersionInfo() (set.Strings, error) {
 		return nil, util.WrapWithUnsupportedVersionError(err)
 	} else if err != nil {
 		return nil, err
-		//return nil, errors.Trace(err)
 	}
 	err = json.Unmarshal(parsedBytes, &parsed)
 	if err != nil {

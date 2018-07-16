@@ -4,7 +4,6 @@
 package maasapiv2
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -149,27 +148,6 @@ func (m *Machine) Start(args StartArgs) error {
 	return nil
 }
 
-// Validate ensures that all required Values are non-emtpy.
-func (a *CreateMachineNodeArgs) Validate() error {
-	if a.InterfaceName == "" {
-		return errors.NotValidf("missing InterfaceName")
-	}
-
-	if a.MACAddress == "" {
-		return errors.NotValidf("missing MACAddress")
-	}
-
-	if a.Subnet != nil && a.VLAN != nil && a.Subnet.VLAN != a.VLAN {
-		msg := fmt.Sprintf(
-			"given Subnet %q on VLAN %d does not match given VLAN %d",
-			a.Subnet.CIDR, a.Subnet.VLAN.ID, a.VLAN.ID,
-		)
-		return errors.NewNotValid(nil, msg)
-	}
-
-	return nil
-}
-
 // CreateNode implements Machine
 func (m *Machine) CreateNode(args CreateMachineNodeArgs) (*node, error) {
 	if err := args.Validate(); err != nil {
@@ -287,7 +265,6 @@ type MachineInterface interface {
 	// this MachineInterface as the Parent.
 	Devices(NodesArgs) ([]NodeInterface, error)
 
-	InterfaceSet() []*MachineNetworkInterface
 	// MachineNetworkInterface returns the interface for the MachineInterface that matches the ID
 	// specified. If there is no match, nil is returned.
 	Interface(id int) *MachineNetworkInterface

@@ -39,23 +39,11 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/juju/testing"
-
-[[constraint]]
-  branch = "master"
   name = "github.com/juju/utils"
 
 [[constraint]]
   branch = "master"
   name = "github.com/juju/version"
-
-[[constraint]]
-  branch = "v1"
-  name = "gopkg.in/check.v1"
-
-[[constraint]]
-  branch = "v2"
-  name = "gopkg.in/mgo.v2"
 
 [prune]
   go-tests = true
