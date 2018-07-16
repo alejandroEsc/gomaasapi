@@ -3,6 +3,7 @@ package maasapiv2
 import (
 	"io"
 	"path"
+
 	"github.com/juju/errors"
 )
 

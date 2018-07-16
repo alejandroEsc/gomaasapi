@@ -1,8 +1,9 @@
 package maasapiv2
 
 import (
-	"github.com/juju/errors"
 	"fmt"
+
+	"github.com/juju/errors"
 )
 
 // InterfaceSpec represents one element of network related constraints.
@@ -37,6 +38,7 @@ func (a *InterfaceSpec) Validate() error {
 	}
 	return nil
 }
+
 // String returns the interface spec as MaaS requires it.
 func (a *InterfaceSpec) String() string {
 	return fmt.Sprintf("%s:space=%s", a.Label, a.Space)

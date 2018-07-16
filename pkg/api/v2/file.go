@@ -10,10 +10,11 @@ import (
 
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
-	"strings"
 )
 
 type File struct {

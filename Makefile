@@ -4,7 +4,7 @@ clean: ## clean build output
 go-clean: ## Invoke gofmt's "simplify" option to streamline the source code.
 	gofmt -w -s ./pkg
 	gofmt -w -s ./cmd
-	goimports -w $(git ls-files "**/*.go" "*.go" | grep -v -e "vendor")
+	goimports -w $(shell git ls-files "**/*.go" "*.go" | grep -v -e "vendor" | xargs echo)
 
 .PHONY: install-tools
 install-tools: ## install tools needed by go-link-checks

@@ -5,10 +5,11 @@ package client
 
 import (
 	"fmt"
-	"github.com/lxc/lxd/shared/logger"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+
+	"github.com/lxc/lxd/shared/logger"
 )
 
 type singleServingServer struct {

@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"sync/atomic"
 
+	"io"
+
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
@@ -18,7 +20,6 @@ import (
 	"github.com/juju/schema"
 	"github.com/juju/utils/set"
 	"github.com/juju/version"
-	"io"
 )
 
 var (
@@ -128,8 +129,6 @@ func newControllerUnknownVersion(args ControllerArgs) (*controller, error) {
 
 	return nil, util.NewUnsupportedVersionError("ControllerInterface at %s does not support any of %s", args.BaseURL, supportedAPIVersions)
 }
-
-
 
 // BootResources implements ControllerInterface.
 func (c *controller) BootResources() ([]*bootResource, error) {

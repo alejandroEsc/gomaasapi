@@ -1,11 +1,12 @@
 package maasapiv2
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/juju/utils/set"
-	"strings"
-	"fmt"
 )
 
 // MachinesArgs is a argument struct for selecting Machines.

@@ -1,9 +1,10 @@
 package maasapiv2
 
 import (
-	"github.com/juju/errors"
-	"strings"
 	"fmt"
+	"strings"
+
+	"github.com/juju/errors"
 )
 
 // StorageSpec represents one element of storage constraints necessary

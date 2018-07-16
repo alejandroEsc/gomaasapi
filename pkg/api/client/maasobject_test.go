@@ -9,8 +9,9 @@ import (
 	"math/rand"
 	"net/url"
 
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func makeFakeResourceURI() string {

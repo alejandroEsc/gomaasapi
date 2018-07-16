@@ -116,8 +116,6 @@ func (i *MachineNetworkInterface) Delete() error {
 // LinkSubnetArgs.
 type InterfaceLinkMode string
 
-
-
 // LinkSubnet will attempt to make this interface available on the specified
 // Subnet.
 func (i *MachineNetworkInterface) LinkSubnet(args LinkSubnetArgs) error {

@@ -8,11 +8,12 @@ import (
 
 	"encoding/json"
 
+	"testing"
+
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestReadNodesBadSchema(t *testing.T) {

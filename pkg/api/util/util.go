@@ -5,9 +5,10 @@ package util
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // JoinURLs joins a base URL and a subpath together.

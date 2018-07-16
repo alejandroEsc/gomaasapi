@@ -5,9 +5,10 @@ package maasapiv2
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestReadPartitionsBadSchema(t *testing.T) {

@@ -6,9 +6,10 @@ package maasapiv2
 import (
 	"encoding/json"
 
+	"testing"
+
 	"github.com/juju/utils/set"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestReadBootResourcesBadSchema(t *testing.T) {

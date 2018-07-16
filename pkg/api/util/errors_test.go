@@ -6,9 +6,10 @@ package util
 import (
 	"strings"
 
+	"testing"
+
 	"github.com/juju/errors"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNoMatchError(t *testing.T) {
