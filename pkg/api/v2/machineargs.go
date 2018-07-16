@@ -54,9 +54,9 @@ type AllocateMachineArgs struct {
 	DryRun    bool
 }
 
-// StartArgs is an argument struct for passing parameters to the Machine.Start
+// DeployMachineArgs is an argument struct for passing parameters to the Machine.Deploy
 // method.
-type StartArgs struct {
+type DeployMachineArgs struct {
 	// UserData needs to be Base64 encoded user data for cloud-init.
 	UserData     string
 	DistroSeries string
@@ -192,7 +192,7 @@ func releaseMachinesParams(args ReleaseMachinesArgs) *util.URLParams {
 	return params
 }
 
-func startMachineParams(args StartArgs) *util.URLParams {
+func startMachineParams(args DeployMachineArgs) *util.URLParams {
 	params := util.NewURLParams()
 	params.MaybeAdd("user_data", args.UserData)
 	params.MaybeAdd("distro_series", args.DistroSeries)

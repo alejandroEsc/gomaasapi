@@ -118,8 +118,8 @@ func (m *Machine) Nodes(args NodesArgs) ([]node, error) {
 	return result, nil
 }
 
-// Start implements Machine.
-func (m *Machine) Start(args StartArgs) error {
+// Deploy implements Machine.
+func (m *Machine) Deploy(args DeployMachineArgs) error {
 	params := startMachineParams(args)
 	result, err := m.Controller.post(m.ResourceURI, "deploy", params.Values)
 	if err != nil {
@@ -272,12 +272,12 @@ type MachineInterface interface {
 	// ID specified. If there is no match, nil is returned.
 	BlockDevice(id int) BlockDevice
 
-	// Start the MachineInterface and install the operating system specified in the args.
-	Start(StartArgs) error
+	// Deploy the MachineInterface and install the operating system specified in the args.
+	Deploy(DeployMachineArgs) error
 
 	// CreateNode creates a new NodeInterface with this MachineInterface as the Parent.
 	// The node will have one interface that is linked to the specified Subnet.
-	CreateDevice(CreateMachineNodeArgs) (NodeInterface, error)
+	CreateNode(CreateMachineNodeArgs) (NodeInterface, error)
 }
 
 // OwnerDataHolderInterface represents any MAAS object that can store key/value

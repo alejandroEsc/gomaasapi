@@ -123,13 +123,13 @@ func ManipulateMachines(maas *client.MAASObject) {
 	var machines []maasapiv2.Machine
 	var machines2 []maasapiv2.Machine
 	var machines3 []maasapiv2.Machine
-	var newNode maasapiv2.Machine
-	var newNode2 maasapiv2.Machine
+	var newMachine maasapiv2.Machine
+	var newMachine2 maasapiv2.Machine
 
 	machinesRequestObj := maas.GetSubObject("machines")
 
 	// List nodes.
-	fmt.Println("Fetching list of nodes...")
+	fmt.Println("Fetching list of machines...")
 	machinesObject, err := machinesRequestObj.CallGet("", url.Values{})
 	checkError(err)
 
@@ -138,28 +138,28 @@ func ManipulateMachines(maas *client.MAASObject) {
 
 	fmt.Printf("Got list of %v nodes\n", len(machines))
 	for index, node := range machines {
-		fmt.Printf("Node #%d is named '%v' (%v)\n", index, node.Hostname, node.ResourceURI)
+		fmt.Printf("Machine #%d is named '%v' (%v)\n", index, node.Hostname, node.ResourceURI)
 	}
 
 	// Create a node.
-	fmt.Println("Creating a new node...")
+	fmt.Println("Creating a new machine...")
 	params := url.Values{"architecture": {"amd64/generic"}, "mac_addresses": {"AA:BB:CC:DD:EE:FF"}, "power_type": {"manual"}}
-	newNodeObj, err := machinesRequestObj.CallPost("", params)
+	newMachineObj, err := machinesRequestObj.CallPost("", params)
 	checkError(err)
 
-	err = json.Unmarshal(newNodeObj.Values, &newNode)
+	err = json.Unmarshal(newMachineObj.Values, &newMachine)
 	checkError(err)
-	fmt.Printf("New node created: %s (%s)\n", newNode.Hostname, newNode.ResourceURI)
+	fmt.Printf("New node created: %s (%s)\n", newMachine.Hostname, newMachine.ResourceURI)
 
 	// Update the new node.
 	fmt.Println("Updating the new node...")
 	updateParams := url.Values{"hostname": {"mynewname"}}
-	newNodeObj2, err := newNodeObj.Update(updateParams)
+	newNodeObj2, err := newMachineObj.Update(updateParams)
 	checkError(err)
 
-	err = json.Unmarshal(newNodeObj2.Values, &newNode2)
+	err = json.Unmarshal(newNodeObj2.Values, &newMachine2)
 	checkError(err)
-	fmt.Printf("New node updated, now named: %s\n", newNode2.Hostname)
+	fmt.Printf("New machine updated, now named: %s\n", newMachine2.Hostname)
 
 	// Count the nodes.
 	listNodeObjects2, err := machinesRequestObj.CallGet("", url.Values{})
@@ -173,7 +173,7 @@ func ManipulateMachines(maas *client.MAASObject) {
 
 	// Delete the new node.
 	fmt.Println("Deleting the new node...")
-	errDelete := newNodeObj.Delete()
+	errDelete := newMachineObj.Delete()
 	checkError(errDelete)
 
 	// Count the nodes.

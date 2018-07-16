@@ -116,7 +116,7 @@ func getServerAndMachine(t *testing.T) (*client.SimpleTestServer, *Machine) {
 	return server, &machine
 }
 
-func TestStart(t *testing.T) {
+func TestMachineDeploy(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	defer server.Close()
 	response := util.UpdateJSONMap(t, machineResponse, map[string]interface{}{
@@ -125,7 +125,7 @@ func TestStart(t *testing.T) {
 	})
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusOK, response)
 
-	err := machine.Start(StartArgs{
+	err := machine.Deploy(DeployMachineArgs{
 		UserData:     "userdata",
 		DistroSeries: "trusty",
 		Kernel:       "kernel",
@@ -145,47 +145,47 @@ func TestStart(t *testing.T) {
 	assert.Equal(t, form.Get("comment"), "a comment")
 }
 
-func TestStartMachineNotFound(t *testing.T) {
+func TestMachineDeployNotFound(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	defer server.Close()
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusNotFound, "can't find MachineInterface")
-	err := machine.Start(StartArgs{})
+	err := machine.Deploy(DeployMachineArgs{})
 	assert.True(t, util.IsBadRequestError(err))
 	assert.Equal(t, err.Error(), "can't find MachineInterface")
 }
 
-func TestStartMachineConflict(t *testing.T) {
+func TestMachineDeployConflict(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	defer server.Close()
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusConflict, "MachineInterface not allocated")
-	err := machine.Start(StartArgs{})
+	err := machine.Deploy(DeployMachineArgs{})
 	assert.True(t, util.IsBadRequestError(err))
 	assert.Equal(t, err.Error(), "MachineInterface not allocated")
 }
 
-func TestStartMachineForbidden(t *testing.T) {
+func TestMachineDeployForbidden(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	defer server.Close()
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusForbidden, "MachineInterface not yours")
-	err := machine.Start(StartArgs{})
+	err := machine.Deploy(DeployMachineArgs{})
 	assert.True(t, util.IsPermissionError(err))
 	assert.Equal(t, err.Error(), "MachineInterface not yours")
 }
 
-func TestStartMachineServiceUnavailable(t *testing.T) {
+func TestMachineDeployServiceUnavailable(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	defer server.Close()
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusServiceUnavailable, "no ip addresses available")
-	err := machine.Start(StartArgs{})
+	err := machine.Deploy(DeployMachineArgs{})
 	assert.True(t, util.IsCannotCompleteError(err))
 	assert.Equal(t, err.Error(), "no ip addresses available")
 }
 
-func TestStartMachineUnknown(t *testing.T) {
+func TestMachineDeployMachineUnknown(t *testing.T) {
 	server, machine := getServerAndMachine(t)
 	defer server.Close()
 	server.AddPostResponse(machine.ResourceURI+"?op=deploy", http.StatusMethodNotAllowed, "wat?")
-	err := machine.Start(StartArgs{})
+	err := machine.Deploy(DeployMachineArgs{})
 	assert.True(t, util.IsUnexpectedError(err))
 	assert.Equal(t, err.Error(), "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
