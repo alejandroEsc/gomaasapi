@@ -16,7 +16,7 @@ import (
 )
 
 // Nodes are now known as nodes...? should reconsider this struct.
-// Device represents some form of Node in MAAS.
+// Device represents some form of Node in maas.
 type Node struct {
 	// TODO: add domain
 	Controller  *Controller `json:"-"`

@@ -20,10 +20,10 @@ const (
 	resourceURI = "resource_uri"
 )
 
-// MAASObject represents a MAAS object as returned by the MAAS API, such as a
+// MAASObject represents a maas object as returned by the maas API, such as a
 // Node or a Tag.
 // You can extract a MAASObject out of a JSONObject using
-// JSONObject.GetMAASObject.  A MAAS API call will usually return either a
+// JSONObject.GetMAASObject.  A maas API call will usually return either a
 // MAASObject or a list of MAASObjects.  The list itself would be wrapped in
 // a JSONObject, so if an API call returns a list of objects "l," you first
 // obtain the array using l.GetArray().  Then, for each item "i" in the array,
@@ -34,8 +34,8 @@ type MAASObject struct {
 	URI    *url.URL
 }
 
-// NewMAAS returns an interface to the MAAS API as a *MAASObject.
-func NewMAAS(client MAASClient) *MAASObject {
+// NewMAASObj returns an interface to the maas API as a *MAASObject.
+func NewMAASObj(client MAASClient) *MAASObject {
 	return &MAASObject{URI: client.APIURL, Client: client, Values: nil}
 }
 
@@ -73,18 +73,18 @@ func extractURI(value []byte) (*url.URL, error) {
 	return resourceURL, nil
 }
 
-// URL returns a full absolute URL (including network part) for this MAAS
+// URL returns a full absolute URL (including network part) for this maas
 // object on the API.
 func (obj MAASObject) URL() *url.URL {
 	return obj.Client.GetURL(obj.URI)
 }
 
-// GetField extracts a string field from this MAAS object.
+// GetField extracts a string field from this maas object.
 func (obj MAASObject) GetField(name string) string {
 	return gjson.Get(string(obj.Values), name).String()
 }
 
-// Get retrieves a fresh copy of this MAAS object from the API.
+// Get retrieves a fresh copy of this maas object from the API.
 func (obj MAASObject) Get() (*MAASObject, error) {
 	result, err := obj.Client.Get(obj.URI, "", url.Values{})
 	if err != nil {

@@ -3,7 +3,7 @@
 
 /*
 This is an cmd on how the Go library gomaasapi can be used to interact with
-a real MAAS server.
+a real maas server.
 Note that this is a provided only as an cmd and that real code should probably do something more sensible with errors than ignoring them or panicking.
 */
 package main
@@ -15,6 +15,7 @@ import (
 
 	"encoding/json"
 
+	"github.com/juju/gomaasapi/pkg/api"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/v2"
 )
@@ -24,7 +25,7 @@ var apiURL string
 var apiVersion string
 
 func getParams() {
-	fmt.Println("Warning: this will create a node on the MAAS server; it should be deleted at the end of the run but if something goes wrong, that test node might be left over.  You've been warned.")
+	fmt.Println("Warning: this will create a node on the maas server; it should be deleted at the end of the run but if something goes wrong, that test node might be left over.  You've been warned.")
 	fmt.Print("Enter API key: ")
 	_, err := fmt.Scanf("%s", &apiKey)
 	if err != nil {
@@ -53,16 +54,38 @@ func main() {
 	getParams()
 
 	// Create API server endpoint.
-	authClient, err := client.NewAuthenticatedMAASClient(
-		client.AddAPIVersionToURL(apiURL, apiVersion), apiKey)
+	//authClient, err := client.NewAuthenticatedMAASClient(
+	//	client.AddAPIVersionToURL(apiURL, apiVersion), apiKey)
+	//checkError(err)
+	//maas := client.NewMAASObj(*authClient)
+
+	m, err := api.NewMASS(apiURL, apiVersion, apiKey)
 	checkError(err)
-	maas := client.NewMAAS(*authClient)
 
-	// Exercise the API.
-	ManipulateMachines(maas)
-	ManipulateFiles(maas)
+	//// Exercise the API.
+	//ManipulateMachines(maas)
+	//ManipulateFiles(maas)
 
+	machines(m)
 	fmt.Println("All done.")
+}
+
+func machines(maas *api.MAAS) {
+
+	params := maasapiv2.MachinesParams(maasapiv2.MachinesArgs{})
+	rawMachines, err := maas.GET("machines", "", params.Values)
+	checkError(err)
+
+	result := make([]maasapiv2.Machine, 0)
+	var machines []maasapiv2.Machine
+	err = json.Unmarshal(rawMachines, &result)
+	checkError(err)
+
+	fmt.Printf("Got list of %v nodes\n", len(machines))
+	for index, machine := range machines {
+		fmt.Printf("Machine #%d is named '%v' (%v)\n", index, machine.Hostname, machine.ResourceURI)
+	}
+
 }
 
 // ManipulateFiles exercises the /api/1.0/files/ API endpoint.  Most precisely,
@@ -70,7 +93,6 @@ func main() {
 // is the same as the one that was sent.
 func ManipulateFiles(maas *client.MAASObject) {
 	var err error
-	maas.Client.Get()
 	filesResource := maas.GetSubObject("files")
 
 	fileContent := []byte("test file content")

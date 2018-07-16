@@ -120,7 +120,7 @@ func TestNewMAASUsesBaseURLFromClient(t *testing.T) {
 	baseURLString := "https://server.com:888/"
 	baseURL, _ := url.Parse(baseURLString)
 	client := MAASClient{APIURL: baseURL}
-	maas := NewMAAS(client)
+	maas := NewMAASObj(client)
 	URL := maas.URL()
 	assert.EqualValues(t, URL, baseURL)
 }

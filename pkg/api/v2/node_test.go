@@ -193,12 +193,12 @@ const (
     {
         "Zone": {
             "Description": "",
-            "resource_uri": "/MAAS/api/2.0/zones/default/",
+            "resource_uri": "/maas/api/2.0/zones/default/",
             "Name": "default"
         },
         "domain": {
             "resource_record_count": 0,
-            "resource_uri": "/MAAS/api/2.0/domains/0/",
+            "resource_uri": "/maas/api/2.0/domains/0/",
             "authoritative": true,
             "Name": "maas",
             "ttl": null,
@@ -208,7 +208,7 @@ const (
         "address_ttl": null,
         "Hostname": "furnacelike-brittney",
         "node_type": 1,
-        "resource_uri": "/MAAS/api/2.0/nodes/4y3haf/",
+        "resource_uri": "/maas/api/2.0/nodes/4y3haf/",
         "ip_addresses": ["192.168.100.11"],
         "Owner": "thumper",
         "tag_names": [],
@@ -217,7 +217,7 @@ const (
         "Parent": "4y3ha3",
         "interface_set": [
             {
-                "resource_uri": "/MAAS/api/2.0/nodes/4y3haf/interfaces/48/",
+                "resource_uri": "/maas/api/2.0/nodes/4y3haf/interfaces/48/",
                 "type": "physical",
                 "mac_address": "78:f0:f1:16:a7:46",
                 "params": "",
@@ -233,7 +233,7 @@ const (
                     "Fabric": "Fabric-0",
                     "MTU": 1500,
                     "primary_rack": "4y3h7n",
-                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                    "resource_uri": "/maas/api/2.0/VLANs/1/",
                     "external_dhcp": null,
                     "Name": "untagged",
                     "ID": 1,
@@ -244,7 +244,7 @@ const (
                 "Enabled": true
             },
             {
-                "resource_uri": "/MAAS/api/2.0/nodes/4y3haf/interfaces/49/",
+                "resource_uri": "/maas/api/2.0/nodes/4y3haf/interfaces/49/",
                 "type": "physical",
                 "mac_address": "15:34:d3:2d:f7:a7",
                 "params": {},
@@ -265,7 +265,7 @@ const (
                     "Fabric": "Fabric-0",
                     "MTU": 1500,
                     "primary_rack": "4y3h7n",
-                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                    "resource_uri": "/maas/api/2.0/VLANs/1/",
                     "external_dhcp": null,
                     "Name": "untagged",
                     "ID": 1,

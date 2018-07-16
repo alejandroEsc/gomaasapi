@@ -2,6 +2,7 @@ package maasapiv2
 
 import (
 	"testing"
+
 	"github.com/juju/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,5 +32,3 @@ func TestInterfaceSpec(t *testing.T) {
 		}
 	}
 }
-
-

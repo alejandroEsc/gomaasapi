@@ -5,7 +5,6 @@ package maasapiv2
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -31,7 +30,7 @@ var (
 	requestNumber int64
 )
 
-// Controller represents an API connection to a MAAS ControllerInterface. Since the API
+// Controller represents an API connection to a maas. Since the API
 // is restful, there is no long held connection to the API server, but instead
 // HTTP calls are made and JSON response structures parsed.
 type Controller struct {
@@ -49,7 +48,7 @@ type ControllerArgs struct {
 	APIKey  string
 }
 
-// NewController creates an authenticated Client to the MAAS API, and
+// NewController creates an authenticated Client to the maas API, and
 // checks the Capabilities of the server. If the BaseURL specified
 // includes the API version, that version of the API will be used,
 // otherwise the ControllerInterface will use the highest supported version
@@ -60,15 +59,15 @@ type ControllerArgs struct {
 func NewController(args ControllerArgs) (*Controller, error) {
 	base, apiVersion, includesVersion := client.SplitVersionedURL(args.BaseURL)
 	if includesVersion {
-		if !supportedVersion(apiVersion) {
+		if !SupportedVersion(apiVersion) {
 			return nil, util.NewUnsupportedVersionError("version %s", apiVersion)
 		}
-		return newControllerWithVersion(base, apiVersion, args.APIKey)
+		return NewControllerWithVersion(base, apiVersion, args.APIKey)
 	}
-	return newControllerUnknownVersion(args)
+	return NewControllerUnknownVersion(args)
 }
 
-func supportedVersion(value string) bool {
+func SupportedVersion(value string) bool {
 	for _, version := range supportedAPIVersions {
 		if value == version {
 			return true
@@ -77,7 +76,7 @@ func supportedVersion(value string) bool {
 	return false
 }
 
-func newControllerWithVersion(baseURL, apiVersion, apiKey string) (*Controller, error) {
+func NewControllerWithVersion(baseURL, apiVersion, apiKey string) (*Controller, error) {
 	major, minor, err := version.ParseMajorMinor(apiVersion)
 	// We should not Get an error here. See the test.
 	if err != nil {
@@ -110,12 +109,12 @@ func newControllerWithVersion(baseURL, apiVersion, apiKey string) (*Controller, 
 	return controller, nil
 }
 
-func newControllerUnknownVersion(args ControllerArgs) (*Controller, error) {
+func NewControllerUnknownVersion(args ControllerArgs) (*Controller, error) {
 	// For now we don't need to test multiple versions. It is expected that at
 	// some time in the future, we will try the most up to date version and then
 	// work our way backwards.
 	for _, apiVersion := range supportedAPIVersions {
-		controller, err := newControllerWithVersion(args.BaseURL, apiVersion, args.APIKey)
+		controller, err := NewControllerWithVersion(args.BaseURL, apiVersion, args.APIKey)
 		switch {
 		case err == nil:
 			return controller, nil
@@ -146,7 +145,7 @@ func (c *Controller) BootResources() ([]*BootResource, error) {
 	return resources, nil
 }
 
-// Fabrics returns the list of Fabrics defined in the MAAS ControllerInterface.
+// Fabrics returns the list of Fabrics defined in the maas ControllerInterface.
 func (c *Controller) Fabrics() ([]Fabric, error) {
 	source, err := c.Get("fabrics", "", nil)
 	if err != nil {
@@ -162,7 +161,7 @@ func (c *Controller) Fabrics() ([]Fabric, error) {
 	return fabrics, nil
 }
 
-// Spaces returns the list of Spaces defined in the MAAS ControllerInterface.
+// Spaces returns the list of Spaces defined in the maas ControllerInterface.
 func (c *Controller) Spaces() ([]Space, error) {
 	source, err := c.Get("spaces", "", nil)
 	if err != nil {
@@ -178,7 +177,7 @@ func (c *Controller) Spaces() ([]Space, error) {
 	return spaces, nil
 }
 
-// StaticRoutes returns the list of StaticRoutes defined in the MAAS ControllerInterface.
+// StaticRoutes returns the list of StaticRoutes defined in the maas ControllerInterface.
 func (c *Controller) StaticRoutes() ([]StaticRoute, error) {
 	source, err := c.Get("static-routes", "", nil)
 	if err != nil {
@@ -193,7 +192,7 @@ func (c *Controller) StaticRoutes() ([]StaticRoute, error) {
 	return staticRoutes, nil
 }
 
-// Zones lists all the zones known to the MAAS ControllerInterface.
+// Zones lists all the zones known to the maas ControllerInterface.
 func (c *Controller) Zones() ([]Zone, error) {
 	source, err := c.Get("zones", "", nil)
 	if err != nil {
@@ -268,7 +267,7 @@ func (c *Controller) CreateNode(args CreateNodeArgs) (*Node, error) {
 // Machines returns a list of machines that match the params.
 func (c *Controller) Machines(args MachinesArgs) ([]Machine, error) {
 	params := MachinesParams(args)
-	// At the moment the MAAS API doesn't support filtering by Owner
+	// At the moment the maas API doesn't support filtering by Owner
 	// data so we do that ourselves below.
 	source, err := c.Get("machines", "", params.Values)
 	if err != nil {
@@ -422,7 +421,7 @@ func (c *Controller) GetFile(filename string) (*File, error) {
 }
 
 // AddFile adds or replaces the Content of the specified Filename.
-// If or when the MAAS api is able to return metadata about a single
+// If or when the maas api is able to return metadata about a single
 // File without sending the Content of the File, we can return a FileInterface
 // instance here too.
 func (c *Controller) AddFile(args AddFileArgs) error {
@@ -462,13 +461,9 @@ func (c *Controller) checkCreds() error {
 	return nil
 }
 
-func (c *Controller) Put(path string, params url.Values) ([]byte, error) {
+func (c Controller) Put(path string, params url.Values) ([]byte, error) {
 	path = util.EnsureTrailingSlash(path)
 	requestID := nextRequestID()
-
-	if c == nil {
-		return nil, fmt.Errorf("control is nil again...")
-	}
 	logger.Tracef("request %x: PUT %s%s, params: %s", requestID, c.Client.APIURL, path, params.Encode())
 	bytes, err := c.Client.Put(&url.URL{Path: path}, params)
 	if err != nil {
@@ -479,7 +474,7 @@ func (c *Controller) Put(path string, params url.Values) ([]byte, error) {
 	return bytes, nil
 }
 
-func (c *Controller) Post(path, op string, params url.Values) ([]byte, error) {
+func (c Controller) Post(path, op string, params url.Values) ([]byte, error) {
 	bytes, err := c.postRaw(path, op, params, nil)
 	if err != nil {
 		return nil, err
@@ -487,7 +482,7 @@ func (c *Controller) Post(path, op string, params url.Values) ([]byte, error) {
 	return bytes, nil
 }
 
-func (c *Controller) PostFile(path, op string, params url.Values, fileContent []byte) ([]byte, error) {
+func (c Controller) PostFile(path, op string, params url.Values, fileContent []byte) ([]byte, error) {
 	// Only one File is ever sent at a time.
 	files := map[string][]byte{"File": fileContent}
 	return c.postRaw(path, op, params, files)
@@ -514,7 +509,7 @@ func (c *Controller) postRaw(path, op string, params url.Values, files map[strin
 	return bytes, nil
 }
 
-func (c *Controller) Delete(path string) error {
+func (c Controller) Delete(path string) error {
 	path = util.EnsureTrailingSlash(path)
 	url := &url.URL{Path: path}
 	requestID := nextRequestID()
@@ -529,7 +524,7 @@ func (c *Controller) Delete(path string) error {
 	return nil
 }
 
-func (c *Controller) Get(path, op string, params url.Values) ([]byte, error) {
+func (c Controller) Get(path string, op string, params url.Values) ([]byte, error) {
 	path = util.EnsureTrailingSlash(path)
 	url := &url.URL{Path: path}
 	requestID := nextRequestID()
@@ -562,7 +557,7 @@ func indicatesUnsupportedVersion(err error) bool {
 		code := serverErr.StatusCode
 		return code == http.StatusNotFound || code == http.StatusGone
 	}
-	// Workaround for bug in MAAS 1.9.4 - instead of a 404 we Get a
+	// Workaround for bug in maas 1.9.4 - instead of a 404 we Get a
 	// redirect to the HTML login page, which doesn't parse as JSON.
 	// https://bugs.launchpad.net/maas/+bug/1583715
 	if syntaxErr, ok := errors.Cause(err).(*json.SyntaxError); ok {

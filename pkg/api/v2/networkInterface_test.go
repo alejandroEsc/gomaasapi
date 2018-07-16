@@ -371,7 +371,7 @@ const (
     "discovered": [],
     "params": "some params",
     "VLAN": {
-        "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+        "resource_uri": "/maas/api/2.0/VLANs/1/",
         "ID": 1,
         "secondary_rack": null,
         "MTU": 1500,
@@ -386,18 +386,18 @@ const (
     "Parents": ["bond0"],
     "ID": 40,
     "type": "physical",
-    "resource_uri": "/MAAS/api/2.0/nodes/4y3ha6/interfaces/40/",
+    "resource_uri": "/maas/api/2.0/nodes/4y3ha6/interfaces/40/",
     "Tags": ["foo", "bar"],
     "Links": [
         {
             "ID": 69,
             "Mode": "auto",
             "Subnet": {
-                "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+                "resource_uri": "/maas/api/2.0/Subnets/1/",
                 "ID": 1,
                 "rdns_mode": 2,
                 "VLAN": {
-                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                    "resource_uri": "/maas/api/2.0/VLANs/1/",
                     "ID": 1,
                     "secondary_rack": null,
                     "MTU": 1500,
@@ -430,18 +430,18 @@ const (
     "Parents": ["bond0"],
     "ID": 40,
     "type": "physical",
-    "resource_uri": "/MAAS/api/2.0/nodes/4y3ha6/interfaces/40/",
+    "resource_uri": "/maas/api/2.0/nodes/4y3ha6/interfaces/40/",
     "Tags": null,
     "Links": [
         {
             "ID": 69,
             "Mode": "auto",
             "Subnet": {
-                "resource_uri": "/MAAS/api/2.0/Subnets/1/",
+                "resource_uri": "/maas/api/2.0/Subnets/1/",
                 "ID": 1,
                 "rdns_mode": 2,
                 "VLAN": {
-                    "resource_uri": "/MAAS/api/2.0/VLANs/1/",
+                    "resource_uri": "/maas/api/2.0/VLANs/1/",
                     "ID": 1,
                     "secondary_rack": null,
                     "MTU": 1500,

@@ -308,8 +308,8 @@ func TestNewAuthenticatedClientFailsIfInvalidKey(t *testing.T) {
 
 func TestAddAPIVersionToURL(t *testing.T) {
 	addVersion := AddAPIVersionToURL
-	assert.Equal(t, addVersion("http://cmd.com/MAAS", "1.0"), "http://cmd.com/MAAS/api/1.0/")
-	assert.Equal(t, addVersion("http://cmd.com/MAAS/", "2.0"), "http://cmd.com/MAAS/api/2.0/")
+	assert.Equal(t, addVersion("http://cmd.com/maas", "1.0"), "http://cmd.com/maas/api/1.0/")
+	assert.Equal(t, addVersion("http://cmd.com/maas/", "2.0"), "http://cmd.com/maas/api/2.0/")
 }
 
 func TestSplitVersionedURL(t *testing.T) {
@@ -319,8 +319,8 @@ func TestSplitVersionedURL(t *testing.T) {
 		assert.Equal(t, base, expectedBase)
 		assert.Equal(t, version, expectedVersion)
 	}
-	check("http://maas.server/MAAS", "http://maas.server/MAAS", "", false)
-	check("http://maas.server/MAAS/api/3.0", "http://maas.server/MAAS/", "3.0", true)
-	check("http://maas.server/MAAS/api/3.0/", "http://maas.server/MAAS/", "3.0", true)
-	check("http://maas.server/MAAS/api/maas", "http://maas.server/MAAS/api/maas", "", false)
+	check("http://maas.server/maas", "http://maas.server/maas", "", false)
+	check("http://maas.server/maas/api/3.0", "http://maas.server/maas/", "3.0", true)
+	check("http://maas.server/maas/api/3.0/", "http://maas.server/maas/", "3.0", true)
+	check("http://maas.server/maas/api/maas", "http://maas.server/maas/api/maas", "", false)
 }

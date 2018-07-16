@@ -1,10 +1,8 @@
 package maasapiv2
 
-
-
 type MachineOp string
 
-const(
+const (
 
 	// Comission begins commissioning process for a machine.
 	Comission MachineOp = "comission"
@@ -48,16 +46,11 @@ const(
 	SetStorageLayout MachineOp = "set_storage_layout"
 	// Unmount a special-purpose filesystem, like tmpfs.
 	UnmountSpecial MachineOp = "unmount_special"
-
-
-
 )
-
 
 type MachinesOp string
 
 const (
 	// Allocate an available machine for deployment.
 	Allocate MachinesOp = "allocate"
-
 )

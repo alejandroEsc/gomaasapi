@@ -102,7 +102,7 @@ func (m *Machine) BlockDevice(id int) *BlockDevice {
 
 // Nodes implements Machine.
 func (m *Machine) Nodes(args NodesArgs) ([]Node, error) {
-	// Perhaps in the future, MAAS will give us a way to query just for the
+	// Perhaps in the future, maas will give us a way to query just for the
 	// nodes for a particular Parent.
 	nodes, err := m.Controller.Nodes(args)
 	if err != nil {
@@ -258,6 +258,9 @@ func (m *Machine) SetOwnerData(ownerData map[string]string) error {
 	return nil
 }
 
+func unmarshalMachines(obj []byte) {
+}
+
 type MachineInterface interface {
 	OwnerDataHolderInterface
 
@@ -280,7 +283,7 @@ type MachineInterface interface {
 	CreateNode(CreateMachineNodeArgs) (NodeInterface, error)
 }
 
-// OwnerDataHolderInterface represents any MAAS object that can store key/value
+// OwnerDataHolderInterface represents any maas object that can store key/value
 // data.
 type OwnerDataHolderInterface interface {
 	// SetOwnerData updates the key/value data stored for this object

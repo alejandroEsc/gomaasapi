@@ -29,7 +29,7 @@ const (
 	RetryAfterHeaderName = "Retry-After"
 )
 
-// MAASClient represents a way to communicating with a MAAS API instance.
+// MAASClient represents a way to communicating with a maas API instance.
 // It is stateless, so it can have concurrent requests in progress.
 type MAASClient struct {
 	APIURL *url.URL
@@ -292,9 +292,9 @@ func SplitVersionedURL(url string) (string, string, bool) {
 }
 
 // NewAnonymousClient creates a MAASClient that issues anonymous requests.
-// BaseURL should refer to the root of the MAAS server Path, e.g.
+// BaseURL should refer to the root of the maas server Path, e.g.
 // http://my.maas.server.example.com/MAAS/
-// APIVersion should contain the version of the MAAS API that you want to use.
+// APIVersion should contain the version of the maas API that you want to use.
 func NewAnonymousClient(BaseURL string, apiVersion string) (*MAASClient, error) {
 	versionedURL := AddAPIVersionToURL(BaseURL, apiVersion)
 	parsedURL, err := url.Parse(versionedURL)
@@ -304,11 +304,11 @@ func NewAnonymousClient(BaseURL string, apiVersion string) (*MAASClient, error) 
 	return &MAASClient{Signer: &anonSigner{}, APIURL: parsedURL}, nil
 }
 
-// NewAuthenticatedMAASClient parses the given MAAS API key into the
+// NewAuthenticatedMAASClient parses the given maas API key into the
 // individual OAuth tokens and creates an MAASClient that will use these
 // tokens to sign the requests it issues.
 // versionedURL should be the location of the versioned API root of
-// the MAAS server, e.g.:
+// the maas server, e.g.:
 // http://my.maas.server.example.com/MAAS/api/2.0/
 func NewAuthenticatedMAASClient(versionedURL, apiKey string) (*MAASClient, error) {
 	elements := strings.Split(apiKey, ":")
@@ -318,12 +318,12 @@ func NewAuthenticatedMAASClient(versionedURL, apiKey string) (*MAASClient, error
 	}
 	token := &OAuthToken{
 		ConsumerKey: elements[0],
-		// The consumer secret is the empty string in MAAS' authentication.
+		// The consumer secret is the empty string in maas' authentication.
 		ConsumerSecret: "",
 		TokenKey:       elements[1],
 		TokenSecret:    elements[2],
 	}
-	signer, err := NewPlainTestOAuthSigner(token, "MAAS API")
+	signer, err := NewPlainTestOAuthSigner(token, "maas API")
 	if err != nil {
 		return nil, err
 	}

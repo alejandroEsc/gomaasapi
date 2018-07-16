@@ -82,9 +82,9 @@ func (f *File) readFromServer() ([]byte, error) {
 	return bytes, nil
 }
 
-// FileInterface represents a File stored in the MAAS ControllerInterface.
+// FileInterface represents a File stored in the maas ControllerInterface.
 type FileInterface interface {
-	// Delete removes the File from the MAAS ControllerInterface.
+	// Delete removes the File from the maas ControllerInterface.
 	Delete() error
 	// ReadAll returns the Content of the File.
 	ReadAll() ([]byte, error)

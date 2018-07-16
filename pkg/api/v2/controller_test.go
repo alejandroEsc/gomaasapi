@@ -820,7 +820,7 @@ func TestControllerFiles(t *testing.T) {
 	assert.Equal(t, file.Filename, "test")
 
 	assert.Equal(t, file.AnonymousURI.Scheme, "http")
-	assert.Equal(t, file.AnonymousURI.RequestURI(), "/MAAS/api/2.0/files/?op=get_by_key&key=3afba564-fb7d-11e5-932f-52540051bf22")
+	assert.Equal(t, file.AnonymousURI.RequestURI(), "/maas/api/2.0/files/?op=get_by_key&key=3afba564-fb7d-11e5-932f-52540051bf22")
 }
 
 func TestControllerGetFile(t *testing.T) {
@@ -840,7 +840,7 @@ func TestControllerGetFile(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, file.AnonymousURI.Scheme, "http")
-	assert.Equal(t, file.AnonymousURI.RequestURI(), "/MAAS/api/2.0/files/?op=get_by_key&key=88e64b76-fb82-11e5-932f-52540051bf22")
+	assert.Equal(t, file.AnonymousURI.RequestURI(), "/maas/api/2.0/files/?op=get_by_key&key=88e64b76-fb82-11e5-932f-52540051bf22")
 }
 
 func TestControllerGetFileMissing(t *testing.T) {
