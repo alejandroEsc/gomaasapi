@@ -9,10 +9,10 @@ import (
 	"encoding/json"
 
 	"github.com/juju/errors"
+	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/juju/gomaasapi/pkg/api/client"
 )
 
 func TestReadInterfacesBadSchema(t *testing.T) {
@@ -359,7 +359,6 @@ func getServerAndNewInterface(t *testing.T) (*client.SimpleTestServer, *MachineN
 	assert.Nil(t, err)
 	return server, iface
 }
-
 
 const (
 	interfacesResponse = "[" + interfaceResponse + "]"

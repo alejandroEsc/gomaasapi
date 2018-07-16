@@ -110,7 +110,7 @@ func (m *Machine) Nodes(args NodesArgs) ([]node, error) {
 		return nil, errors.Trace(err)
 	}
 
-	result :=make([]node,0)
+	result := make([]node, 0)
 	for _, n := range nodes {
 		if n.Parent == m.SystemID {
 			result = append(result, n)
@@ -118,7 +118,6 @@ func (m *Machine) Nodes(args NodesArgs) ([]node, error) {
 	}
 	return result, nil
 }
-
 
 // Start implements Machine.
 func (m *Machine) Start(args StartArgs) error {

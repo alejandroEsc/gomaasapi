@@ -23,7 +23,7 @@ func TestReadVLANsWithName(t *testing.T) {
 	assert.Len(t, vlans, 1)
 	readVLAN := vlans[0]
 	expectedVLAN := &vlan{
-		ResourceURI:  "/MAAS/api/2.0/VLANs/1/",
+		ResourceURI:   "/MAAS/api/2.0/VLANs/1/",
 		ID:            1,
 		Name:          "untagged",
 		Fabric:        "Fabric-0",
@@ -55,7 +55,7 @@ func TestReadVLANsWithoutName(t *testing.T) {
 	assert.Len(t, vlans, 1)
 	readVLAN := vlans[0]
 	expectedVLAN := &vlan{
-		ResourceURI: "/MAAS/api/2.0/VLANs/5006/",
+		ResourceURI:   "/MAAS/api/2.0/VLANs/5006/",
 		ID:            5006,
 		Name:          "",
 		Fabric:        "maas-management",

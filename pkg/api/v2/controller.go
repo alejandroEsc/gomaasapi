@@ -27,7 +27,7 @@ var (
 	logger = loggo.GetLogger("maas")
 	// The supported versions should be ordered from most desirable version to
 	// least as they will be tried in order.
-	supportedAPIVersions = []string{"2.0","2.1","2.3","2.4"}
+	supportedAPIVersions = []string{"2.0", "2.1", "2.3", "2.4"}
 	// Current request number. Informational only for logging.
 	requestNumber int64
 )
@@ -135,7 +135,6 @@ func newControllerUnknownVersion(args ControllerArgs) (*controller, error) {
 	return nil, util.NewUnsupportedVersionError("ControllerInterface at %s does not support any of %s", args.BaseURL, supportedAPIVersions)
 }
 
-
 // BootResources implements ControllerInterface.
 func (c *controller) BootResources() ([]*bootResource, error) {
 	source, err := c.get("boot-resources", "", nil)
@@ -221,7 +220,7 @@ func (c *controller) Nodes(args NodesArgs) ([]node, error) {
 		return nil, util.NewUnexpectedError(err)
 	}
 
-	results := make([]node,0)
+	results := make([]node, 0)
 	var nodes []node
 	err = json.Unmarshal(source, &nodes)
 	if err != nil {
@@ -261,7 +260,7 @@ func (c *controller) CreateNode(args CreateNodeArgs) (*node, error) {
 	}
 	d.Controller = c
 
-	for _, i := range d.InterfaceSet{
+	for _, i := range d.InterfaceSet {
 		i.Controller = c
 		iSet = append(iSet, i)
 	}
@@ -280,7 +279,7 @@ func (c *controller) Machines(args MachinesArgs) ([]Machine, error) {
 	if err != nil {
 		return nil, util.NewUnexpectedError(err)
 	}
-	result := make([]Machine,0)
+	result := make([]Machine, 0)
 	var machines []Machine
 	err = json.Unmarshal(source, &machines)
 	if err != nil {
@@ -291,7 +290,7 @@ func (c *controller) Machines(args MachinesArgs) ([]Machine, error) {
 		if ownerDataMatches(m.OwnerData, args.OwnerData) {
 			m.Controller = c
 
-			resultIface := make([]*MachineNetworkInterface,0)
+			resultIface := make([]*MachineNetworkInterface, 0)
 			for _, i := range m.InterfaceSet {
 				i.Controller = c
 				resultIface = append(resultIface, i)
@@ -481,7 +480,7 @@ func (c *controller) getFiles(prefix string) ([]File, error) {
 	}
 
 	var files []File
-	results := make([]File,0)
+	results := make([]File, 0)
 	err = json.Unmarshal(source, &files)
 	if err != nil {
 		return nil, err
