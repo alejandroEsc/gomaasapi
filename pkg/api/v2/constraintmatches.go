@@ -4,9 +4,9 @@ package maasapiv2
 //.how the allocated MachineInterface matched the storage and interfaces constraints specified.
 // The labels that were used in the constraints are the keys in the maps.
 type ConstraintMatches struct {
-	// MachineNetworkInterface is a mapping of the constraint Label specified to the Interfaces
+	// NetworkInterface is a mapping of the constraint Label specified to the Interfaces
 	// that match that constraint.
-	Interfaces map[string][]MachineNetworkInterface
+	Interfaces map[string][]NetworkInterface
 
 	// Storage is a mapping of the constraint Label specified to the BlockDevices
 	// that match that constraint.

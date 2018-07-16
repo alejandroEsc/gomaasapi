@@ -37,10 +37,10 @@ type Machine struct {
 	StatusName    string `json:"status_name,omitempty"`
 	StatusMessage string `json:"status_message,omitempty"`
 	// BootInterface returns the interface that was used to boot the MachineInterface.
-	BootInterface *MachineNetworkInterface `json:"boot_interface,omitempty"`
+	BootInterface *NetworkInterface `json:"boot_interface,omitempty"`
 	// InterfaceSet returns all the interfaces for the MachineInterface.
-	InterfaceSet []*MachineNetworkInterface `json:"interface_set,omitempty"`
-	Zone         *zone                      `json:"Zone,omitempty"`
+	InterfaceSet []*NetworkInterface `json:"interface_set,omitempty"`
+	Zone         *zone               `json:"Zone,omitempty"`
 	// Don't really know the difference between these two lists:
 
 	// PhysicalBlockDevice returns the physical block node for the MachineInterface
@@ -69,8 +69,8 @@ func (m *Machine) updateFrom(other *Machine) {
 	m.OwnerData = other.OwnerData
 }
 
-// MachineNetworkInterface implements Machine.
-func (m *Machine) Interface(id int) *MachineNetworkInterface {
+// NetworkInterface implements Machine.
+func (m *Machine) Interface(id int) *NetworkInterface {
 	for _, iface := range m.InterfaceSet {
 		if iface.ID == id {
 			iface.Controller = m.Controller
@@ -200,7 +200,7 @@ func (m *Machine) CreateNode(args CreateMachineNodeArgs) (*node, error) {
 	return d, nil
 }
 
-func (m *Machine) updateDeviceInterface(interfaces []*MachineNetworkInterface, nameToUse string, vlanToUse *vlan) error {
+func (m *Machine) updateDeviceInterface(interfaces []*NetworkInterface, nameToUse string, vlanToUse *vlan) error {
 	iface := interfaces[0]
 
 	updateArgs := UpdateInterfaceArgs{}
@@ -217,7 +217,7 @@ func (m *Machine) updateDeviceInterface(interfaces []*MachineNetworkInterface, n
 	return nil
 }
 
-func (m *Machine) linkDeviceInterfaceToSubnet(interfaces []*MachineNetworkInterface, subnetToUse *subnet) error {
+func (m *Machine) linkDeviceInterfaceToSubnet(interfaces []*NetworkInterface, subnetToUse *subnet) error {
 	iface := interfaces[0]
 
 	err := iface.LinkSubnet(LinkSubnetArgs{
@@ -265,9 +265,9 @@ type MachineInterface interface {
 	// this MachineInterface as the Parent.
 	Devices(NodesArgs) ([]NodeInterface, error)
 
-	// MachineNetworkInterface returns the interface for the MachineInterface that matches the ID
+	// NetworkInterface returns the interface for the MachineInterface that matches the ID
 	// specified. If there is no match, nil is returned.
-	Interface(id int) *MachineNetworkInterface
+	Interface(id int) *NetworkInterface
 	// BlockDevice returns the block node for the MachineInterface that matches the
 	// ID specified. If there is no match, nil is returned.
 	BlockDevice(id int) BlockDevice

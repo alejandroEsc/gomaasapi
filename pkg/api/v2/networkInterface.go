@@ -14,8 +14,8 @@ import (
 	"github.com/juju/gomaasapi/pkg/api/util"
 )
 
-// MachineNetworkInterface represents a physical or virtual network interface on a MachineInterface.
-type MachineNetworkInterface struct {
+// NetworkInterface represents a physical or virtual network interface on a MachineInterface.
+type NetworkInterface struct {
 	Controller   *controller `json:"-"`
 	ResourceURI  string      `json:"resource_uri,omitempty"`
 	ID           int         `json:"ID,omitempty"`
@@ -31,7 +31,7 @@ type MachineNetworkInterface struct {
 	Children     []string    `json:"Children,omitempty"`
 }
 
-func (i *MachineNetworkInterface) updateFrom(other *MachineNetworkInterface) {
+func (i *NetworkInterface) updateFrom(other *NetworkInterface) {
 	i.ResourceURI = other.ResourceURI
 	i.ID = other.ID
 	i.Name = other.Name
@@ -46,7 +46,7 @@ func (i *MachineNetworkInterface) updateFrom(other *MachineNetworkInterface) {
 	i.Children = other.Children
 }
 
-// UpdateInterfaceArgs is an argument struct for calling MachineNetworkInterface.Update.
+// UpdateInterfaceArgs is an argument struct for calling NetworkInterface.Update.
 type UpdateInterfaceArgs struct {
 	Name       string
 	MACAddress string
@@ -61,7 +61,7 @@ func (a *UpdateInterfaceArgs) vlanID() int {
 }
 
 // Update the Name, mac address or VLAN.
-func (i *MachineNetworkInterface) Update(args UpdateInterfaceArgs) error {
+func (i *NetworkInterface) Update(args UpdateInterfaceArgs) error {
 	var empty UpdateInterfaceArgs
 
 	if args == empty {
@@ -86,7 +86,7 @@ func (i *MachineNetworkInterface) Update(args UpdateInterfaceArgs) error {
 		return util.NewUnexpectedError(err)
 	}
 
-	var response MachineNetworkInterface
+	var response NetworkInterface
 	err = json.Unmarshal(source, &response)
 	if err != nil {
 		return errors.Trace(err)
@@ -96,7 +96,7 @@ func (i *MachineNetworkInterface) Update(args UpdateInterfaceArgs) error {
 }
 
 // Delete this interface.
-func (i *MachineNetworkInterface) Delete() error {
+func (i *NetworkInterface) Delete() error {
 	err := i.Controller.delete(i.ResourceURI)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
@@ -118,7 +118,7 @@ type InterfaceLinkMode string
 
 // LinkSubnet will attempt to make this interface available on the specified
 // Subnet.
-func (i *MachineNetworkInterface) LinkSubnet(args LinkSubnetArgs) error {
+func (i *NetworkInterface) LinkSubnet(args LinkSubnetArgs) error {
 	if err := args.Validate(); err != nil {
 		return errors.Trace(err)
 	}
@@ -142,7 +142,7 @@ func (i *MachineNetworkInterface) LinkSubnet(args LinkSubnetArgs) error {
 		return util.NewUnexpectedError(err)
 	}
 
-	var response MachineNetworkInterface
+	var response NetworkInterface
 	err = json.Unmarshal(source, &response)
 	if err != nil {
 		return errors.Trace(err)
@@ -152,7 +152,7 @@ func (i *MachineNetworkInterface) LinkSubnet(args LinkSubnetArgs) error {
 	return nil
 }
 
-func (i *MachineNetworkInterface) linkForSubnet(st *subnet) *link {
+func (i *NetworkInterface) linkForSubnet(st *subnet) *link {
 	for _, link := range i.Links {
 		if s := link.Subnet; s != nil && s.ID == st.ID {
 			return link
@@ -163,7 +163,7 @@ func (i *MachineNetworkInterface) linkForSubnet(st *subnet) *link {
 
 // UnlinkSubnet will remove the Link to the Subnet, and release the IP
 // address associated if there is one.
-func (i *MachineNetworkInterface) UnlinkSubnet(s *subnet) error {
+func (i *NetworkInterface) UnlinkSubnet(s *subnet) error {
 	if s == nil {
 		return errors.NotValidf("missing Subnet")
 	}
@@ -186,7 +186,7 @@ func (i *MachineNetworkInterface) UnlinkSubnet(s *subnet) error {
 		return util.NewUnexpectedError(err)
 	}
 
-	var response MachineNetworkInterface
+	var response NetworkInterface
 	err = json.Unmarshal(source, &response)
 	if err != nil {
 		return errors.Trace(err)

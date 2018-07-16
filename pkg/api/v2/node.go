@@ -31,8 +31,8 @@ type node struct {
 	Owner       string   `json:"Owner,omitempty"`
 	IPAddresses []string `json:"ip_addresses,omitempty"`
 	// InterfaceSet returns all the interfaces for the NodeInterface.
-	InterfaceSet []*MachineNetworkInterface `json:"interface_set,omitempty"`
-	Zone         *zone                      `json:"Zone,omitempty"`
+	InterfaceSet []*NetworkInterface `json:"interface_set,omitempty"`
+	Zone         *zone               `json:"Zone,omitempty"`
 }
 
 // CreateInterfaceArgs is an argument struct for passing parameters to
@@ -75,7 +75,7 @@ func (d *node) interfacesURI() string {
 }
 
 // CreateInterface implements NodeInterface.
-func (d *node) CreateInterface(args CreateInterfaceArgs) (*MachineNetworkInterface, error) {
+func (d *node) CreateInterface(args CreateInterfaceArgs) (*NetworkInterface, error) {
 	if err := args.Validate(); err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (d *node) CreateInterface(args CreateInterfaceArgs) (*MachineNetworkInterfa
 		return nil, util.NewUnexpectedError(err)
 	}
 
-	var iface MachineNetworkInterface
+	var iface NetworkInterface
 	err = json.Unmarshal(result, &iface)
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func (d *node) Delete() error {
 
 type NodeInterface interface {
 	// CreateInterface will create a physical interface for this MachineInterface.
-	CreateInterface(CreateInterfaceArgs) (*MachineNetworkInterface, error)
+	CreateInterface(CreateInterfaceArgs) (*NetworkInterface, error)
 	// Delete will remove this NodeInterface.
 	Delete() error
 }

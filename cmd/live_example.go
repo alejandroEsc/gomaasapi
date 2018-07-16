@@ -70,6 +70,7 @@ func main() {
 // is the same as the one that was sent.
 func ManipulateFiles(maas *client.MAASObject) {
 	var err error
+	maas.Client.Get()
 	filesResource := maas.GetSubObject("files")
 
 	fileContent := []byte("test file content")

@@ -19,7 +19,7 @@ const (
 )
 
 // LinkSubnetArgs is an argument struct for passing parameters to
-// the MachineNetworkInterface.LinkSubnet method.
+// the NetworkInterface.LinkSubnet method.
 type LinkSubnetArgs struct {
 	// Mode is used to describe how the address is provided for the Link.
 	// Required field.

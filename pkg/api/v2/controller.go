@@ -248,7 +248,7 @@ func (c *controller) CreateNode(args CreateNodeArgs) (*node, error) {
 
 	var d node
 
-	iSet := make([]*MachineNetworkInterface, 0)
+	iSet := make([]*NetworkInterface, 0)
 	err = json.Unmarshal(result, &d)
 	if err != nil {
 		return nil, err
@@ -285,7 +285,7 @@ func (c *controller) Machines(args MachinesArgs) ([]Machine, error) {
 		if ownerDataMatches(m.OwnerData, args.OwnerData) {
 			m.Controller = c
 
-			resultIface := make([]*MachineNetworkInterface, 0)
+			resultIface := make([]*NetworkInterface, 0)
 			for _, i := range m.InterfaceSet {
 				i.Controller = c
 				resultIface = append(resultIface, i)
@@ -629,14 +629,14 @@ func parseAllocateConstraintsResponse(source interface{}, machine *Machine) (Con
 	valid := coerced.(map[string]interface{})
 	constraintsMap := valid["constraints_by_type"].(map[string]interface{})
 	result := ConstraintMatches{
-		Interfaces: make(map[string][]MachineNetworkInterface),
+		Interfaces: make(map[string][]NetworkInterface),
 		Storage:    make(map[string][]BlockDevice),
 	}
 
 	if interfaceMatches, found := constraintsMap["interfaces"]; found {
 		matches := convertConstraintMatches(interfaceMatches)
 		for label, ids := range matches {
-			interfaces := make([]MachineNetworkInterface, len(ids))
+			interfaces := make([]NetworkInterface, len(ids))
 			for index, id := range ids {
 				iface := machine.Interface(id)
 				if iface == nil {

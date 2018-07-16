@@ -64,6 +64,8 @@ type DeployMachineArgs struct {
 	Comment      string
 }
 
+
+
 // CreatemachineDeviceArgs is an argument structure for Machine.CreateNode.
 // Only InterfaceName and MACAddress fields are required, the others are only
 // used if set. If Subnet and VLAN are both set, Subnet.VLAN() must match the
