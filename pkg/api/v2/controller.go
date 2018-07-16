@@ -27,14 +27,21 @@ var (
 	logger = loggo.GetLogger("maas")
 	// The supported versions should be ordered from most desirable version to
 	// least as they will be tried in order.
-	supportedAPIVersions = []string{"2.0"}
-	// Each of the api versions that change the request or response structure
-	// for any given call should have a value defined for easy definition of
-	// the deserialization functions.
-	twoDotOh = version.Number{Major: 2, Minor: 0}
+	supportedAPIVersions = []string{"2.0","2.1","2.3","2.4"}
 	// Current request number. Informational only for logging.
 	requestNumber int64
 )
+
+// Controller represents an API connection to a MAAS ControllerInterface. Since the API
+// is restful, there is no long held connection to the API server, but instead
+// HTTP calls are made and JSON response structures parsed.
+type controller struct {
+	Client     *client.MAASClient
+	APIVersion version.Number
+	// Capabilities returns a set of Capabilities as defined by the string
+	// constants.
+	Capabilities set.Strings
+}
 
 // ControllerArgs is an argument struct for passing the required parameters
 // to the NewController method.
@@ -128,16 +135,6 @@ func newControllerUnknownVersion(args ControllerArgs) (*controller, error) {
 	return nil, util.NewUnsupportedVersionError("ControllerInterface at %s does not support any of %s", args.BaseURL, supportedAPIVersions)
 }
 
-// Controller represents an API connection to a MAAS ControllerInterface. Since the API
-// is restful, there is no long held connection to the API server, but instead
-// HTTP calls are made and JSON response structures parsed.
-type controller struct {
-	Client     *client.MAASClient
-	APIVersion version.Number
-	// Capabilities returns a set of Capabilities as defined by the string
-	// constants.
-	Capabilities set.Strings
-}
 
 // BootResources implements ControllerInterface.
 func (c *controller) BootResources() ([]*bootResource, error) {
@@ -224,15 +221,17 @@ func (c *controller) Nodes(args NodesArgs) ([]node, error) {
 		return nil, util.NewUnexpectedError(err)
 	}
 
-	var devices []node
-	err = json.Unmarshal(source, &devices)
+	results := make([]node,0)
+	var nodes []node
+	err = json.Unmarshal(source, &nodes)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	for _, d := range devices {
+	for _, d := range nodes {
 		d.Controller = c
+		results = append(results, d)
 	}
-	return devices, nil
+	return results, nil
 }
 
 // CreateNode creates and returns a new NodeInterface.
@@ -254,11 +253,21 @@ func (c *controller) CreateNode(args CreateNodeArgs) (*node, error) {
 	}
 
 	var d node
+
+	iSet := make([]*MachineNetworkInterface, 0)
 	err = json.Unmarshal(result, &d)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 	d.Controller = c
+
+	for _, i := range d.InterfaceSet{
+		i.Controller = c
+		iSet = append(iSet, i)
+	}
+
+	d.InterfaceSet = iSet
+
 	return &d, nil
 }
 
@@ -269,22 +278,30 @@ func (c *controller) Machines(args MachinesArgs) ([]Machine, error) {
 	// data so we do that ourselves below.
 	source, err := c.get("machines", "", params.Values)
 	if err != nil {
-		//return nil, util.NewUnexpectedError(err)
-		return nil, err
+		return nil, util.NewUnexpectedError(err)
 	}
+	result := make([]Machine,0)
 	var machines []Machine
 	err = json.Unmarshal(source, &machines)
 	if err != nil {
-		//return nil, errors.Trace(err)
 		return nil, err
 	}
-	var result []Machine
+
 	for _, m := range machines {
-		m.Controller = c
 		if ownerDataMatches(m.OwnerData, args.OwnerData) {
+			m.Controller = c
+
+			resultIface := make([]*MachineNetworkInterface,0)
+			for _, i := range m.InterfaceSet {
+				i.Controller = c
+				resultIface = append(resultIface, i)
+			}
+			m.InterfaceSet = resultIface
+
 			result = append(result, m)
 		}
 	}
+
 	return result, nil
 }
 
@@ -454,8 +471,8 @@ func (c *controller) ReleaseMachines(args ReleaseMachinesArgs) error {
 	return nil
 }
 
-// Files returns all the files that match the specified prefix.
-func (c *controller) Files(prefix string) ([]File, error) {
+// getFiles returns all the files that match the specified prefix.
+func (c *controller) getFiles(prefix string) ([]File, error) {
 	params := util.NewURLParams()
 	params.MaybeAdd("prefix", prefix)
 	source, err := c.get("files", "", params.Values)
@@ -464,20 +481,17 @@ func (c *controller) Files(prefix string) ([]File, error) {
 	}
 
 	var files []File
+	results := make([]File,0)
 	err = json.Unmarshal(source, &files)
 	if err != nil {
 		return nil, err
 	}
 
-	if c == nil {
-		return nil, fmt.Errorf("controller is nil, why?")
-	}
-
 	for _, f := range files {
 		f.Controller = c
+		results = append(results, f)
 	}
-
-	return files, nil
+	return results, nil
 }
 
 // GetFile returns a single File by its Filename.
@@ -575,6 +589,10 @@ func (c *controller) checkCreds() error {
 func (c *controller) put(path string, params url.Values) ([]byte, error) {
 	path = util.EnsureTrailingSlash(path)
 	requestID := nextRequestID()
+
+	if c == nil {
+		return nil, fmt.Errorf("control is nil again...")
+	}
 	logger.Tracef("request %x: PUT %s%s, params: %s", requestID, c.Client.APIURL, path, params.Encode())
 	bytes, err := c.Client.Put(&url.URL{Path: path}, params)
 	if err != nil {
@@ -637,6 +655,11 @@ func (c *controller) delete(path string) error {
 }
 
 func (c *controller) get(path, op string, params url.Values) ([]byte, error) {
+	if c == nil {
+		//return nil, errors.Trace(fmt.Errorf("control has a nil client"))
+		return nil, fmt.Errorf("control is nil!")
+	}
+
 	path = util.EnsureTrailingSlash(path)
 	url := &url.URL{Path: path}
 	requestID := nextRequestID()
@@ -647,18 +670,7 @@ func (c *controller) get(path, op string, params url.Values) ([]byte, error) {
 		}
 		logger.Tracef("request %x: GET %s%s%s", requestID, c.Client.APIURL, path, query)
 	}
-
-	if c == nil {
-		//return nil, errors.Trace(fmt.Errorf("control has a nil client"))
-		return nil, fmt.Errorf("control has a nil client")
-	}
-
-	cl := c.Client
-	//if cl == nil {
-	//	return nil, errors.Trace(fmt.Errorf("control has a nil client"))
-	//}
-
-	bytes, err := cl.Get(url, op, params)
+	bytes, err := c.Client.Get(url, op, params)
 	if err != nil {
 		logger.Tracef("response %x: error: %q", requestID, err.Error())
 		logger.Tracef("error detail: %#v", err)

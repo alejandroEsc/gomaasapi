@@ -63,13 +63,16 @@ func (a *UpdateInterfaceArgs) vlanID() int {
 // Update the Name, mac address or VLAN.
 func (i *MachineNetworkInterface) Update(args UpdateInterfaceArgs) error {
 	var empty UpdateInterfaceArgs
+
 	if args == empty {
 		return nil
 	}
+
 	params := util.NewURLParams()
 	params.MaybeAdd("Name", args.Name)
 	params.MaybeAdd("mac_address", args.MACAddress)
 	params.MaybeAddInt("VLAN", args.vlanID())
+
 	source, err := i.Controller.put(i.ResourceURI, params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {

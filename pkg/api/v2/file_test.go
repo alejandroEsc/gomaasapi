@@ -50,12 +50,12 @@ func TestReadAllFromFiles(t *testing.T) {
 	server.AddGetResponse("/api/2.0/files/", http.StatusOK, filesResponse)
 	server.AddGetResponse("/api/2.0/files/?Filename=test&op=get", http.StatusOK, "some Content\n")
 
-	files, err := controller.Files("")
+	files, err := controller.getFiles("")
 	assert.Nil(t, err)
 	file := files[0]
 	content, err := file.ReadAll()
 	assert.Nil(t, err)
-	assert.Equal(t, "some Content\n"+string(content), string(content))
+	assert.Equal(t, "some Content\n", string(content))
 }
 
 func TestDeleteMissing(t *testing.T) {

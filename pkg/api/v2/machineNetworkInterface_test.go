@@ -9,10 +9,10 @@ import (
 	"encoding/json"
 
 	"github.com/juju/errors"
-	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"github.com/juju/gomaasapi/pkg/api/client"
 )
 
 func TestReadInterfacesBadSchema(t *testing.T) {
@@ -71,22 +71,8 @@ func TestReadInterfaces(t *testing.T) {
 	checkInterface(t, &iface[0])
 }
 
-func getServerAndNewInterface(t *testing.T) (*client.SimpleTestServer, *MachineNetworkInterface) {
-	server, controller := createTestServerController(t)
-	server.AddGetResponse("/api/2.0/devices/", http.StatusOK, devicesResponse)
-	defer server.Close()
-
-	devices, err := controller.Nodes(NodesArgs{})
-	assert.Nil(t, err)
-	device := devices[0]
-	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusOK, interfaceResponse)
-	iface, err := device.CreateInterface(minimalCreateInterfaceArgs())
-	assert.Nil(t, err)
-	return server, iface
-}
-
 func TestInterfaceDelete(t *testing.T) {
-	server, iface := getServerAndDevice(t)
+	server, iface := getServerAndNode(t)
 	// Successful delete is 204 - StatusNoContent - We hope, would be consistent
 	// with node deletions.
 	server.AddDeleteResponse(iface.ResourceURI, http.StatusNoContent, "")
@@ -96,14 +82,14 @@ func TestInterfaceDelete(t *testing.T) {
 }
 
 func TestDelete404(t *testing.T) {
-	_, iface := getServerAndDevice(t)
+	_, iface := getServerAndNode(t)
 	// No Path, so 404
 	err := iface.Delete()
 	assert.True(t, util.IsNoMatchError(err))
 }
 
 func TestDeleteForbidden(t *testing.T) {
-	server, iface := getServerAndDevice(t)
+	server, iface := getServerAndNode(t)
 	server.AddDeleteResponse(iface.ResourceURI, http.StatusForbidden, "")
 	defer server.Close()
 	err := iface.Delete()
@@ -111,7 +97,7 @@ func TestDeleteForbidden(t *testing.T) {
 }
 
 func TestDeleteUnknown(t *testing.T) {
-	server, iface := getServerAndDevice(t)
+	server, iface := getServerAndNode(t)
 	server.AddDeleteResponse(iface.ResourceURI, http.StatusConflict, "")
 	defer server.Close()
 	err := iface.Delete()
@@ -237,6 +223,7 @@ func TestLinkSubnetUnknown(t *testing.T) {
 	server, iface := getServerAndNewInterface(t)
 	server.AddPostResponse(iface.ResourceURI+"?op=link_subnet", http.StatusMethodNotAllowed, "wat?")
 	defer server.Close()
+
 	args := LinkSubnetArgs{
 		Mode:   LinkModeStatic,
 		Subnet: &subnet{ID: 42},
@@ -359,6 +346,20 @@ func TestUpdateGood(t *testing.T) {
 	assert.Equal(t, form.Get("mac_address"), "c3-52-51-b4-50-cd")
 	assert.Equal(t, form.Get("VLAN"), "13")
 }
+
+func getServerAndNewInterface(t *testing.T) (*client.SimpleTestServer, *MachineNetworkInterface) {
+	server, controller := createTestServerController(t)
+	server.AddGetResponse("/api/2.0/nodes/", http.StatusOK, devicesResponse)
+
+	nodes, err := controller.Nodes(NodesArgs{})
+	assert.Nil(t, err)
+	node := nodes[0]
+	server.AddPostResponse(node.interfacesURI()+"?op=create_physical", http.StatusOK, interfaceResponse)
+	iface, err := node.CreateInterface(minimalCreateInterfaceArgs())
+	assert.Nil(t, err)
+	return server, iface
+}
+
 
 const (
 	interfacesResponse = "[" + interfaceResponse + "]"

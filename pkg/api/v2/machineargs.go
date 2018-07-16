@@ -52,6 +52,28 @@ type AllocateMachineArgs struct {
 	DryRun    bool
 }
 
+// StartArgs is an argument struct for passing parameters to the Machine.Start
+// method.
+type StartArgs struct {
+	// UserData needs to be Base64 encoded user data for cloud-init.
+	UserData     string
+	DistroSeries string
+	Kernel       string
+	Comment      string
+}
+
+// CreatemachineDeviceArgs is an argument structure for Machine.CreateNode.
+// Only InterfaceName and MACAddress fields are required, the others are only
+// used if set. If Subnet and VLAN are both set, Subnet.VLAN() must match the
+// given VLAN. On failure, returns an error satisfying errors.IsNotValid().
+type CreateMachineNodeArgs struct {
+	Hostname      string
+	InterfaceName string
+	MACAddress    string
+	Subnet        *subnet
+	VLAN          *vlan
+}
+
 // Validate makes sure that any labels specifed in Storage or Interfaces
 // are unique, and that the required specifications are valid.
 func (a *AllocateMachineArgs) Validate() error {
@@ -143,6 +165,15 @@ func allocateMachinesParams(args AllocateMachineArgs) *util.URLParams {
 func releaseMachinesParams(args ReleaseMachinesArgs) *util.URLParams {
 	params := util.NewURLParams()
 	params.MaybeAddMany("machines", args.SystemIDs)
+	params.MaybeAdd("comment", args.Comment)
+	return params
+}
+
+func startMachineParams(args StartArgs) *util.URLParams {
+	params := util.NewURLParams()
+	params.MaybeAdd("user_data", args.UserData)
+	params.MaybeAdd("distro_series", args.DistroSeries)
+	params.MaybeAdd("hwe_kernel", args.Kernel)
 	params.MaybeAdd("comment", args.Comment)
 	return params
 }

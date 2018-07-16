@@ -22,7 +22,8 @@ func TestReadVLANsWithName(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Len(t, vlans, 1)
 	readVLAN := vlans[0]
-	assertVLAN(t, &readVLAN, &vlan{
+	expectedVLAN := &vlan{
+		ResourceURI:  "/MAAS/api/2.0/VLANs/1/",
 		ID:            1,
 		Name:          "untagged",
 		Fabric:        "Fabric-0",
@@ -31,11 +32,12 @@ func TestReadVLANsWithName(t *testing.T) {
 		DHCP:          true,
 		PrimaryRack:   "a-rack",
 		SecondaryRack: "",
-	})
+	}
+	assertVLAN(t, expectedVLAN, &readVLAN)
 }
 
 func assertVLAN(t *testing.T, givenVLAN, expectedVLAN *vlan) {
-	assert.EqualValues(t, givenVLAN, expectedVLAN)
+	assert.EqualValues(t, expectedVLAN, givenVLAN)
 	//c.Check(givenVLAN.ID, gc.Equals, expectedVLAN.ID)
 	//c.Check(givenVLAN.Name, gc.Equals, expectedVLAN.Name)
 	//c.Check(givenVLAN.Fabric, gc.Equals, expectedVLAN.Fabric)
@@ -52,7 +54,8 @@ func TestReadVLANsWithoutName(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Len(t, vlans, 1)
 	readVLAN := vlans[0]
-	assertVLAN(t, &readVLAN, &vlan{
+	expectedVLAN := &vlan{
+		ResourceURI: "/MAAS/api/2.0/VLANs/5006/",
 		ID:            5006,
 		Name:          "",
 		Fabric:        "maas-management",
@@ -61,7 +64,8 @@ func TestReadVLANsWithoutName(t *testing.T) {
 		DHCP:          true,
 		PrimaryRack:   "4y3h7n",
 		SecondaryRack: "",
-	})
+	}
+	assertVLAN(t, expectedVLAN, &readVLAN)
 }
 
 const (

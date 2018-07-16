@@ -15,13 +15,13 @@ import (
 	"testing"
 )
 
-func TestReadDevicesBadSchema(t *testing.T) {
+func TestReadNodesBadSchema(t *testing.T) {
 	var d node
 	err = json.Unmarshal([]byte("wat?"), &d)
 	assert.Error(t, err)
 }
 
-func TestReadDevices(t *testing.T) {
+func TestReadNodes(t *testing.T) {
 	var devices []node
 	err = json.Unmarshal([]byte(devicesResponse), &devices)
 	assert.Nil(t, err)
@@ -38,14 +38,14 @@ func TestReadDevices(t *testing.T) {
 	assert.Equal(t, zone.Name, "default")
 }
 
-func TestDeviceInterfaceSet(t *testing.T) {
-	server, device := getServerAndDevice(t)
+func TestNodeInterfaceSet(t *testing.T) {
+	server, device := getServerAndNode(t)
 	server.AddGetResponse(device.interfacesURI(), http.StatusOK, interfacesResponse)
 	ifaces := device.InterfaceSet
 	assert.Len(t, ifaces, 2)
 }
 
-func TestDeviceCreateInterfaceArgsValidate(t *testing.T) {
+func TestNodeCreateInterfaceArgsValidate(t *testing.T) {
 	for _, test := range []struct {
 		args    CreateInterfaceArgs
 		errText string
@@ -70,14 +70,14 @@ func TestDeviceCreateInterfaceArgsValidate(t *testing.T) {
 	}
 }
 
-func TestDeviceCreateInterfaceValidates(t *testing.T) {
-	_, device := getServerAndDevice(t)
+func TestNodeCreateInterfaceValidates(t *testing.T) {
+	_, device := getServerAndNode(t)
 	_, err := device.CreateInterface(CreateInterfaceArgs{})
 	assert.True(t, errors.IsNotValid(err))
 }
 
-func TestDeviceCreateInterface(t *testing.T) {
-	server, device := getServerAndDevice(t)
+func TestNodeCreateInterface(t *testing.T) {
+	server, device := getServerAndNode(t)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusOK, interfaceResponse)
 	defer server.Close()
 
@@ -108,8 +108,8 @@ func minimalCreateInterfaceArgs() CreateInterfaceArgs {
 	}
 }
 
-func TestDeviceCreateInterfaceNotFound(t *testing.T) {
-	server, device := getServerAndDevice(t)
+func TestNodeCreateInterfaceNotFound(t *testing.T) {
+	server, device := getServerAndNode(t)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusNotFound, "can't find node")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsBadRequestError(err))
@@ -117,7 +117,7 @@ func TestDeviceCreateInterfaceNotFound(t *testing.T) {
 }
 
 func TestCreateInterfaceConflict(t *testing.T) {
-	server, device := getServerAndDevice(t)
+	server, device := getServerAndNode(t)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusConflict, "node not allocated")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsBadRequestError(err))
@@ -125,7 +125,7 @@ func TestCreateInterfaceConflict(t *testing.T) {
 }
 
 func TestCreateInterfaceForbidden(t *testing.T) {
-	server, device := getServerAndDevice(t)
+	server, device := getServerAndNode(t)
 	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusForbidden, "node not yours")
 	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsPermissionError(err))
@@ -133,51 +133,51 @@ func TestCreateInterfaceForbidden(t *testing.T) {
 }
 
 func TestCreateInterfaceServiceUnavailable(t *testing.T) {
-	server, device := getServerAndDevice(t)
-	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusServiceUnavailable, "no ip addresses available")
-	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
+	server, Node := getServerAndNode(t)
+	server.AddPostResponse(Node.interfacesURI()+"?op=create_physical", http.StatusServiceUnavailable, "no ip addresses available")
+	_, err := Node.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsCannotCompleteError(err))
 	assert.Equal(t, err.Error(), "no ip addresses available")
 }
 
-func TestDeviceCreateInterfaceUnknown(t *testing.T) {
-	server, device := getServerAndDevice(t)
-	server.AddPostResponse(device.interfacesURI()+"?op=create_physical", http.StatusMethodNotAllowed, "wat?")
-	_, err := device.CreateInterface(minimalCreateInterfaceArgs())
+func TestNodeCreateInterfaceUnknown(t *testing.T) {
+	server, node := getServerAndNode(t)
+	server.AddPostResponse(node.interfacesURI()+"?op=create_physical", http.StatusMethodNotAllowed, "wat?")
+	_, err := node.CreateInterface(minimalCreateInterfaceArgs())
 	assert.True(t, util.IsUnexpectedError(err))
 	assert.Equal(t, err.Error(), "unexpected: ServerError: 405 Method Not Allowed (wat?)")
 }
 
-func TestDeviceDelete(t *testing.T) {
-	server, device := getServerAndDevice(t)
+func TestNodeDelete(t *testing.T) {
+	server, device := getServerAndNode(t)
 	// Successful delete is 204 - StatusNoContent
 	server.AddDeleteResponse(device.ResourceURI, http.StatusNoContent, "")
 	err := device.Delete()
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 }
 
-func TestDeviceDelete404(t *testing.T) {
-	_, device := getServerAndDevice(t)
+func TestNodeDelete404(t *testing.T) {
+	_, device := getServerAndNode(t)
 	// No Path, so 404
 	err := device.Delete()
 	assert.True(t, util.IsNoMatchError(err))
 }
 
-func TestDeviceDeleteForbidden(t *testing.T) {
-	server, device := getServerAndDevice(t)
+func TestNodeDeleteForbidden(t *testing.T) {
+	server, device := getServerAndNode(t)
 	server.AddDeleteResponse(device.ResourceURI, http.StatusForbidden, "")
 	err := device.Delete()
 	assert.True(t, util.IsPermissionError(err))
 }
 
-func TestDeviceDeleteUnknown(t *testing.T) {
-	server, device := getServerAndDevice(t)
+func TestNodeDeleteUnknown(t *testing.T) {
+	server, device := getServerAndNode(t)
 	server.AddDeleteResponse(device.ResourceURI, http.StatusConflict, "")
 	err := device.Delete()
 	assert.True(t, util.IsUnexpectedError(err))
 }
 
-func getServerAndDevice(t *testing.T) (*client.SimpleTestServer, *node) {
+func getServerAndNode(t *testing.T) (*client.SimpleTestServer, *node) {
 	server, controller := createTestServerController(t)
 	server.AddGetResponse("/api/2.0/nodes/", http.StatusOK, devicesResponse)
 

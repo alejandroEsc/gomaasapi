@@ -23,7 +23,7 @@ type Machine struct {
 	SystemID    string   `json:"system_id,omitempty"`
 	Hostname    string   `json:"Hostname,omitempty"`
 	FQDN        string   `json:"FQDN,omitempty"`
-	Tags        []string `json:"Tags,omitempty"`
+	Tags        []string `json:"tag_names,omitempty"`
 	// OwnerData returns a copy of the key/value data stored for this
 	// object.
 	OwnerData       map[string]string `json:"owner_data,omitempty"`
@@ -70,18 +70,6 @@ func (m *Machine) updateFrom(other *Machine) {
 	m.OwnerData = other.OwnerData
 }
 
-// CreatemachineDeviceArgs is an argument structure for Machine.CreateNode.
-// Only InterfaceName and MACAddress fields are required, the others are only
-// used if set. If Subnet and VLAN are both set, Subnet.VLAN() must match the
-// given VLAN. On failure, returns an error satisfying errors.IsNotValid().
-type CreateMachineDeviceArgs struct {
-	Hostname      string
-	InterfaceName string
-	MACAddress    string
-	Subnet        *subnet
-	VLAN          *vlan
-}
-
 // MachineNetworkInterface implements Machine.
 func (m *Machine) Interface(id int) *MachineNetworkInterface {
 	for _, iface := range m.InterfaceSet {
@@ -114,39 +102,27 @@ func (m *Machine) BlockDevice(id int) *BlockDevice {
 }
 
 // Nodes implements Machine.
-func (m *Machine) Devices(args NodesArgs) ([]node, error) {
+func (m *Machine) Nodes(args NodesArgs) ([]node, error) {
 	// Perhaps in the future, MAAS will give us a way to query just for the
-	// devices for a particular Parent.
-	devices, err := m.Controller.Nodes(args)
+	// nodes for a particular Parent.
+	nodes, err := m.Controller.Nodes(args)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var result []node
-	for _, d := range devices {
-		if d.Parent == m.SystemID {
-			result = append(result, d)
+
+	result :=make([]node,0)
+	for _, n := range nodes {
+		if n.Parent == m.SystemID {
+			result = append(result, n)
 		}
 	}
 	return result, nil
 }
 
-// StartArgs is an argument struct for passing parameters to the Machine.Start
-// method.
-type StartArgs struct {
-	// UserData needs to be Base64 encoded user data for cloud-init.
-	UserData     string
-	DistroSeries string
-	Kernel       string
-	Comment      string
-}
 
 // Start implements Machine.
 func (m *Machine) Start(args StartArgs) error {
-	params := util.NewURLParams()
-	params.MaybeAdd("user_data", args.UserData)
-	params.MaybeAdd("distro_series", args.DistroSeries)
-	params.MaybeAdd("hwe_kernel", args.Kernel)
-	params.MaybeAdd("comment", args.Comment)
+	params := startMachineParams(args)
 	result, err := m.Controller.post(m.ResourceURI, "deploy", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
@@ -168,12 +144,14 @@ func (m *Machine) Start(args StartArgs) error {
 		return errors.Trace(err)
 	}
 
+	machine.Controller = m.Controller
+
 	m.updateFrom(machine)
 	return nil
 }
 
 // Validate ensures that all required Values are non-emtpy.
-func (a *CreateMachineDeviceArgs) Validate() error {
+func (a *CreateMachineNodeArgs) Validate() error {
 	if a.InterfaceName == "" {
 		return errors.NotValidf("missing InterfaceName")
 	}
@@ -194,7 +172,7 @@ func (a *CreateMachineDeviceArgs) Validate() error {
 }
 
 // CreateNode implements Machine
-func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*node, error) {
+func (m *Machine) CreateNode(args CreateMachineNodeArgs) (*node, error) {
 	if err := args.Validate(); err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -204,12 +182,12 @@ func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*node, error) {
 		Parent:       m.SystemID,
 	})
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 
 	defer func(err *error) {
 		// If there is an error return, at least try to delete the node we just created.
-		if *err != nil {
+		if err != nil {
 			if innerErr := d.Delete(); innerErr != nil {
 				logger.Warningf("could not delete node %q", d.SystemID)
 			}
@@ -229,26 +207,25 @@ func (m *Machine) CreateDevice(args CreateMachineDeviceArgs) (*node, error) {
 		err := errors.Errorf("unexpected interface count for node: %d", count)
 		return nil, util.NewUnexpectedError(err)
 	}
-	iface := interfaces[0]
-	nameToUse := args.InterfaceName
 
-	if err := m.updateDeviceInterface(*iface, nameToUse, vlanToUse); err != nil {
-		return nil, errors.Trace(err)
+	if err := m.updateDeviceInterface(interfaces, args.InterfaceName, vlanToUse); err != nil {
+		return nil, err
 	}
 
 	if args.Subnet == nil {
-		// Nothing further to update.
 		return d, nil
 	}
 
-	if err := m.linkDeviceInterfaceToSubnet(*iface, args.Subnet); err != nil {
-		return nil, errors.Trace(err)
+	if err := m.linkDeviceInterfaceToSubnet(interfaces, args.Subnet); err != nil {
+		return nil, err
 	}
 
 	return d, nil
 }
 
-func (m *Machine) updateDeviceInterface(iface MachineNetworkInterface, nameToUse string, vlanToUse *vlan) error {
+func (m *Machine) updateDeviceInterface(interfaces []*MachineNetworkInterface, nameToUse string, vlanToUse *vlan) error {
+	iface := interfaces[0]
+
 	updateArgs := UpdateInterfaceArgs{}
 	updateArgs.Name = nameToUse
 
@@ -263,7 +240,9 @@ func (m *Machine) updateDeviceInterface(iface MachineNetworkInterface, nameToUse
 	return nil
 }
 
-func (m *Machine) linkDeviceInterfaceToSubnet(iface MachineNetworkInterface, subnetToUse *subnet) error {
+func (m *Machine) linkDeviceInterfaceToSubnet(interfaces []*MachineNetworkInterface, subnetToUse *subnet) error {
+	iface := interfaces[0]
+
 	err := iface.LinkSubnet(LinkSubnetArgs{
 		Mode:   LinkModeStatic,
 		Subnet: subnetToUse,
@@ -322,7 +301,7 @@ type MachineInterface interface {
 
 	// CreateNode creates a new NodeInterface with this MachineInterface as the Parent.
 	// The node will have one interface that is linked to the specified Subnet.
-	CreateDevice(CreateMachineDeviceArgs) (NodeInterface, error)
+	CreateDevice(CreateMachineNodeArgs) (NodeInterface, error)
 }
 
 // OwnerDataHolderInterface represents any MAAS object that can store key/value

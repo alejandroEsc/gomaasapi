@@ -953,7 +953,7 @@ func TestFiles(t *testing.T) {
 	defer server.Close()
 
 	controller := getController(t)
-	files, err := controller.Files("")
+	files, err := controller.getFiles("")
 	assert.Nil(t, err)
 	assert.Len(t, files, 2)
 

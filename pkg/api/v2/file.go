@@ -57,11 +57,15 @@ func (f *File) ReadAll() ([]byte, error) {
 	return bytes, nil
 }
 
+func (f *File) get(path, op string, params url.Values) ([]byte, error) {
+	return f.Controller.get(path, op, params)
+}
+
 func (f *File) readFromServer() ([]byte, error) {
 	// If the Content is available, it is base64 encoded, so
 	args := make(url.Values)
 	args.Add("Filename", f.Filename)
-	bytes, err := f.Controller.get("files", "get", args)
+	bytes, err := f.get("files", "get", args)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
 			switch svrErr.StatusCode {

@@ -77,7 +77,6 @@ func (d *node) interfacesURI() string {
 // CreateInterface implements NodeInterface.
 func (d *node) CreateInterface(args CreateInterfaceArgs) (*MachineNetworkInterface, error) {
 	if err := args.Validate(); err != nil {
-		//return nil, errors.Trace(err)
 		return nil, err
 	}
 	params := util.NewURLParams()
@@ -90,7 +89,6 @@ func (d *node) CreateInterface(args CreateInterfaceArgs) (*MachineNetworkInterfa
 	params.MaybeAddBool("autoconf", args.Autoconf)
 
 	uri := d.interfacesURI()
-	fmt.Println(params.Values, uri)
 	result, err := d.Controller.post(uri, "create_physical", params.Values)
 	if err != nil {
 		if svrErr, ok := errors.Cause(err).(client.ServerError); ok {
@@ -109,13 +107,10 @@ func (d *node) CreateInterface(args CreateInterfaceArgs) (*MachineNetworkInterfa
 	var iface MachineNetworkInterface
 	err = json.Unmarshal(result, &iface)
 	if err != nil {
-		//return nil, errors.Trace(err)
 		return nil, err
 	}
 	iface.Controller = d.Controller
-
-	// TODO: add to the interfaces for the node when the interfaces are returned.
-	// lp:bug 1567213.
+	d.InterfaceSet = append(d.InterfaceSet, &iface)
 	return &iface, nil
 }
 

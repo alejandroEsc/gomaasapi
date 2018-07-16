@@ -9,13 +9,13 @@ import (
 	"testing"
 )
 
-func TestReadZonesBadSchema(t *testing.T) {
+func TestZoneReadBadSchema(t *testing.T) {
 	var z zone
 	err = json.Unmarshal([]byte("wat?"), &z)
 	assert.Error(t, err)
 }
 
-func TestReadZones(t *testing.T) {
+func TestZonesRead(t *testing.T) {
 	var zones []zone
 	err = json.Unmarshal([]byte(zoneResponse), &zones)
 	assert.Nil(t, err)
