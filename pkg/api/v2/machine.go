@@ -1,7 +1,7 @@
 // Copyright 2016 Canonical Ltd.
 // Licensed under the LGPLv3, see LICENCE File for details.
 
-package machine
+package maasapiv2
 
 import (
 	"net/http"
@@ -12,14 +12,6 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
-	. "github.com/juju/gomaasapi/pkg/api/v2"
-	. "github.com/juju/gomaasapi/pkg/api/v2/node"
-	. "github.com/juju/gomaasapi/pkg/api/v2/controller"
-	"github.com/juju/loggo"
-)
-
-var (
-	logger = loggo.GetLogger("maas")
 )
 
 // MachineInterface represents a physical MachineInterface.
@@ -170,7 +162,7 @@ func (m *Machine) CreateNode(args CreateMachineNodeArgs) (*Node, error) {
 		return nil, err
 	}
 
-	defer func(err error) {
+	defer func(err *error) {
 		// If there is an error return, at least try to delete the node we just created.
 		if err != nil {
 			if innerErr := d.Delete(); innerErr != nil {

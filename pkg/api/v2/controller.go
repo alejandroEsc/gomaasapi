@@ -1,7 +1,7 @@
 // Copyright 2016 Canonical Ltd.
 // Licensed under the LGPLv3, see LICENCE File for details.
 
-package controller
+package maasapiv2
 
 import (
 	"encoding/json"
@@ -16,9 +16,6 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
-	. "github.com/juju/gomaasapi/pkg/api/v2"
-	. "github.com/juju/gomaasapi/pkg/api/v2/Node"
-	. "github.com/juju/gomaasapi/pkg/api/v2/Machine"
 	"github.com/juju/loggo"
 	"github.com/juju/schema"
 	"github.com/juju/utils/set"

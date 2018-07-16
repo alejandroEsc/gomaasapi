@@ -1,4 +1,4 @@
-package machine
+package maasapiv2
 
 import (
 	"fmt"
@@ -6,8 +6,6 @@ import (
 
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/util"
-	. "github.com/juju/gomaasapi/pkg/api/v2"
-
 	"github.com/juju/utils/set"
 )
 

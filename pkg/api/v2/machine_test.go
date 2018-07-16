@@ -1,7 +1,7 @@
 // Copyright 2016 Canonical Ltd.
 // Licensed under the LGPLv3, see LICENCE File for details.
 
-package machine
+package maasapiv2
 
 import (
 	"encoding/json"
@@ -227,11 +227,11 @@ func TestCreateMachineNodeArgsValidate(t *testing.T) {
 		args: CreateMachineNodeArgs{
 			InterfaceName: "eth1",
 			MACAddress:    "something",
-			Subnet: &subnet{
+			Subnet: &Subnet{
 				CIDR: "1.2.3.4/5",
-				VLAN: &vlan{ID: 42},
+				VLAN: &VLAN{ID: 42},
 			},
-			VLAN: &vlan{ID: 10},
+			VLAN: &VLAN{ID: 10},
 		},
 		errText: `given Subnet "1.2.3.4/5" on VLAN 42 does not match given VLAN 10`,
 	}, {
@@ -240,13 +240,13 @@ func TestCreateMachineNodeArgsValidate(t *testing.T) {
 			InterfaceName: "eth1",
 			MACAddress:    "something",
 			Subnet:        nil,
-			VLAN:          &vlan{},
+			VLAN:          &VLAN{},
 		},
 	}, {
 		args: CreateMachineNodeArgs{
 			InterfaceName: "eth1",
 			MACAddress:    "something",
-			Subnet:        &subnet{},
+			Subnet:        &Subnet{},
 			VLAN:          nil,
 		},
 	}, {
@@ -350,7 +350,7 @@ func TestMachineCreateNodeWithVLANOnly(t *testing.T) {
 		InterfaceName: "eth4",
 		MACAddress:    "fake-mac-address",
 		Subnet:        nil,
-		VLAN:          &vlan{ID: 42},
+		VLAN:          &VLAN{ID: 42},
 	})
 	assert.Nil(t, err)
 	assert.Equal(t, device.InterfaceSet[0].Name, "eth4")

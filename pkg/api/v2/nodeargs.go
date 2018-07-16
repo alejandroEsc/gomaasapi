@@ -1,4 +1,4 @@
-package node
+package maasapiv2
 
 import "github.com/juju/gomaasapi/pkg/api/util"
 

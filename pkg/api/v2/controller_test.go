@@ -1,7 +1,7 @@
 // Copyright 2016 Canonical Ltd.
 // Licensed under the LGPLv3, see LICENCE File for details.
 
-package controller
+package maasapiv2
 
 import (
 	"bytes"
@@ -214,7 +214,7 @@ func TestNewControllerWith194Bug(t *testing.T) {
 	assert.True(t, util.IsDeserializationError(err))
 }
 
-func TestBootResources(t *testing.T) {
+func TestControllerBootResources(t *testing.T) {
 	//t.Skipf("unknown failure %s", `Expected nil, but got: &url.Error{Op:"Get", URL:"http://127.0.0.1:53393/api/2.0/version/", Err:(*net.OpError)(0xc4202dc2d0)}`)
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/boot-resources/", http.StatusOK, bootResourcesResponse)
@@ -249,7 +249,7 @@ func TestControllerNodes(t *testing.T) {
 	assert.Len(t, devices, 1)
 }
 
-func TestDevicesArgs(t *testing.T) {
+func TestControllerNodesArgs(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/nodes/", http.StatusOK, devicesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -274,7 +274,7 @@ func TestDevicesArgs(t *testing.T) {
 	assert.Len(t, request.URL.Query(), 6)
 }
 
-func TestCreateControllerDevice(t *testing.T) {
+func TestControllerCreateNode(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/nodes/", http.StatusOK, devicesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -291,7 +291,7 @@ func TestCreateControllerDevice(t *testing.T) {
 	assert.Equal(t, device.SystemID, "4y3haf")
 }
 
-func TestCreateDeviceMissingAddress(t *testing.T) {
+func TestControllerCreateNodeMissingAddress(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/nodes/", http.StatusOK, devicesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -305,7 +305,7 @@ func TestCreateDeviceMissingAddress(t *testing.T) {
 	assert.Equal(t, err.Error(), "at least one MAC address must be specified")
 }
 
-func TestCreateDeviceBadRequest(t *testing.T) {
+func TestControllerCreateNodeBadRequest(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddPostResponse("/api/2.0/nodes/?op=", http.StatusBadRequest, "some error")
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -321,7 +321,7 @@ func TestCreateDeviceBadRequest(t *testing.T) {
 	assert.Equal(t, err.Error(), "some error")
 }
 
-func TestCreateDeviceArgs(t *testing.T) {
+func TestControllerCreateNodeArgs(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddPostResponse("/api/2.0/nodes/?op=", http.StatusOK, deviceResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -345,7 +345,7 @@ func TestCreateDeviceArgs(t *testing.T) {
 	assert.Len(t, request.PostForm, 4)
 }
 
-func TestFabrics(t *testing.T) {
+func TestControllerFabrics(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/fabrics/", http.StatusOK, fabricResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -359,7 +359,7 @@ func TestFabrics(t *testing.T) {
 	assert.Len(t, fabrics, 2)
 }
 
-func TestSpaces(t *testing.T) {
+func TestControllerSpaces(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/spaces/", http.StatusOK, spacesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -373,7 +373,7 @@ func TestSpaces(t *testing.T) {
 	assert.Len(t, spaces, 1)
 }
 
-func TestStaticRoutes(t *testing.T) {
+func TestControllerStaticRoutes(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/static-routes/", http.StatusOK, staticRoutesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -387,7 +387,7 @@ func TestStaticRoutes(t *testing.T) {
 	assert.Len(t, staticRoutes, 1)
 }
 
-func TestZones(t *testing.T) {
+func TestControllerZones(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/zones/", http.StatusOK, zoneResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -401,7 +401,7 @@ func TestZones(t *testing.T) {
 	assert.Len(t, zones, 2)
 }
 
-func TestMachines(t *testing.T) {
+func TestControllerMachines(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, machinesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -415,7 +415,7 @@ func TestMachines(t *testing.T) {
 	assert.Len(t, machines, 3)
 }
 
-func TestMachinesFilter(t *testing.T) {
+func TestControllerMachinesFilter(t *testing.T) {
 	hostName := "untasted-markita"
 	response := "[" + machineResponse + "]"
 	server = client.NewSimpleServer()
@@ -434,7 +434,7 @@ func TestMachinesFilter(t *testing.T) {
 	assert.Equal(t, machines[0].Hostname, hostName)
 }
 
-func TestMachinesFilterWithOwnerData(t *testing.T) {
+func TestControllerMachinesFilterWithOwnerData(t *testing.T) {
 	server = client.NewSimpleServer()
 	//server.AddGetResponse("/api/2.0/machines/", http.StatusOK, machinesResponse)
 	server.AddGetResponse("/api/2.0/machines/?Hostname=untasted-markita", http.StatusOK, "["+machineResponse+"]")
@@ -454,7 +454,7 @@ func TestMachinesFilterWithOwnerData(t *testing.T) {
 	assert.Len(t, machines, 0)
 }
 
-func TestMachinesFilterWithOwnerData_MultipleMatches(t *testing.T) {
+func TestControllerMachinesFilterWithOwnerData_MultipleMatches(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, machinesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -474,7 +474,7 @@ func TestMachinesFilterWithOwnerData_MultipleMatches(t *testing.T) {
 	assert.Equal(t, machines[1].Hostname, "icier-nina")
 }
 
-func TestMachinesFilterWithOwnerData_RequiresAllMatch(t *testing.T) {
+func TestControllerMachinesFilterWithOwnerData_RequiresAllMatch(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/machines/", http.StatusOK, machinesResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -494,7 +494,7 @@ func TestMachinesFilterWithOwnerData_RequiresAllMatch(t *testing.T) {
 	assert.Equal(t, machines[0].Hostname, "lowlier-glady")
 }
 
-func TestMachinesArgs(t *testing.T) {
+func TestControllerMachinesArgs(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/machines/?Hostname=untasted-markita", http.StatusOK, "["+machineResponse+"]")
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -519,148 +519,7 @@ func TestMachinesArgs(t *testing.T) {
 	assert.Len(t, request.URL.Query(), 6)
 }
 
-func TestStorageSpec(t *testing.T) {
-	for _, test := range []struct {
-		spec StorageSpec
-		err  string
-		repr string
-	}{{
-		spec: StorageSpec{},
-		err:  "Size value 0 not valid",
-	}, {
-		spec: StorageSpec{Size: -10},
-		err:  "Size value -10 not valid",
-	}, {
-		spec: StorageSpec{Size: 200},
-		repr: "200",
-	}, {
-		spec: StorageSpec{Label: "foo", Size: 200},
-		repr: "foo:200",
-	}, {
-		spec: StorageSpec{Size: 200, Tags: []string{"foo", ""}},
-		err:  "empty tag not valid",
-	}, {
-		spec: StorageSpec{Size: 200, Tags: []string{"foo"}},
-		repr: "200(foo)",
-	}, {
-		spec: StorageSpec{Label: "omg", Size: 200, Tags: []string{"foo", "bar"}},
-		repr: "omg:200(foo,bar)",
-	}} {
-		err := test.spec.Validate()
-		if test.err == "" {
-			assert.Nil(t, err)
-			assert.Equal(t, test.spec.String(), test.repr)
-		} else {
-			assert.True(t, errors.IsNotValid(err))
-			assert.Equal(t, err.Error(), test.err)
-		}
-	}
-}
-
-func TestInterfaceSpec(t *testing.T) {
-	for _, test := range []struct {
-		spec InterfaceSpec
-		err  string
-		repr string
-	}{{
-		spec: InterfaceSpec{},
-		err:  "missing Label not valid",
-	}, {
-		spec: InterfaceSpec{Label: "foo"},
-		err:  "empty Space constraint not valid",
-	}, {
-		spec: InterfaceSpec{Label: "foo", Space: "magic"},
-		repr: "foo:Space=magic",
-	}} {
-		err := test.spec.Validate()
-		if test.err == "" {
-			assert.Nil(t, err)
-			assert.Equal(t, test.spec.String(), test.repr)
-		} else {
-			assert.True(t, errors.IsNotValid(err))
-			assert.Equal(t, err.Error(), test.err)
-		}
-	}
-}
-
-func TestAllocateMachineArgs(t *testing.T) {
-	for _, test := range []struct {
-		args       AllocateMachineArgs
-		err        string
-		storage    string
-		interfaces string
-		notSubnets []string
-	}{{
-		args: AllocateMachineArgs{},
-	}, {
-		args: AllocateMachineArgs{
-			Storage: []StorageSpec{{}},
-		},
-		err: "Storage: Size value 0 not valid",
-	}, {
-		args: AllocateMachineArgs{
-			Storage: []StorageSpec{{Size: 200}, {Size: 400, Tags: []string{"ssd"}}},
-		},
-		storage: "200,400(ssd)",
-	}, {
-		args: AllocateMachineArgs{
-			Storage: []StorageSpec{
-				{Label: "foo", Size: 200},
-				{Label: "foo", Size: 400, Tags: []string{"ssd"}},
-			},
-		},
-		err: `reusing storage Label "foo" not valid`,
-	}, {
-		args: AllocateMachineArgs{
-			Interfaces: []InterfaceSpec{{}},
-		},
-		err: "Interfaces: missing Label not valid",
-	}, {
-		args: AllocateMachineArgs{
-			Interfaces: []InterfaceSpec{
-				{Label: "foo", Space: "magic"},
-				{Label: "bar", Space: "other"},
-			},
-		},
-		interfaces: "foo:Space=magic;bar:Space=other",
-	}, {
-		args: AllocateMachineArgs{
-			Interfaces: []InterfaceSpec{
-				{Label: "foo", Space: "magic"},
-				{Label: "foo", Space: "other"},
-			},
-		},
-		err: `reusing interface Label "foo" not valid`,
-	}, {
-		args: AllocateMachineArgs{
-			NotSpace: []string{""},
-		},
-		err: "empty NotSpace constraint not valid",
-	}, {
-		args: AllocateMachineArgs{
-			NotSpace: []string{"foo"},
-		},
-		notSubnets: []string{"Space:foo"},
-	}, {
-		args: AllocateMachineArgs{
-			NotSpace: []string{"foo", "bar"},
-		},
-		notSubnets: []string{"Space:foo", "Space:bar"},
-	}} {
-		err := test.args.Validate()
-		if test.err == "" {
-			assert.Nil(t, err)
-			assert.Equal(t, test.args.storage(), test.storage)
-			assert.Equal(t, test.args.interfaces(), test.interfaces)
-			assert.EqualValues(t, test.args.notSubnets(), test.notSubnets)
-		} else {
-			assert.True(t, errors.IsNotValid(err))
-			assert.Equal(t, err.Error(), test.err)
-		}
-	}
-}
-
-func TestAllocateMachine(t *testing.T) {
+func TestControllerAllocateMachine(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -674,7 +533,7 @@ func TestAllocateMachine(t *testing.T) {
 	assert.Equal(t, machine.SystemID, "4y3ha3")
 }
 
-func TestAllocateMachineInterfacesMatch(t *testing.T) {
+func TestControllerAllocateMachineInterfacesMatch(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -700,7 +559,7 @@ func TestAllocateMachineInterfacesMatch(t *testing.T) {
 	assert.Equal(t, ifaces[1].ID, 99)
 }
 
-func TestAllocateMachineInterfacesMatchMissing(t *testing.T) {
+func TestControllerAllocateMachineInterfacesMatchMissing(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -722,7 +581,7 @@ func TestAllocateMachineInterfacesMatchMissing(t *testing.T) {
 	assert.True(t, util.IsDeserializationError(err))
 }
 
-func TestAllocateMachineStorageMatches(t *testing.T) {
+func TestControllerAllocateMachineStorageMatches(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -748,7 +607,7 @@ func TestAllocateMachineStorageMatches(t *testing.T) {
 	assert.Equal(t, storages[1].ID, 98)
 }
 
-func TestAllocateMachineStorageLogicalMatches(t *testing.T) {
+func TestControllerAllocateMachineStorageLogicalMatches(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddPostResponse("/api/2.0/machines/?op=allocate", http.StatusOK, machineResponse)
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -769,7 +628,7 @@ func TestAllocateMachineStorageLogicalMatches(t *testing.T) {
 	assert.EqualValues(t, matches.Storage["0"][0], *machine.BlockDevice(virtualDeviceID))
 }
 
-func TestAllocateMachineStorageMatchMissing(t *testing.T) {
+func TestControllerAllocateMachineStorageMatchMissing(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -792,7 +651,7 @@ func TestAllocateMachineStorageMatchMissing(t *testing.T) {
 	assert.True(t, util.IsDeserializationError(err))
 }
 
-func TestAllocateMachineArgsForm(t *testing.T) {
+func TestControllerAllocateMachineArgsForm(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -827,12 +686,12 @@ func TestAllocateMachineArgsForm(t *testing.T) {
 	form := request.PostForm
 	assert.Len(t, form, 15)
 	// Positive Space check.
-	assert.Equal(t, form.Get("interfaces"), "default:Space=magic")
+	assert.Equal(t, form.Get("interfaces"), "default:space=magic")
 	// Negative Space check.
-	assert.Equal(t, form.Get("not_subnets"), "Space:special")
+	assert.Equal(t, form.Get("not_subnets"), "space:special")
 }
 
-func TestAllocateMachineNoMatch(t *testing.T) {
+func TestControllerAllocateMachineNoMatch(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -845,7 +704,7 @@ func TestAllocateMachineNoMatch(t *testing.T) {
 	assert.True(t, util.IsNoMatchError(err))
 }
 
-func TestAllocateMachineUnexpected(t *testing.T) {
+func TestControllerAllocateMachineUnexpected(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -858,7 +717,7 @@ func TestAllocateMachineUnexpected(t *testing.T) {
 	assert.True(t, util.IsUnexpectedError(err))
 }
 
-func TestReleaseMachines(t *testing.T) {
+func TestControllerReleaseMachines(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddPostResponse("/api/2.0/machines/?op=release", http.StatusOK, "[]")
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -879,7 +738,7 @@ func TestReleaseMachines(t *testing.T) {
 	assert.EqualValues(t, request.PostForm.Get("comment"), "all good")
 }
 
-func TestReleaseMachinesBadRequest(t *testing.T) {
+func TestControllerReleaseMachinesBadRequest(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -895,7 +754,7 @@ func TestReleaseMachinesBadRequest(t *testing.T) {
 	assert.Equal(t, err.Error(), "unknown machines")
 }
 
-func TestReleaseMachinesForbidden(t *testing.T) {
+func TestControllerReleaseMachinesForbidden(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -911,7 +770,7 @@ func TestReleaseMachinesForbidden(t *testing.T) {
 	assert.Equal(t, err.Error(), "bzzt denied")
 }
 
-func TestReleaseMachinesConflict(t *testing.T) {
+func TestControllerReleaseMachinesConflict(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -927,7 +786,7 @@ func TestReleaseMachinesConflict(t *testing.T) {
 	assert.Equal(t, err.Error(), "MachineInterface busy")
 }
 
-func TestReleaseMachinesUnexpected(t *testing.T) {
+func TestControllerReleaseMachinesUnexpected(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -943,7 +802,7 @@ func TestReleaseMachinesUnexpected(t *testing.T) {
 	assert.Equal(t, err.Error(), "unexpected: ServerError: 502 Bad Gateway (wat)")
 }
 
-func TestFiles(t *testing.T) {
+func TestControllerFiles(t *testing.T) {
 	t.Skip("skip until testing on real server.")
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/files/", http.StatusOK, filesResponse)
@@ -964,7 +823,7 @@ func TestFiles(t *testing.T) {
 	assert.Equal(t, file.AnonymousURI.RequestURI(), "/MAAS/api/2.0/files/?op=get_by_key&key=3afba564-fb7d-11e5-932f-52540051bf22")
 }
 
-func TestGetFile(t *testing.T) {
+func TestControllerGetFile(t *testing.T) {
 	t.Skip("skip until testing on real server.")
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
@@ -984,7 +843,7 @@ func TestGetFile(t *testing.T) {
 	assert.Equal(t, file.AnonymousURI.RequestURI(), "/MAAS/api/2.0/files/?op=get_by_key&key=88e64b76-fb82-11e5-932f-52540051bf22")
 }
 
-func TestGetFileMissing(t *testing.T) {
+func TestControllerGetFileMissing(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -996,7 +855,7 @@ func TestGetFileMissing(t *testing.T) {
 	assert.True(t, util.IsNoMatchError(err))
 }
 
-func TestAddFileArgsValidate(t *testing.T) {
+func TestControllerAddFileArgsValidate(t *testing.T) {
 	reader := bytes.NewBufferString("test")
 	for _, test := range []struct {
 		args    AddFileArgs
@@ -1054,7 +913,7 @@ func TestAddFileArgsValidate(t *testing.T) {
 	}
 }
 
-func TestAddFileValidates(t *testing.T) {
+func TestControllerAddFileValidates(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -1066,7 +925,7 @@ func TestAddFileValidates(t *testing.T) {
 	assert.True(t, errors.IsNotValid(err))
 }
 
-func TestAddFileContent(t *testing.T) {
+func TestControllerAddFileContent(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)
@@ -1085,7 +944,7 @@ func TestAddFileContent(t *testing.T) {
 	assertFile(t, request, "foo.txt", "foo")
 }
 
-func TestAddFileReader(t *testing.T) {
+func TestControllerAddFileReader(t *testing.T) {
 	server = client.NewSimpleServer()
 	server.AddGetResponse("/api/2.0/version/", http.StatusOK, versionResponse)
 	server.AddGetResponse("/api/2.0/users/?op=whoami", http.StatusOK, `"captain awesome"`)

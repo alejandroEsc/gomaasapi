@@ -1,7 +1,7 @@
 // Copyright 2016 Canonical Ltd.
 // Licensed under the LGPLv3, see LICENCE File for details.
 
-package node
+package maasapiv2
 
 import (
 	"net/http"
@@ -59,7 +59,7 @@ func TestNodeCreateInterfaceArgsValidate(t *testing.T) {
 		args:    CreateInterfaceArgs{Name: "eth3", MACAddress: "a-mac-address"},
 		errText: `missing VLAN not valid`,
 	}, {
-		args: CreateInterfaceArgs{Name: "eth3", MACAddress: "a-mac-address", VLAN: &vlan{}},
+		args: CreateInterfaceArgs{Name: "eth3", MACAddress: "a-mac-address", VLAN: &VLAN{}},
 	}} {
 		err := test.args.Validate()
 		if test.errText == "" {
@@ -85,7 +85,7 @@ func TestNodeCreateInterface(t *testing.T) {
 	args := CreateInterfaceArgs{
 		Name:       "eth43",
 		MACAddress: "some-mac-address",
-		VLAN:       &vlan{ID: 33},
+		VLAN:       &VLAN{ID: 33},
 		Tags:       []string{"foo", "bar"},
 	}
 
@@ -105,7 +105,7 @@ func minimalCreateInterfaceArgs() CreateInterfaceArgs {
 	return CreateInterfaceArgs{
 		Name:       "eth43",
 		MACAddress: "some-mac-address",
-		VLAN:       &vlan{ID: 33},
+		VLAN:       &VLAN{ID: 33},
 	}
 }
 

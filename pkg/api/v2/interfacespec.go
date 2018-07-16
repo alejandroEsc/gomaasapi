@@ -41,5 +41,5 @@ func (a *InterfaceSpec) Validate() error {
 
 // String returns the interface spec as MaaS requires it.
 func (a *InterfaceSpec) String() string {
-	return fmt.Sprintf("%s:Space=%s", a.Label, a.Space)
+	return fmt.Sprintf("%s:space=%s", a.Label, a.Space)
 }
