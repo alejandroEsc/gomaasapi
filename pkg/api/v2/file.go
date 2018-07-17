@@ -48,21 +48,16 @@ func (f *File) Delete() error {
 // ReadAll implements FileInterface.
 func (f *File) ReadAll() ([]byte, error) {
 	if f.Content == "" {
-		return f.readFromServer()
+		return f.readFileContent()
 	}
-	bytes, err := base64.StdEncoding.DecodeString(f.Content)
-	if err != nil {
-		//return nil, util.NewUnexpectedError(fmt.Errorf("content is %s.",f.Content))
-		return nil, fmt.Errorf("err: %s, content is %s.", err.Error(), f.Content)
-	}
-	return bytes, nil
+	return []byte(f.Content), nil
 }
 
 func (f *File) get(path, op string, params url.Values) ([]byte, error) {
 	return f.Controller.Get(path, op, params)
 }
 
-func (f *File) readFromServer() ([]byte, error) {
+func (f *File) readFileContent() ([]byte, error) {
 	// If the Content is available, it is base64 encoded, so
 	args := make(url.Values)
 	args.Add("Filename", f.Filename)
@@ -76,18 +71,9 @@ func (f *File) readFromServer() ([]byte, error) {
 				return nil, errors.Wrap(err, util.NewPermissionError(svrErr.BodyMessage))
 			}
 		}
-		return nil, err
-		//return nil, util.NewUnexpectedError(err)
+		return nil, util.NewUnexpectedError(err)
 	}
 	return bytes, nil
-}
-
-// FileInterface represents a File stored in the maas ControllerInterface.
-type FileInterface interface {
-	// Delete removes the File from the maas ControllerInterface.
-	Delete() error
-	// ReadAll returns the Content of the File.
-	ReadAll() ([]byte, error)
 }
 
 func (f *File) UnmarshalJSON(j []byte) error {
