@@ -13,7 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/juju/gomaasapi/pkg/api/maas"
+	"github.com/juju/gomaasapi/pkg/api"
 	"github.com/juju/gomaasapi/pkg/api/v2"
 	"github.com/spf13/viper"
 )
@@ -52,7 +52,7 @@ func main() {
 
 	fmt.Printf("values are: %s %s %s\n", apiKey, apiURL, apiVersion)
 
-	m, err := maas.NewMASS(apiURL, apiVersion, apiKey)
+	m, err := api.NewMASS(apiURL, apiVersion, apiKey)
 	checkError(err)
 
 	files(m)
@@ -62,7 +62,7 @@ func main() {
 	fmt.Println("All done.")
 }
 
-func machines(maas *maas.MAAS) {
+func machines(maas *api.MAAS) {
 
 	params := maasapiv2.MachinesParams(maasapiv2.MachinesArgs{})
 	rawMachines, err := maas.Get("machines", "", params.Values)
@@ -79,7 +79,7 @@ func machines(maas *maas.MAAS) {
 
 }
 
-func nodes(maas *maas.MAAS) {
+func nodes(maas *api.MAAS) {
 	rawNodes, err := maas.Get("nodes", "", nil)
 	checkError(err)
 
@@ -89,7 +89,7 @@ func nodes(maas *maas.MAAS) {
 // ManipulateFiles exercises the /api/1.0/files/ API endpoint.  Most precisely,
 // it uploads a files and then fetches it, making sure the received content
 // is the same as the one that was sent.
-func files(maas *maas.MAAS) {
+func files(maas *api.MAAS) {
 	var err error
 
 	fileContent := []byte("test file content")

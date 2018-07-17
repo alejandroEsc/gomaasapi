@@ -1,4 +1,4 @@
-package maas
+package api
 
 import (
 	"fmt"
