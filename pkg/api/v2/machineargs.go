@@ -7,6 +7,7 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/util"
 	"github.com/juju/utils/set"
+	"github.com/juju/schema"
 )
 
 // MachinesArgs is a argument struct for selecting Machines.
@@ -199,4 +200,75 @@ func DeploytMachineParams(args DeployMachineArgs) *util.URLParams {
 	params.MaybeAdd("hwe_kernel", args.Kernel)
 	params.MaybeAdd("comment", args.Comment)
 	return params
+}
+
+func parseAllocateConstraintsResponse(source interface{}, machine *Machine) (ConstraintMatches, error) {
+	var empty ConstraintMatches
+	matchFields := schema.Fields{
+		"storage":    schema.StringMap(schema.List(schema.ForceInt())),
+		"interfaces": schema.StringMap(schema.List(schema.ForceInt())),
+	}
+	matchDefaults := schema.Defaults{
+		"storage":    schema.Omit,
+		"interfaces": schema.Omit,
+	}
+	fields := schema.Fields{
+		"constraints_by_type": schema.FieldMap(matchFields, matchDefaults),
+	}
+	checker := schema.FieldMap(fields, nil) // no defaults
+	coerced, err := checker.Coerce(source, nil)
+	if err != nil {
+		return empty, util.WrapWithDeserializationError(err, "allocation constraints response schema check failed")
+	}
+	valid := coerced.(map[string]interface{})
+	constraintsMap := valid["constraints_by_type"].(map[string]interface{})
+	result := ConstraintMatches{
+		Interfaces: make(map[string][]NetworkInterface),
+		Storage:    make(map[string][]BlockDevice),
+	}
+
+	if interfaceMatches, found := constraintsMap["interfaces"]; found {
+		matches := convertConstraintMatches(interfaceMatches)
+		for label, ids := range matches {
+			interfaces := make([]NetworkInterface, len(ids))
+			for index, id := range ids {
+				iface := machine.Interface(id)
+				if iface == nil {
+					return empty, util.NewDeserializationError("constraint match interface %q: %d does not match an interface for the MachineInterface", label, id)
+				}
+				interfaces[index] = *iface
+			}
+			result.Interfaces[label] = interfaces
+		}
+	}
+
+	if storageMatches, found := constraintsMap["storage"]; found {
+		matches := convertConstraintMatches(storageMatches)
+		for label, ids := range matches {
+			blockDevices := make([]BlockDevice, len(ids))
+			for index, id := range ids {
+				blockDevice := machine.BlockDevice(id)
+				if blockDevice == nil {
+					return empty, util.NewDeserializationError("constraint match storage %q: %d does not match a block node for the MachineInterface", label, id)
+				}
+				blockDevices[index] = *blockDevice
+			}
+			result.Storage[label] = blockDevices
+		}
+	}
+	return result, nil
+}
+
+func convertConstraintMatches(source interface{}) map[string][]int {
+	// These casts are all safe because of the schema check.
+	result := make(map[string][]int)
+	matchMap := source.(map[string]interface{})
+	for label, values := range matchMap {
+		items := values.([]interface{})
+		result[label] = make([]int, len(items))
+		for index, value := range items {
+			result[label][index] = value.(int)
+		}
+	}
+	return result
 }

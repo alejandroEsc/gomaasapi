@@ -1,6 +1,9 @@
 package client
 
-import "net/url"
+import (
+	"net/url"
+	"github.com/juju/utils/set"
+)
 
 type ControllerInterface interface {
 	Put(path string, params url.Values) ([]byte, error)
@@ -12,4 +15,6 @@ type ControllerInterface interface {
 	Delete(path string) error
 
 	Get(path string, op string, params url.Values) ([]byte, error)
+
+	readAPIVersionInfo() (set.Strings, error)
 }

@@ -51,7 +51,7 @@ func TestReadAllFromFiles(t *testing.T) {
 	files, err := controller.getFiles("")
 	assert.Nil(t, err)
 	file := files[0]
-	content, err := file.ReadAll()
+	content, err := controller.ReadFileContent(&file)
 	assert.Nil(t, err)
 	assert.Equal(t, "some Content\n", string(content))
 }
@@ -65,7 +65,7 @@ func TestDeleteMissing(t *testing.T) {
 
 	file, err := controller.GetFile("testing")
 	assert.Nil(t, err)
-	err = file.Delete()
+	err = controller.DeleteFile(file)
 	assert.True(t, util.IsNoMatchError(err))
 }
 
@@ -78,7 +78,7 @@ func TestDelete(t *testing.T) {
 
 	file, err := controller.GetFile("testing")
 	assert.Nil(t, err)
-	err = file.Delete()
+	err = controller.DeleteFile(file)
 	assert.True(t, util.IsNoMatchError(err))
 }
 
