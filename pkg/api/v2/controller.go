@@ -19,7 +19,6 @@ import (
 	"github.com/juju/schema"
 	"github.com/juju/utils/set"
 	"github.com/juju/version"
-	"fmt"
 )
 
 var (
@@ -101,7 +100,6 @@ func NewControllerWithVersion(baseURL, apiVersion, apiKey string) (*Controller, 
 	controller.Capabilities, err = controller.readAPIVersionInfo()
 	if err != nil {
 		logger.Debugf("nread version failed: %#v", err)
-		fmt.Printf("\n%s error\n", err)
 		return nil, err
 	}
 
@@ -486,7 +484,7 @@ func (c Controller) Post(path, op string, params url.Values) ([]byte, error) {
 
 func (c Controller) PostFile(path, op string, params url.Values, fileContent []byte) ([]byte, error) {
 	// Only one File is ever sent at a time.
-	files := map[string][]byte{"File": fileContent}
+	files := map[string][]byte{"file": fileContent}
 	return c.postRaw(path, op, params, files)
 }
 
@@ -499,7 +497,7 @@ func (c *Controller) postRaw(path, op string, params url.Values, files map[strin
 		if op != "" {
 			opArg = "?op=" + op
 		}
-		logger.Tracef("request %x: POST %s%s%s, params=%s", requestID, c.Client.APIURL, path, opArg, params.Encode())
+		logger.Tracef("request %x: Post %s%s%s, params=%s", requestID, c.Client.APIURL, path, opArg, params.Encode())
 	}
 	bytes, err := c.Client.Post(url, op, params, files)
 	if err != nil {
@@ -535,7 +533,7 @@ func (c Controller) Get(path string, op string, params url.Values) ([]byte, erro
 		if params != nil {
 			query = "?" + params.Encode()
 		}
-		logger.Tracef("request %x: GET %s%s%s", requestID, c.Client.APIURL, path, query)
+		logger.Tracef("request %x: Get %s%s%s", requestID, c.Client.APIURL, path, query)
 	}
 	bytes, err := c.Client.Get(url, op, params)
 	if err != nil {

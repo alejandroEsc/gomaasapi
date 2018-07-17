@@ -17,7 +17,7 @@ type MAAS struct {
 
 func NewMASS(baseURL string, apiVersion string, apiKey string) (*MAAS, error) {
 	if apiVersion == "" {
-		return nil, fmt.Errorf("version filed must not be empty")
+		return nil, fmt.Errorf("api version must not be empty")
 	}
 	major, _, err := version.ParseMajorMinor(apiVersion)
 	if err != nil {
@@ -39,22 +39,22 @@ func NewMASS(baseURL string, apiVersion string, apiKey string) (*MAAS, error) {
 
 }
 
-func (m *MAAS) GET(path string, op string, params url.Values) ([]byte, error) {
+func (m *MAAS) Get(path string, op string, params url.Values) ([]byte, error) {
 	return m.controller.Get(path, op, params)
 }
 
-func (m *MAAS) POST(path string, op string, params url.Values) ([]byte, error) {
+func (m *MAAS) Post(path string, op string, params url.Values) ([]byte, error) {
 	return m.controller.Post(path, op, params)
 }
 
-func (m *MAAS) POSTFILES(path string, op string, params url.Values, fc []byte) ([]byte, error) {
+func (m *MAAS) PostFile(path string, op string, params url.Values, fc []byte) ([]byte, error) {
 	return m.controller.PostFile(path, op, params, fc)
 }
 
-func (m *MAAS) PUT(path string, params url.Values) ([]byte, error) {
+func (m *MAAS) Put(path string, params url.Values) ([]byte, error) {
 	return m.controller.Put(path, params)
 }
 
-func (m *MAAS) DELETE(path string) error {
+func (m *MAAS) Delete(path string) error {
 	return m.controller.Delete(path)
 }

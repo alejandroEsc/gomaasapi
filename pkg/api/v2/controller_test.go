@@ -967,9 +967,9 @@ func TestControllerAddFileReader(t *testing.T) {
 
 func assertFile(t *testing.T, request *http.Request, filename, content string) {
 	form := request.Form
-	assert.Equal(t, form.Get("Filename"), filename)
+	assert.Equal(t, filename, form.Get("Filename"))
 
-	fileHeader := request.MultipartForm.File["File"][0]
+	fileHeader := request.MultipartForm.File["file"][0]
 	f, err := fileHeader.Open()
 	assert.Nil(t, err)
 	bytes, err := ioutil.ReadAll(f)

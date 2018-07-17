@@ -5,6 +5,7 @@ import (
 	"path"
 
 	"github.com/juju/errors"
+	"github.com/juju/gomaasapi/pkg/api/util"
 )
 
 // AddFileArgs is a argument struct for passing information into AddFile.
@@ -42,4 +43,11 @@ func (a *AddFileArgs) Validate() error {
 		}
 	}
 	return nil
+}
+
+func FileParams(args AddFileArgs) *util.URLParams {
+	params := util.NewURLParams()
+	params.MaybeAdd("filename", args.Filename)
+	params.MaybeAdd("file", string(args.Content))
+	return params
 }

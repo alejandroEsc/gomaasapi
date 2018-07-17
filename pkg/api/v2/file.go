@@ -111,7 +111,11 @@ func (f *File) UnmarshalJSON(j []byte) error {
 			}
 			f.AnonymousURI = u
 		case "content":
-			f.Content = v
+			bytes, err := base64.StdEncoding.DecodeString(v)
+			if err != nil {
+				return fmt.Errorf("err: %s, content is %s.", err.Error(), v)
+			}
+			f.Content = string(bytes)
 		}
 	}
 

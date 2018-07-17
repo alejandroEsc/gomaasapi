@@ -45,6 +45,10 @@
   branch = "master"
   name = "github.com/juju/version"
 
+[[constraint]]
+  name = "github.com/spf13/viper"
+  version = "1.0.2"
+
 [prune]
   go-tests = true
   unused-packages = true

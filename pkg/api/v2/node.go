@@ -28,11 +28,13 @@ type Node struct {
 	// MachineInterface.
 	Parent string `json:"Parent,omitempty"`
 	// Owner is the username of the user that created the Node.
-	Owner       string   `json:"Owner,omitempty"`
+	Owner       string   `json:"owner,omitempty"`
 	IPAddresses []string `json:"ip_addresses,omitempty"`
 	// InterfaceSet returns all the interfaces for the NodeInterface.
 	InterfaceSet []*NetworkInterface `json:"interface_set,omitempty"`
 	Zone         *Zone               `json:"Zone,omitempty"`
+	Tags         []string            `json:"tag_names,omitempty"`
+	Type         string              `json:"node_type_name,omitempty"`
 }
 
 // CreateInterfaceArgs is an argument struct for passing parameters to

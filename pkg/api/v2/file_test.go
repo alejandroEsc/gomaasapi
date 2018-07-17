@@ -37,9 +37,7 @@ func TestReadAllFromGetFile(t *testing.T) {
 
 	file, err := controller.GetFile("testing")
 	assert.Nil(t, err)
-	content, err := file.ReadAll()
-	assert.Nil(t, err)
-	assert.Equal(t, string(content), "this is a test\n")
+	assert.Equal(t, file.Content, "this is a test\n")
 }
 
 func TestReadAllFromFiles(t *testing.T) {
