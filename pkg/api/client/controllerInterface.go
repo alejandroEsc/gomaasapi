@@ -2,6 +2,7 @@ package client
 
 import (
 	"net/url"
+
 	"github.com/juju/utils/set"
 )
 
@@ -16,5 +17,5 @@ type ControllerInterface interface {
 
 	Get(path string, op string, params url.Values) ([]byte, error)
 
-	readAPIVersionInfo() (set.Strings, error)
+	GetAPIVersionInfo() (set.Strings, error)
 }

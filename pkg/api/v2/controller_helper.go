@@ -1,14 +1,15 @@
 package maasapiv2
 
 import (
+	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
-	"github.com/juju/errors"
 	"net/url"
+
+	"github.com/juju/errors"
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
-	"encoding/json"
-	"io/ioutil"
-	"io"
 )
 
 // GetFile returns a single File by its Filename.
@@ -75,7 +76,6 @@ func (c *Controller) getFiles(prefix string) ([]File, error) {
 	}
 	return results, nil
 }
-
 
 // Delete implements FileInterface.
 func (c *Controller) DeleteFile(f *File) error {
@@ -275,8 +275,6 @@ func (c *Controller) AddFile(args AddFileArgs) error {
 	}
 	return nil
 }
-
-
 
 func ownerDataMatches(ownerData, filter map[string]string) bool {
 	for key, value := range filter {

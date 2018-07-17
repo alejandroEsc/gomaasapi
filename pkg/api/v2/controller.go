@@ -93,7 +93,7 @@ func NewControllerWithVersion(baseURL, apiVersion, apiKey string) (*Controller, 
 		Minor: minor,
 	}
 	controller := &Controller{Client: client, APIVersion: controllerVersion}
-	controller.Capabilities, err = controller.readAPIVersionInfo()
+	controller.Capabilities, err = controller.GetAPIVersionInfo()
 	if err != nil {
 		logger.Debugf("nread version failed: %#v", err)
 		return nil, err
@@ -115,7 +115,7 @@ func NewControllerUnknownVersion(args ControllerArgs) (*Controller, error) {
 		case err == nil:
 			return controller, nil
 		case util.IsUnsupportedVersionError(err):
-			// This will only come back from readAPIVersionInfo for 410/404.
+			// This will only come back from GetAPIVersionInfo for 410/404.
 			continue
 		default:
 			return nil, err
@@ -243,7 +243,7 @@ func indicatesUnsupportedVersion(err error) bool {
 	return false
 }
 
-func (c *Controller) readAPIVersionInfo() (set.Strings, error) {
+func (c *Controller) GetAPIVersionInfo() (set.Strings, error) {
 	parsedBytes, err := c.Get("version", "", nil)
 	if indicatesUnsupportedVersion(err) {
 		return nil, util.WrapWithUnsupportedVersionError(err)
@@ -264,5 +264,3 @@ func (c *Controller) readAPIVersionInfo() (set.Strings, error) {
 
 	return capabilities, nil
 }
-
-

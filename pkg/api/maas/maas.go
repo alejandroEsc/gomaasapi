@@ -7,6 +7,7 @@ import (
 	"github.com/juju/gomaasapi/pkg/api/client"
 	"github.com/juju/gomaasapi/pkg/api/util"
 	v2 "github.com/juju/gomaasapi/pkg/api/v2"
+	"github.com/juju/utils/set"
 	"github.com/juju/version"
 )
 
@@ -57,4 +58,8 @@ func (m *MAAS) Put(path string, params url.Values) ([]byte, error) {
 
 func (m *MAAS) Delete(path string) error {
 	return m.controller.Delete(path)
+}
+
+func (m *MAAS) GetAPIVersionInfo() (set.Strings, error) {
+	return m.controller.GetAPIVersionInfo()
 }
